@@ -311,12 +311,14 @@
 .form-container {
     flex: 1;
     padding: var(--space-6);
-    overflow: hidden;
-    min-height: 600px;
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .form-container iframe {
     border-radius: var(--radius-lg);
+    min-height: 600px;
+    display: block;
 }
 
 /* Responsive Design */
@@ -366,7 +368,7 @@
         max-height: 95vh;
     }
 
-    .form-container {
+    .form-container iframe {
         min-height: 500px;
     }
 }
@@ -387,6 +389,9 @@
 
     .form-container {
         padding: var(--space-4);
+    }
+
+    .form-container iframe {
         min-height: 450px;
     }
 }
