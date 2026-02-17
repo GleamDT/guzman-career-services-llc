@@ -79,25 +79,52 @@
 }
 
 @media (max-width: 768px) {
+    .steps-container {
+        margin-top: var(--space-8);
+    }
+
     .step-item {
         flex-direction: column;
         align-items: center;
         text-align: center;
+        margin-bottom: var(--space-8);
     }
 
     .step-number {
-        width: 70px;
-        height: 70px;
-        font-size: var(--text-2xl);
+        width: 56px;
+        height: 56px;
+        font-size: var(--text-xl);
+        margin-bottom: var(--space-4);
+        position: relative;
+        z-index: 2;
+    }
+
+    .step-content {
+        padding: var(--space-5);
+        position: relative;
+        z-index: 2;
+    }
+
+    .step-title {
+        font-size: var(--text-lg);
+    }
+
+    .step-description {
+        font-size: var(--text-sm);
     }
 
     .step-connector {
         left: 50%;
         transform: translateX(-50%);
-        top: 70px;
+        top: 56px;
+        height: calc(100% + var(--space-8));
     }
 
     .step-item:hover .step-content {
         transform: translateY(-5px);
+    }
+
+    .step-item:hover .step-number {
+        transform: scale(1.05);
     }
 }

@@ -34,9 +34,9 @@ function Contact() {
         <section id="contact" className="section section-alt">
             <div className="container">
                 <div className="section-header text-center">
-                    <h2 className="section-title">Get In Touch</h2>
+                    <h2 className="section-title">Contact Us</h2>
                     <p className="section-subtitle">
-                        Ready to take the next step? Contact us today for a free consultation
+                        We are available to respond to all inquiries and requests from 9:00 AM - 2:00 PM CST Monday - Friday (Except on public holidays)
                     </p>
                 </div>
                 <div className="contact-content">
@@ -52,31 +52,18 @@ function Contact() {
                             </div>
                         </div>
                         <div className="contact-item">
-                            <div className="contact-icon">📞</div>
-                            <div className="contact-details">
-                                <div className="contact-label">Phone</div>
-                                <a href="tel:+15551234567" className="contact-value">
-                                    +1 (555) 123-4567
-                                </a>
-                            </div>
-                        </div>
-                        <div className="contact-item">
                             <div className="contact-icon">🕒</div>
                             <div className="contact-details">
                                 <div className="contact-label">Business Hours</div>
                                 <div className="contact-value">
-                                    Monday - Friday: 9:00 AM - 6:00 PM EST<br />
-                                    Saturday: 10:00 AM - 2:00 PM EST<br />
-                                    Sunday: Closed
+                                    Monday - Friday: 9:00 AM - 2:00 PM CST<br />
+                                    (Except on public holidays)
                                 </div>
                             </div>
                         </div>
                         <div className="contact-social">
                             <h4>Follow Us</h4>
                             <div className="social-links">
-                                <a href="#linkedin" className="social-link" aria-label="LinkedIn">
-                                    <span>in</span>
-                                </a>
                                 <a href="#facebook" className="social-link" aria-label="Facebook">
                                     <span>f</span>
                                 </a>
@@ -134,7 +121,7 @@ function Contact() {
                                 <option value="">Select a service</option>
                                 <option value="job-application">Job Application Assistance</option>
                                 <option value="resume">Resume & CV Optimization</option>
-                                <option value="linkedin">LinkedIn Profile Optimization</option>
+
                                 <option value="cover-letter">Cover Letter Writing</option>
                                 <option value="interview">Interview Coaching</option>
                                 <option value="consulting">Career Consulting</option>

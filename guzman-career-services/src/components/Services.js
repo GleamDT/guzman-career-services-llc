@@ -8,9 +8,9 @@ function Services() {
         {
             id: 'tech2mates',
             icon: '🤝',
-            title: 'Tech2mates Collaboration',
-            tagline: 'Partner with Us',
-            description: 'Join our exclusive Tech2mates network and collaborate with industry professionals. We connect talented tech experts with exciting opportunities and provide comprehensive career support tailored for the tech industry.',
+            title: 'Tech2mates Students Apply Here',
+            tagline: 'Student Applications',
+            description: 'Tech2mates students can apply here to access exclusive career support and opportunities. We provide comprehensive career guidance tailored for tech students to help launch your professional journey.',
             features: [
                 'Exclusive tech industry partnerships',
                 'Specialized career guidance for tech professionals',
@@ -18,7 +18,7 @@ function Services() {
                 'Ongoing professional development support'
             ],
             formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSdvjvE3MfW9VrPgMeWrfTepbpbFNqZxr4NIdWBBE_JSsmmAwg/viewform?embedded=true',
-            buttonText: 'Apply for Tech2mates',
+            buttonText: 'Apply Here',
             gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
         },
         {
@@ -29,7 +29,7 @@ function Services() {
             description: 'Our full-service career support is designed for professionals at every stage. From resume optimization to interview coaching, we provide personalized guidance to help you land your dream job and advance your career.',
             features: [
                 'Professional resume & CV optimization',
-                'LinkedIn profile enhancement',
+                'Career profile enhancement',
                 'Interview preparation & coaching',
                 'Job application strategy & support'
             ],

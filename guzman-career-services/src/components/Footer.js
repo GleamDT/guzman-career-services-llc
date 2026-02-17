@@ -17,9 +17,6 @@ function Footer() {
                             Professional career services helping you land your dream job with confidence and success.
                         </p>
                         <div className="footer-social">
-                            <a href="#linkedin" className="footer-social-link" aria-label="LinkedIn">
-                                <span>in</span>
-                            </a>
                             <a href="#facebook" className="footer-social-link" aria-label="Facebook">
                                 <span>f</span>
                             </a>
@@ -34,7 +31,7 @@ function Footer() {
                         <ul className="footer-links">
                             <li><a href="#services">Job Application Assistance</a></li>
                             <li><a href="#services">Resume Optimization</a></li>
-                            <li><a href="#services">LinkedIn Optimization</a></li>
+
                             <li><a href="#services">Cover Letter Writing</a></li>
                             <li><a href="#services">Interview Coaching</a></li>
                             <li><a href="#services">Career Consulting</a></li>
@@ -59,12 +56,8 @@ function Footer() {
                                 <a href="mailto:info@guzmancareerservice.com">info@guzmancareerservice.com</a>
                             </li>
                             <li>
-                                <span className="footer-contact-icon">📞</span>
-                                <a href="tel:+15551234567">+1 (555) 123-4567</a>
-                            </li>
-                            <li>
                                 <span className="footer-contact-icon">🕒</span>
-                                <span>Mon-Fri: 9AM-6PM EST</span>
+                                <span>Mon-Fri: 9AM-2PM CST</span>
                             </li>
                         </ul>
                     </div>

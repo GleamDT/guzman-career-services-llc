@@ -11,7 +11,7 @@ function HowItWorks() {
         {
             number: '02',
             title: 'Profile & Resume Optimization',
-            description: 'Our experts craft and optimize your resume, CV, and LinkedIn profile to showcase your strengths and pass applicant tracking systems.'
+            description: 'Our experts craft and optimize your resume and CV to showcase your strengths and pass applicant tracking systems.'
         },
         {
             number: '03',

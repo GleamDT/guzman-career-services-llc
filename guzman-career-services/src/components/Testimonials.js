@@ -14,7 +14,7 @@ function Testimonials() {
             name: 'Michael Chen',
             role: 'Software Engineer',
             company: 'Innovation Labs',
-            text: 'I was struggling to get interviews despite having strong qualifications. Their LinkedIn optimization and application strategy made all the difference. Within a month, I had multiple offers to choose from.',
+            text: 'I was struggling to get interviews despite having strong qualifications. Their resume optimization and application strategy made all the difference. Within a month, I had multiple offers to choose from.',
             rating: 5
         },
         {
