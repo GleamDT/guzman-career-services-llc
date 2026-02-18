@@ -9,6 +9,8 @@ function Contact() {
         service: '',
         message: ''
     });
+    const [result, setResult] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleChange = (e) => {
         setFormData({
@@ -17,17 +19,28 @@ function Contact() {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Form submission logic would go here
-        alert('Thank you for your interest! We will contact you shortly.');
-        setFormData({
-            name: '',
-            email: '',
-            phone: '',
-            service: '',
-            message: ''
+        setIsSubmitting(true);
+        setResult('');
+
+        const data = new FormData(e.target);
+        data.append('access_key', 'efb5316a-e733-40a2-bde9-aeb3a9a6a56f');
+
+        const response = await fetch('https://api.web3forms.com/submit', {
+            method: 'POST',
+            body: data
         });
+
+        const json = await response.json();
+        setIsSubmitting(false);
+
+        if (json.success) {
+            setResult('success');
+            setFormData({ name: '', email: '', phone: '', service: '', message: '' });
+        } else {
+            setResult('error');
+        }
     };
 
     return (
@@ -119,12 +132,9 @@ function Contact() {
                                 required
                             >
                                 <option value="">Select a service</option>
-                                <option value="job-application">Job Application Assistance</option>
-                                <option value="resume">Resume & CV Optimization</option>
-
-                                <option value="cover-letter">Cover Letter Writing</option>
-                                <option value="interview">Interview Coaching</option>
-                                <option value="consulting">Career Consulting</option>
+                                <option value="resume">Professional Resume & CV Optimization</option>
+                                <option value="profile">Career Profile Enhancement</option>
+                                <option value="job-application">Job Application Strategy & Support</option>
                             </select>
                         </div>
                         <div className="form-group">
@@ -139,9 +149,19 @@ function Contact() {
                                 placeholder="Tell us about your career goals and how we can help..."
                             ></textarea>
                         </div>
-                        <button type="submit" className="btn btn-primary btn-lg form-submit">
-                            Send Message
+                        <button type="submit" className="btn btn-primary btn-lg form-submit" disabled={isSubmitting}>
+                            {isSubmitting ? 'Sending...' : 'Send Message'}
                         </button>
+                        {result === 'success' && (
+                            <p className="form-result form-result--success">
+                                Thank you! We will get back to you shortly.
+                            </p>
+                        )}
+                        {result === 'error' && (
+                            <p className="form-result form-result--error">
+                                Something went wrong. Please try again or email us directly.
+                            </p>
+                        )}
                     </form>
                 </div>
             </div>
