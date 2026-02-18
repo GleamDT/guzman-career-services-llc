@@ -18,8 +18,8 @@ function CTA() {
                         <a href="#contact" className="btn btn-accent btn-lg">
                             Get Started Now
                         </a>
-                        <a href="tel:+1234567890" className="btn btn-outline btn-lg cta-btn-outline">
-                            Call Us Today
+                        <a href="#contact" className="btn btn-outline btn-lg cta-btn-outline">
+                            Contact Us
                         </a>
                     </div>
                     <div className="cta-trust">
