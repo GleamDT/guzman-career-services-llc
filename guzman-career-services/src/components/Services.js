@@ -6,22 +6,6 @@ function Services() {
 
     const serviceCategories = [
         {
-            id: 'tech2mates',
-            icon: '🤝',
-            title: 'Tech2mates Students Apply Here',
-            tagline: 'Student Applications',
-            description: 'Tech2mates students can apply here to access exclusive career support and opportunities. We provide comprehensive career guidance tailored for tech students to help launch your professional journey.',
-            features: [
-                'Exclusive tech industry partnerships',
-                'Specialized career guidance for tech professionals',
-                'Access to premium job opportunities',
-                'Ongoing professional development support'
-            ],
-            formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSdvjvE3MfW9VrPgMeWrfTepbpbFNqZxr4NIdWBBE_JSsmmAwg/viewform?embedded=true',
-            buttonText: 'Apply Here',
-            gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-        },
-        {
             id: 'general',
             icon: '💼',
             title: 'General Client Services',
@@ -36,6 +20,22 @@ function Services() {
             formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSd0r-Oqtumv--5uwbrTpRnhK7eR8vhk6j0svQVyMLUxEqwdGg/viewform?embedded=true',
             buttonText: 'Get Started Today',
             gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+        },
+        {
+            id: 'tech2mates',
+            icon: '🤝',
+            title: 'Tech2mates Students Apply Here',
+            tagline: 'Student Applications',
+            description: 'Tech2mates students can apply here to access exclusive career support and opportunities. We provide comprehensive career guidance tailored for tech students to help launch your professional journey.',
+            features: [
+                'Exclusive tech industry partnerships',
+                'Specialized career guidance for tech professionals',
+                'Access to premium job opportunities',
+                'Ongoing professional development support'
+            ],
+            formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSdvjvE3MfW9VrPgMeWrfTepbpbFNqZxr4NIdWBBE_JSsmmAwg/viewform?embedded=true',
+            buttonText: 'Apply Here',
+            gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
         }
     ];
 

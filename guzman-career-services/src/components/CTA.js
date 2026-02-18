@@ -11,7 +11,7 @@ function CTA() {
                 <div className="cta-text">
                     <h2 className="cta-title">Start Your Career Journey Today</h2>
                     <p className="cta-subtitle">
-                        Don't let another opportunity pass you by. Partner with Guzman Career Service LLC
+                        Don't let another opportunity pass you by. Partner with Guzman Career Service
                         and take the first step toward landing your dream job with confidence.
                     </p>
                     <div className="cta-buttons">

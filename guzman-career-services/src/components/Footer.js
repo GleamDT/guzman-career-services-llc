@@ -11,7 +11,7 @@ function Footer() {
                     <div className="footer-section">
                         <div className="footer-logo">
                             <span className="footer-logo-icon">💼</span>
-                            <span className="footer-logo-text">Guzman Career Service LLC</span>
+                            <span className="footer-logo-text">Guzman Career Service</span>
                         </div>
                         <p className="footer-description">
                             Professional career services helping you land your dream job with confidence and success.
@@ -65,7 +65,7 @@ function Footer() {
 
                 <div className="footer-bottom">
                     <div className="footer-copyright">
-                        © {currentYear} Guzman Career Service LLC. All rights reserved.
+                        © {currentYear} Guzman Career Service. All rights reserved.
                     </div>
                     <div className="footer-legal">
                         <a href="#privacy">Privacy Policy</a>
