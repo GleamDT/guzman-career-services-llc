@@ -10,8 +10,7 @@ function Footer() {
                 <div className="footer-content">
                     <div className="footer-section">
                         <div className="footer-logo">
-                            <span className="footer-logo-icon">💼</span>
-                            <span className="footer-logo-text">Guzman Career Service</span>
+                            <img src={process.env.PUBLIC_URL + '/logo.png'} alt="Guzman Career Service" className="footer-logo-img" />
                         </div>
                         <p className="footer-description">
                             Professional career services helping you land your dream job with confidence and success.

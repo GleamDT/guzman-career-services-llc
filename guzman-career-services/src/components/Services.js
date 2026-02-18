@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './Services.css';
 
 function Services() {
-    const [activeForm, setActiveForm] = useState(null);
-
     const serviceCategories = [
         {
             id: 'general',
@@ -14,10 +12,9 @@ function Services() {
             features: [
                 'Professional resume & CV optimization',
                 'Career profile enhancement',
-                'Interview preparation & coaching',
                 'Job application strategy & support'
             ],
-            formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSd0r-Oqtumv--5uwbrTpRnhK7eR8vhk6j0svQVyMLUxEqwdGg/viewform?embedded=true',
+            formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSd0r-Oqtumv--5uwbrTpRnhK7eR8vhk6j0svQVyMLUxEqwdGg/viewform',
             buttonText: 'Get Started Today',
             gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
         },
@@ -28,24 +25,15 @@ function Services() {
             tagline: 'Student Applications',
             description: 'Tech2mates students can apply here to access exclusive career support and opportunities. We provide comprehensive career guidance tailored for tech students to help launch your professional journey.',
             features: [
-                'Exclusive tech industry partnerships',
-                'Specialized career guidance for tech professionals',
-                'Access to premium job opportunities',
-                'Ongoing professional development support'
+                'Professional resume & CV optimization',
+                'Career profile enhancement',
+                'Job application strategy & support'
             ],
-            formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSdvjvE3MfW9VrPgMeWrfTepbpbFNqZxr4NIdWBBE_JSsmmAwg/viewform?embedded=true',
+            formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSdvjvE3MfW9VrPgMeWrfTepbpbFNqZxr4NIdWBBE_JSsmmAwg/viewform',
             buttonText: 'Apply Here',
             gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
         }
     ];
-
-    const openForm = (categoryId) => {
-        setActiveForm(categoryId);
-    };
-
-    const closeForm = () => {
-        setActiveForm(null);
-    };
 
     return (
         <section id="services" className="section">
@@ -84,50 +72,20 @@ function Services() {
                                     ))}
                                 </ul>
 
-                                <button
+                                <a
+                                    href={category.formUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="category-button"
-                                    onClick={() => openForm(category.id)}
                                     style={{ background: category.gradient }}
                                 >
                                     {category.buttonText}
                                     <span className="button-arrow">→</span>
-                                </button>
+                                </a>
                             </div>
                         </div>
                     ))}
                 </div>
-
-                {/* Form Modal */}
-                {activeForm && (
-                    <div className="form-modal" onClick={closeForm}>
-                        <div className="form-modal-content" onClick={(e) => e.stopPropagation()}>
-                            <button className="form-close-button" onClick={closeForm}>
-                                ✕
-                            </button>
-                            <div className="form-header">
-                                <h3 className="form-title">
-                                    {serviceCategories.find(cat => cat.id === activeForm)?.title}
-                                </h3>
-                                <p className="form-subtitle">
-                                    Fill out the form below to get started
-                                </p>
-                            </div>
-                            <div className="form-container">
-                                <iframe
-                                    src={serviceCategories.find(cat => cat.id === activeForm)?.formUrl}
-                                    width="100%"
-                                    height="100%"
-                                    frameBorder="0"
-                                    marginHeight="0"
-                                    marginWidth="0"
-                                    title={serviceCategories.find(cat => cat.id === activeForm)?.title}
-                                >
-                                    Loading…
-                                </iframe>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         </section>
     );

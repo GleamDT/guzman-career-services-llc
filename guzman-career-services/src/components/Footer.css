@@ -40,8 +40,10 @@
     margin-bottom: var(--space-4);
 }
 
-.footer-logo-icon {
-    font-size: 2rem;
+.footer-logo-img {
+    height: 48px;
+    width: auto;
+    object-fit: contain;
 }
 
 .footer-logo-text {
