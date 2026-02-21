@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './Hero.css';
+import GetStartedModal from './GetStartedModal';
 
 function Hero() {
+  const [modalOpen, setModalOpen] = useState(false);
+
   return (
     <section id="home" className="hero">
       <div className="hero-background">
@@ -18,9 +21,9 @@ function Hero() {
             to help you stand out and succeed in today's competitive job market.
           </p>
           <div className="hero-cta">
-            <a href="#contact" className="btn btn-accent btn-lg">
+            <button onClick={() => setModalOpen(true)} className="btn btn-accent btn-lg">
               Get Started Today
-            </a>
+            </button>
             <a href="#services" className="btn btn-outline btn-lg">
               Explore Services
             </a>
@@ -46,6 +49,7 @@ function Hero() {
           <span></span>
         </a>
       </div>
+      <GetStartedModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </section>
   );
 }

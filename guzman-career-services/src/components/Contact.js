@@ -59,8 +59,8 @@ function Contact() {
                             <div className="contact-icon">📧</div>
                             <div className="contact-details">
                                 <div className="contact-label">Email</div>
-                                <a href="mailto:info@guzmancareerservice.com" className="contact-value">
-                                    info@guzmancareerservice.com
+                                <a href="mailto:info@guzmancareerservices.com" className="contact-value">
+                                    info@guzmancareerservices.com
                                 </a>
                             </div>
                         </div>
@@ -72,17 +72,6 @@ function Contact() {
                                     Monday - Friday: 9:00 AM - 2:00 PM CST<br />
                                     (Except on public holidays)
                                 </div>
-                            </div>
-                        </div>
-                        <div className="contact-social">
-                            <h4>Follow Us</h4>
-                            <div className="social-links">
-                                <a href="#facebook" className="social-link" aria-label="Facebook">
-                                    <span>f</span>
-                                </a>
-                                <a href="#twitter" className="social-link" aria-label="Twitter">
-                                    <span>𝕏</span>
-                                </a>
                             </div>
                         </div>
                     </div>

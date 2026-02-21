@@ -10,19 +10,11 @@ function Footer() {
                 <div className="footer-content">
                     <div className="footer-section">
                         <div className="footer-logo">
-                            <img src={process.env.PUBLIC_URL + '/logo.png'} alt="Guzman Career Service" className="footer-logo-img" />
+                            <img src={process.env.PUBLIC_URL + '/logo.png'} alt="Guzman Career Services" className="footer-logo-img" />
                         </div>
                         <p className="footer-description">
                             Professional career services helping you land your dream job with confidence and success.
                         </p>
-                        <div className="footer-social">
-                            <a href="#facebook" className="footer-social-link" aria-label="Facebook">
-                                <span>f</span>
-                            </a>
-                            <a href="#twitter" className="footer-social-link" aria-label="Twitter">
-                                <span>𝕏</span>
-                            </a>
-                        </div>
                     </div>
 
                     <div className="footer-section">
@@ -52,7 +44,7 @@ function Footer() {
                         <ul className="footer-contact">
                             <li>
                                 <span className="footer-contact-icon">📧</span>
-                                <a href="mailto:info@guzmancareerservice.com">info@guzmancareerservice.com</a>
+                                <a href="mailto:info@guzmancareerservices.com">info@guzmancareerservices.com</a>
                             </li>
                             <li>
                                 <span className="footer-contact-icon">🕒</span>
@@ -64,7 +56,7 @@ function Footer() {
 
                 <div className="footer-bottom">
                     <div className="footer-copyright">
-                        © {currentYear} Guzman Career Service. All rights reserved.
+                        © {currentYear} Guzman Career Services. All rights reserved.
                     </div>
                     <div className="footer-legal">
                         <a href="#privacy">Privacy Policy</a>

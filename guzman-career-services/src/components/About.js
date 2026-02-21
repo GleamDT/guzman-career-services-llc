@@ -7,10 +7,10 @@ function About() {
             <div className="container">
                 <div className="about-content">
                     <div className="about-text">
-                        <h2 className="about-title">About Guzman Career Service</h2>
+                        <h2 className="about-title">About Guzman Career Services</h2>
                         <div className="about-divider"></div>
                         <p className="about-paragraph">
-                            At Guzman Career Service, we are dedicated to empowering professionals
+                            At Guzman Career Services, we are dedicated to empowering professionals
                             to achieve their career aspirations through expert guidance and personalized support.
                         </p>
                         <p className="about-paragraph">

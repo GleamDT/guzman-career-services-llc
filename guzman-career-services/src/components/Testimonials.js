@@ -7,7 +7,7 @@ function Testimonials() {
             name: 'Sarah Johnson',
             role: 'Marketing Manager',
             company: 'Tech Solutions Inc.',
-            text: 'Guzman Career Service transformed my job search. Their resume optimization and interview coaching helped me land my dream role in just 6 weeks. The team is professional, responsive, and truly invested in your success.',
+            text: 'Guzman Career Services transformed my job search. Their resume optimization and interview coaching helped me land my dream role in just 6 weeks. The team is professional, responsive, and truly invested in your success.',
             rating: 5
         },
         {
@@ -21,7 +21,7 @@ function Testimonials() {
             name: 'Emily Rodriguez',
             role: 'Financial Analyst',
             company: 'Capital Advisors',
-            text: 'The personalized approach and attention to detail set Guzman Career Service apart. They helped me negotiate a 25% salary increase and transition into a role that aligns perfectly with my career goals.',
+            text: 'The personalized approach and attention to detail set Guzman Career Services apart. They helped me negotiate a 25% salary increase and transition into a role that aligns perfectly with my career goals.',
             rating: 5
         }
     ];

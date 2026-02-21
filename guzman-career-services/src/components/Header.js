@@ -35,7 +35,6 @@ function Header() {
                     <a href="#services" className="nav-link" onClick={closeMobileMenu}>Services</a>
                     <a href="#how-it-works" className="nav-link" onClick={closeMobileMenu}>How It Works</a>
                     <a href="#about" className="nav-link" onClick={closeMobileMenu}>About</a>
-                    <a href="#testimonials" className="nav-link" onClick={closeMobileMenu}>Testimonials</a>
                     <a href="#contact" className="nav-link nav-link-cta" onClick={closeMobileMenu}>
                         Contact Us
                     </a>

@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './CTA.css';
+import GetStartedModal from './GetStartedModal';
 
 function CTA() {
+    const [modalOpen, setModalOpen] = useState(false);
+
     return (
         <section id="cta" className="cta-section">
             <div className="cta-background">
@@ -11,13 +14,13 @@ function CTA() {
                 <div className="cta-text">
                     <h2 className="cta-title">Start Your Career Journey Today</h2>
                     <p className="cta-subtitle">
-                        Don't let another opportunity pass you by. Partner with Guzman Career Service
+                        Don't let another opportunity pass you by. Partner with Guzman Career Services
                         and take the first step toward landing your dream job with confidence.
                     </p>
                     <div className="cta-buttons">
-                        <a href="#contact" className="btn btn-accent btn-lg">
+                        <button onClick={() => setModalOpen(true)} className="btn btn-accent btn-lg">
                             Get Started Now
-                        </a>
+                        </button>
                         <a href="#contact" className="btn btn-outline btn-lg cta-btn-outline">
                             Contact Us
                         </a>
@@ -38,6 +41,7 @@ function CTA() {
                     </div>
                 </div>
             </div>
+            <GetStartedModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
         </section>
     );
 }
