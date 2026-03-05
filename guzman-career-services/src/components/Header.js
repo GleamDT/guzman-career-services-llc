@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import './Header.css';
+import Login from './Login';
 
 function Header() {
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [loginOpen, setLoginOpen] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -23,6 +25,7 @@ function Header() {
     };
 
     return (
+        <>
         <header className={`header ${scrolled ? 'header-scrolled' : ''}`}>
             <div className="container header-container">
                 <a href="#home" className="logo" onClick={closeMobileMenu}>
@@ -38,6 +41,12 @@ function Header() {
                     <a href="#contact" className="nav-link nav-link-cta" onClick={closeMobileMenu}>
                         Contact Us
                     </a>
+                    <button
+                        className="nav-link nav-link-login"
+                        onClick={() => { closeMobileMenu(); setLoginOpen(true); }}
+                    >
+                        Login
+                    </button>
                 </nav>
 
                 <button
@@ -51,6 +60,9 @@ function Header() {
                 </button>
             </div>
         </header>
+
+        <Login isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
+        </>
     );
 }
 
