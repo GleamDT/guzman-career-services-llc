@@ -223,14 +223,44 @@
 .login-forgot:hover { opacity: 0.75; }
 
 .login-reset-sent {
-    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: center;
     color: #16a34a;
     background: #f0fdf4;
     border: 1px solid #bbf7d0;
-    border-radius: 0.5rem;
-    padding: 0.6rem 0.85rem;
-    margin: 0;
+    border-radius: 0.75rem;
+    padding: 1.5rem 1rem;
+    margin: 1rem 0;
 }
+
+.login-reset-sent .material-symbols-outlined {
+    font-size: 2rem;
+}
+
+.login-reset-sent p {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    margin: 0;
+    color: #15803d;
+}
+
+.login-back-btn {
+    background: none;
+    border: none;
+    color: #1183d4;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.4rem 0;
+    text-align: center;
+    width: 100%;
+    transition: opacity 0.2s;
+}
+
+.login-back-btn:hover { opacity: 0.75; }
 
 .login-input-wrap {
     position: relative;

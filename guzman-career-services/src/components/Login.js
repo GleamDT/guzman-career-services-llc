@@ -16,8 +16,24 @@ function Login({ isOpen, onClose }) {
     const [formData, setFormData] = useState({ email: '', password: '', remember: false });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [forgotMode, setForgotMode] = useState(false);
+    const [forgotEmail, setForgotEmail] = useState('');
     const [resetSent, setResetSent] = useState(false);
     const navigate = useNavigate();
+
+    const switchToForgot = () => { setForgotMode(true); setError(''); setResetSent(false); };
+    const switchToLogin = () => { setForgotMode(false); setError(''); setResetSent(false); setForgotEmail(''); };
+
+    const handleForgotSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        await supabase.auth.resetPasswordForEmail(forgotEmail, {
+            redirectTo: `${window.location.origin}/set-password`,
+        });
+        setLoading(false);
+        setResetSent(true);
+    };
 
     useEffect(() => {
         if (!isOpen) return;
@@ -97,107 +113,146 @@ function Login({ isOpen, onClose }) {
 
                 {/* Right panel */}
                 <div className="login-right">
-                    <div className="login-heading">
-                        <h2>Welcome Back</h2>
-                        <p>Please enter your details to access your portal.</p>
-                    </div>
-
-                    <form className="login-form" onSubmit={handleSubmit}>
-                        <div className="login-fields">
-                            <div className="login-field">
-                                <label htmlFor="email">Email Address</label>
-                                <div className="login-input-wrap">
-                                    <span className="material-symbols-outlined login-input-icon">mail</span>
-                                    <input
-                                        type="email"
-                                        id="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        placeholder="name@example.com"
-                                        autoComplete="email"
-                                        required
-                                    />
-                                </div>
+                    {forgotMode ? (
+                        <>
+                            <div className="login-heading">
+                                <h2>Reset Password</h2>
+                                <p>Enter your email and we'll send you a reset link if your account exists.</p>
                             </div>
 
-                            <div className="login-field">
-                                <div className="login-field-header">
-                                    <label htmlFor="password">Password</label>
-                                    <button
-                                        type="button"
-                                        className="login-forgot"
-                                        onClick={async () => {
-                                            if (!formData.email) { setError('Enter your email above first.'); return; }
-                                            setLoading(true);
-                                            await supabase.auth.resetPasswordForEmail(formData.email, {
-                                                redirectTo: `${window.location.origin}/set-password`,
-                                            });
-                                            setLoading(false);
-                                            setResetSent(true);
-                                        }}
-                                    >Forgot Password?</button>
+                            {resetSent ? (
+                                <div className="login-reset-sent">
+                                    <span className="material-symbols-outlined">mark_email_read</span>
+                                    <p>If <strong>{forgotEmail}</strong> is registered with us, a password reset link has been sent. Check your inbox.</p>
+                                    <button type="button" className="login-back-btn" onClick={switchToLogin}>Back to Login</button>
                                 </div>
-                                <div className="login-input-wrap">
-                                    <span className="material-symbols-outlined login-input-icon">lock</span>
-                                    <input
-                                        type={showPassword ? 'text' : 'password'}
-                                        id="password"
-                                        name="password"
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        placeholder="••••••••"
-                                        autoComplete="current-password"
-                                        required
-                                    />
-                                    <button
-                                        type="button"
-                                        className="login-pw-toggle"
-                                        onClick={() => setShowPassword(v => !v)}
-                                        aria-label="Toggle password visibility"
-                                    >
-                                        <span className="material-symbols-outlined">
-                                            {showPassword ? 'visibility_off' : 'visibility'}
-                                        </span>
+                            ) : (
+                                <form className="login-form" onSubmit={handleForgotSubmit}>
+                                    <div className="login-fields">
+                                        <div className="login-field">
+                                            <label htmlFor="forgot-email">Email Address</label>
+                                            <div className="login-input-wrap">
+                                                <span className="material-symbols-outlined login-input-icon">mail</span>
+                                                <input
+                                                    type="email"
+                                                    id="forgot-email"
+                                                    value={forgotEmail}
+                                                    onChange={e => setForgotEmail(e.target.value)}
+                                                    placeholder="name@example.com"
+                                                    autoComplete="email"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {error && <p className="login-error">{error}</p>}
+
+                                    <button type="submit" className="login-submit" disabled={loading}>
+                                        <span className="material-symbols-outlined">send</span>
+                                        {loading ? 'SENDING...' : 'SEND RESET LINK'}
                                     </button>
+
+                                    <button type="button" className="login-back-btn" onClick={switchToLogin}>
+                                        ← Back to Login
+                                    </button>
+                                </form>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            <div className="login-heading">
+                                <h2>Welcome Back</h2>
+                                <p>Please enter your details to access your portal.</p>
+                            </div>
+
+                            <form className="login-form" onSubmit={handleSubmit}>
+                                <div className="login-fields">
+                                    <div className="login-field">
+                                        <label htmlFor="email">Email Address</label>
+                                        <div className="login-input-wrap">
+                                            <span className="material-symbols-outlined login-input-icon">mail</span>
+                                            <input
+                                                type="email"
+                                                id="email"
+                                                name="email"
+                                                value={formData.email}
+                                                onChange={handleChange}
+                                                placeholder="name@example.com"
+                                                autoComplete="email"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="login-field">
+                                        <div className="login-field-header">
+                                            <label htmlFor="password">Password</label>
+                                            <button type="button" className="login-forgot" onClick={switchToForgot}>
+                                                Forgot Password?
+                                            </button>
+                                        </div>
+                                        <div className="login-input-wrap">
+                                            <span className="material-symbols-outlined login-input-icon">lock</span>
+                                            <input
+                                                type={showPassword ? 'text' : 'password'}
+                                                id="password"
+                                                name="password"
+                                                value={formData.password}
+                                                onChange={handleChange}
+                                                placeholder="••••••••"
+                                                autoComplete="current-password"
+                                                required
+                                            />
+                                            <button
+                                                type="button"
+                                                className="login-pw-toggle"
+                                                onClick={() => setShowPassword(v => !v)}
+                                                aria-label="Toggle password visibility"
+                                            >
+                                                <span className="material-symbols-outlined">
+                                                    {showPassword ? 'visibility_off' : 'visibility'}
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="login-remember">
+                                    <input
+                                        type="checkbox"
+                                        id="remember"
+                                        name="remember"
+                                        checked={formData.remember}
+                                        onChange={handleChange}
+                                    />
+                                    <label htmlFor="remember">Keep me logged in on this device</label>
+                                </div>
+
+                                {error && <p className="login-error">{error}</p>}
+
+                                <button type="submit" className="login-submit" disabled={loading}>
+                                    <span className="material-symbols-outlined">login</span>
+                                    {loading ? 'SIGNING IN...' : 'LOG IN TO PORTAL'}
+                                </button>
+                            </form>
+
+                            <div className="login-badges">
+                                <div className="login-badge">
+                                    <span className="material-symbols-outlined login-badge-icon login-badge-icon--green">verified_user</span>
+                                    <span>Secure Access</span>
+                                </div>
+                                <div className="login-badge">
+                                    <span className="material-symbols-outlined login-badge-icon">encrypted</span>
+                                    <span>AES-256 SSL</span>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="login-remember">
-                            <input
-                                type="checkbox"
-                                id="remember"
-                                name="remember"
-                                checked={formData.remember}
-                                onChange={handleChange}
-                            />
-                            <label htmlFor="remember">Keep me logged in on this device</label>
-                        </div>
-
-                        {error && <p className="login-error">{error}</p>}
-                        {resetSent && <p className="login-reset-sent">Password reset email sent — check your inbox.</p>}
-
-                        <button type="submit" className="login-submit" disabled={loading}>
-                            <span className="material-symbols-outlined">login</span>
-                            {loading ? 'SIGNING IN...' : 'LOG IN TO PORTAL'}
-                        </button>
-                    </form>
-
-                    <div className="login-badges">
-                        <div className="login-badge">
-                            <span className="material-symbols-outlined login-badge-icon login-badge-icon--green">verified_user</span>
-                            <span>Secure Access</span>
-                        </div>
-                        <div className="login-badge">
-                            <span className="material-symbols-outlined login-badge-icon">encrypted</span>
-                            <span>AES-256 SSL</span>
-                        </div>
-                    </div>
-
-                    <p className="login-disclaimer">
-                        Unauthorized access is prohibited. By logging in, you agree to Guzman Career Services' <a href="#terms">Terms of Use</a> and <a href="#privacy">Privacy Policy</a>.
-                    </p>
+                            <p className="login-disclaimer">
+                                Unauthorized access is prohibited. By logging in, you agree to Guzman Career Services' <a href="#terms">Terms of Use</a> and <a href="#privacy">Privacy Policy</a>.
+                            </p>
+                        </>
+                    )}
                 </div>
 
             </div>
