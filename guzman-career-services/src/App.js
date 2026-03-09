@@ -78,7 +78,7 @@ function App() {
         sessionStorage.setItem('auth', JSON.stringify({ role, email: session.user.email }));
       }
       setAuthReady(true);
-    });
+    }).catch(() => setAuthReady(true));
 
     // Keep sessionStorage in sync with Supabase auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
