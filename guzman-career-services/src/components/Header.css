@@ -116,6 +116,8 @@
     border-radius: var(--radius-lg);
     font-weight: 600;
     transition: all var(--transition-base);
+    background: transparent;
+    cursor: pointer;
 }
 
 .nav-link-login::after {

@@ -12,6 +12,7 @@ import Contact from './components/Contact';
 import Footer from './components/Footer';
 import AdminDashboard from './components/AdminDashboard';
 import ClientDashboard from './components/ClientDashboard';
+import SetPassword from './components/SetPassword';
 import './App.css';
 
 function getAuth() {
@@ -52,8 +53,15 @@ function AuthCallback() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         const role = session.user?.user_metadata?.role || 'client';
+        const passwordSet = session.user?.user_metadata?.password_set;
         sessionStorage.setItem('auth', JSON.stringify({ role, email: session.user.email }));
-        navigate(role === 'admin' ? '/admin' : '/dashboard', { replace: true });
+        if (role === 'admin') {
+          navigate('/admin', { replace: true });
+        } else if (passwordSet === false) {
+          navigate('/set-password', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
       } else {
         navigate('/', { replace: true });
       }
@@ -107,6 +115,7 @@ function App() {
       <Route path="/dashboard" element={
         <ProtectedRoute requiredRole="client"><ClientDashboard /></ProtectedRoute>
       } />
+      <Route path="/set-password" element={<SetPassword />} />
     </Routes>
   );
 }

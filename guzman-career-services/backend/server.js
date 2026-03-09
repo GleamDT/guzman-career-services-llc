@@ -5,7 +5,8 @@ const multer  = require('multer');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
-app.use(cors({ origin: 'http://localhost:3000' }));
+const allowedOrigins = ['http://localhost:3000', process.env.SITE_URL].filter(Boolean);
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
 const upload = multer({
@@ -34,8 +35,8 @@ app.post('/api/clients', async (req, res) => {
     try {
         const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-            data: { role: 'client', full_name: fullName, phone: phone || '' },
-            redirectTo: `${siteUrl}/dashboard`,
+            data: { role: 'client', full_name: fullName, phone: phone || '', password_set: false },
+            redirectTo: `${siteUrl}/auth/callback`,
         });
         if (authError) throw authError;
 

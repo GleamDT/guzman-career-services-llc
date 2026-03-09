@@ -16,6 +16,7 @@ function Login({ isOpen, onClose }) {
     const [formData, setFormData] = useState({ email: '', password: '', remember: false });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [resetSent, setResetSent] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -123,7 +124,19 @@ function Login({ isOpen, onClose }) {
                             <div className="login-field">
                                 <div className="login-field-header">
                                     <label htmlFor="password">Password</label>
-                                    <a href="#forgot" className="login-forgot">Forgot Password?</a>
+                                    <button
+                                        type="button"
+                                        className="login-forgot"
+                                        onClick={async () => {
+                                            if (!formData.email) { setError('Enter your email above first.'); return; }
+                                            setLoading(true);
+                                            await supabase.auth.resetPasswordForEmail(formData.email, {
+                                                redirectTo: `${window.location.origin}/set-password`,
+                                            });
+                                            setLoading(false);
+                                            setResetSent(true);
+                                        }}
+                                    >Forgot Password?</button>
                                 </div>
                                 <div className="login-input-wrap">
                                     <span className="material-symbols-outlined login-input-icon">lock</span>
@@ -163,6 +176,7 @@ function Login({ isOpen, onClose }) {
                         </div>
 
                         {error && <p className="login-error">{error}</p>}
+                        {resetSent && <p className="login-reset-sent">Password reset email sent — check your inbox.</p>}
 
                         <button type="submit" className="login-submit" disabled={loading}>
                             <span className="material-symbols-outlined">login</span>
