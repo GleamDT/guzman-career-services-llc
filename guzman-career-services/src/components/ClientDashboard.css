@@ -938,3 +938,311 @@
         gap: 0.5rem;
     }
 }
+
+/* ===== Resume iframe preview ===== */
+.cd-resume-iframe {
+    width: 100%;
+    height: 100%;
+    min-height: 600px;
+    border: none;
+    border-radius: 8px;
+    display: block;
+}
+.cd-resume-preview-wrap {
+    flex: 1;
+    min-height: 600px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+.cd-resume-preview-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    height: 100%;
+    min-height: 600px;
+    color: #94a3b8;
+    font-size: 0.875rem;
+}
+.cd-resume-preview-loading p {
+    margin: 0;
+}
+.cd-preview-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: cd-spin 0.8s linear infinite;
+}
+@keyframes cd-spin {
+    to { transform: rotate(360deg); }
+}
+.cd-resume-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 3rem;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+.cd-resume-empty p {
+    margin: 0;
+}
+
+/* ===== Resume Card ===== */
+.cd-resume-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    max-width: 480px;
+    margin: 2rem auto;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    text-align: center;
+}
+.cd-resume-card-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    background: #eff6ff;
+    border-radius: 20px;
+}
+.cd-resume-card-badge {
+    position: absolute;
+    bottom: -6px;
+    right: -6px;
+    background: #1d4ed8;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.cd-resume-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.cd-resume-card-name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    word-break: break-all;
+}
+.cd-resume-card-meta {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+.cd-resume-card-dl {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #1d4ed8;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 28px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    width: 100%;
+    justify-content: center;
+}
+.cd-resume-card-dl:hover { background: #1e40af; }
+.cd-resume-card-dl:disabled { opacity: 0.6; cursor: not-allowed; }
+.cd-resume-card-footer {
+    border-top: 1px solid #f1f5f9;
+    padding-top: 1.25rem;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.cd-resume-card-footer p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+/* ===== Document preview card (no iframe) ===== */
+.cd-resume-doc-card {
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+}
+/* Toolbar */
+.cd-doc-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+.cd-doc-toolbar-dots {
+    display: flex;
+    gap: 5px;
+}
+.cd-doc-toolbar-dots span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #cbd5e1;
+}
+.cd-doc-toolbar-dots span:nth-child(1) { background: #fca5a5; }
+.cd-doc-toolbar-dots span:nth-child(2) { background: #fcd34d; }
+.cd-doc-toolbar-dots span:nth-child(3) { background: #86efac; }
+.cd-doc-toolbar-name {
+    flex: 1;
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+}
+.cd-doc-toolbar-dl {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #1d4ed8;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+.cd-doc-toolbar-dl:hover { background: #dbeafe; }
+.cd-doc-toolbar-dl:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Document body */
+.cd-doc-body {
+    flex: 1;
+    padding: 2rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+}
+.cd-doc-name-block {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+.cd-doc-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 1.5rem 0;
+}
+.cd-doc-section {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+/* Skeleton lines */
+.cd-doc-line {
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    width: 100%;
+}
+.cd-doc-line--title  { height: 18px; width: 55%; align-self: center; background: #cbd5e1; }
+.cd-doc-line--sub    { height: 9px;  width: 40%; align-self: center; }
+.cd-doc-line--heading{ height: 11px; width: 30%; background: #cbd5e1; }
+.cd-doc-line--short  { width: 50%; }
+.cd-doc-line--med    { width: 75%; }
+
+/* Frosted overlay with CTA */
+.cd-doc-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(3px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+.cd-doc-overlay-icon {
+    width: 56px;
+    height: 56px;
+    background: #eff6ff;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.cd-doc-overlay p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+/* ===== react-pdf preview ===== */
+.cd-resume-preview-wrap {
+    flex: 1;
+    overflow-y: auto;
+    background: #f1f5f9;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+.cd-pdf-scroll {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+.cd-pdf-page-wrap {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    border-radius: 4px;
+    overflow: hidden;
+    line-height: 0;
+}
+.cd-pdf-page-wrap canvas {
+    display: block;
+    max-width: 100%;
+}
+.cd-pdf-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    min-height: 300px;
+    color: #94a3b8;
+    font-size: 0.875rem;
+}
+.cd-pdf-loading p { margin: 0; }

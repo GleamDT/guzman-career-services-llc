@@ -1,0 +1,220 @@
+/* ===== Create Client Modal ===== */
+
+.ccm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.ccm-modal {
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 560px;
+    overflow: hidden;
+    animation: ccm-in 0.2s ease;
+}
+
+@keyframes ccm-in {
+    from { opacity: 0; transform: scale(0.96) translateY(-10px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Header */
+.ccm-header {
+    padding: 1.375rem 1.75rem;
+    border-bottom: 1px solid #f1f5f9;
+    background: #f8fafc;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.ccm-header h2 {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 0.2rem;
+}
+
+.ccm-header p {
+    font-size: 0.8125rem;
+    color: #64748b;
+    margin: 0;
+}
+
+.ccm-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    padding: 0.25rem;
+    border-radius: 0.375rem;
+    flex-shrink: 0;
+    transition: color 0.15s, background 0.15s;
+}
+
+.ccm-close:hover {
+    color: #475569;
+    background: #e2e8f0;
+}
+
+/* Form */
+.ccm-form {
+    padding: 1.625rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.125rem;
+}
+
+.ccm-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.ccm-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.ccm-field--full {
+    grid-column: 1 / -1;
+}
+
+.ccm-field label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.ccm-field input,
+.ccm-field select {
+    padding: 0.625rem 0.875rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-family: 'Inter', sans-serif;
+    color: #0f172a;
+    background: white;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.ccm-field input:focus,
+.ccm-field select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.ccm-field input::placeholder {
+    color: #94a3b8;
+}
+
+/* Email notice */
+.ccm-email-note {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.75rem 1rem;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 0.5rem;
+    color: #1d4ed8;
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+/* Error */
+.ccm-error {
+    margin: 0;
+    padding: 0.625rem 0.875rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    color: #dc2626;
+}
+
+/* Actions */
+.ccm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 0.625rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.ccm-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    font-family: 'Inter', sans-serif;
+}
+
+.ccm-btn--cancel {
+    background: white;
+    color: #475569;
+    border: 1px solid #d1d5db;
+}
+
+.ccm-btn--cancel:hover {
+    background: #f8fafc;
+}
+
+.ccm-btn--submit {
+    background: #2563eb;
+    color: white;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
+}
+
+.ccm-btn--submit:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+.ccm-btn--submit:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Spinner */
+.ccm-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: ccm-spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes ccm-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .ccm-grid { grid-template-columns: 1fr; }
+    .ccm-field--full { grid-column: 1; }
+    .ccm-modal { max-width: 100%; }
+}

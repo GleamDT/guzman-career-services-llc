@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import './Login.css';
-
-const DUMMY_USERS = [
-    { email: 'admin@guzmancareerservices.com', password: 'Admin123!', role: 'admin' },
-    { email: 'client@guzmancareerservices.com', password: 'Client123!', role: 'client' },
-];
 
 const BG_IMAGE = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBlS2U5YOmfaEXB3S-f2PexiqM6jAAuNUdaDWS12VDdXnj1WztSPF6k_e6vYOe603W6XTnqbFOiL844KUwOZAGJWa7rwOfnEusljxVVTkQg4TdQzH2kUF1LLU25NYnU9h7Wn9IfCU4OB5B1dkm0uFjPCt9YNRiYWW7Cbfm5J1p2dJTMEn9vJ2X9OIN5LLCpq3LrQX-pU0UI6VLnxxyVuEVl-HQDO0d6dqqbqzZipRYeBOpsNtEaUJsdSOuncBg86tzQM3OYcTaoG7Ml';
 
@@ -19,6 +15,7 @@ function Login({ isOpen, onClose }) {
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({ email: '', password: '', remember: false });
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -41,18 +38,27 @@ function Login({ isOpen, onClose }) {
         setError('');
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const match = DUMMY_USERS.find(
-            u => u.email === formData.email && u.password === formData.password
-        );
-        if (!match) {
+        setLoading(true);
+        setError('');
+
+        const { data, error: authError } = await supabase.auth.signInWithPassword({
+            email: formData.email,
+            password: formData.password,
+        });
+
+        if (authError) {
             setError('Incorrect email or password. Please try again.');
+            setLoading(false);
             return;
         }
-        sessionStorage.setItem('auth', JSON.stringify({ role: match.role, email: match.email }));
+
+        const role = data.user?.user_metadata?.role || 'client';
+        sessionStorage.setItem('auth', JSON.stringify({ role, email: data.user.email }));
+        setLoading(false);
         onClose();
-        navigate(match.role === 'admin' ? '/admin' : '/dashboard');
+        navigate(role === 'admin' ? '/admin' : '/dashboard');
     };
 
     return (
@@ -158,9 +164,9 @@ function Login({ isOpen, onClose }) {
 
                         {error && <p className="login-error">{error}</p>}
 
-                        <button type="submit" className="login-submit">
+                        <button type="submit" className="login-submit" disabled={loading}>
                             <span className="material-symbols-outlined">login</span>
-                            LOG IN TO PORTAL
+                            {loading ? 'SIGNING IN...' : 'LOG IN TO PORTAL'}
                         </button>
                     </form>
 

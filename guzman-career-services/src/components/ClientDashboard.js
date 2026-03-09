@@ -1,38 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+import { supabase } from '../lib/supabase';
+import { downloadInvoicePDF } from '../lib/invoicePDF';
 import './ClientDashboard.css';
 
-const INVOICES = [
-    {
-        id: 'INV-2023-004',
-        description: 'LinkedIn Profile Optimization',
-        subtitle: 'Premium Profile Overhaul',
-        date: 'Oct 24, 2023',
-        amount: '$350.00',
-        status: 'Pending',
-    },
-    {
-        id: 'INV-2023-003',
-        description: 'Executive Resume Writing',
-        subtitle: 'Initial Draft & Revisions',
-        date: 'Sep 12, 2023',
-        amount: '$750.00',
-        status: 'Paid',
-    },
-    {
-        id: 'INV-2023-001',
-        description: 'Career Strategy Session',
-        subtitle: 'Consultation Hour',
-        date: 'Aug 15, 2023',
-        amount: '$150.00',
-        status: 'Paid',
-    },
-];
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-function InvoicesTab() {
+// ─── Invoices Tab ─────────────────────────────────────────────────────────────
+function InvoicesTab({ invoices, client, loading }) {
+    const totalPaid    = invoices.filter(i => i.status === 'Paid').reduce((s, i) => s + parseFloat(i.amount || 0), 0);
+    const totalPending = invoices.filter(i => i.status === 'Pending').reduce((s, i) => s + parseFloat(i.amount || 0), 0);
+
     return (
         <div className="cd-tab-content">
-            {/* Header row with stats inline */}
             <div className="cd-section-header">
                 <div className="cd-section-header-text">
                     <h2>Invoices &amp; Payments</h2>
@@ -40,17 +23,16 @@ function InvoicesTab() {
                 </div>
                 <div className="cd-invoice-stats">
                     <div className="cd-stat-card">
-                        <span className="cd-stat-label">Total Spent</span>
-                        <span className="cd-stat-value">$1,250.00</span>
+                        <span className="cd-stat-label">Total Paid</span>
+                        <span className="cd-stat-value">${totalPaid.toFixed(2)}</span>
                     </div>
                     <div className="cd-stat-card">
                         <span className="cd-stat-label">Pending</span>
-                        <span className="cd-stat-value cd-stat-value--pending">$350.00</span>
+                        <span className="cd-stat-value cd-stat-value--pending">${totalPending.toFixed(2)}</span>
                     </div>
                 </div>
             </div>
 
-            {/* Table */}
             <div className="cd-invoice-table-wrap">
                 <table className="cd-invoice-table">
                     <thead>
@@ -64,68 +46,124 @@ function InvoicesTab() {
                         </tr>
                     </thead>
                     <tbody>
-                        {INVOICES.map(inv => (
-                            <tr key={inv.id}>
-                                <td className="cd-td-id">#{inv.id}</td>
-                                <td className="cd-td-desc">
-                                    <div className="cd-td-desc-main">{inv.description}</div>
-                                    <div className="cd-td-desc-sub">{inv.subtitle}</div>
+                        {loading ? (
+                            <tr>
+                                <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
+                                    Loading invoices…
                                 </td>
-                                <td className="cd-td-date">{inv.date}</td>
-                                <td className="cd-td-amount">{inv.amount}</td>
-                                <td>
-                                    <span className={`cd-invoice-status cd-invoice-status--${inv.status.toLowerCase()}`}>
-                                        <span className="cd-status-dot" />
-                                        {inv.status}
-                                    </span>
+                            </tr>
+                        ) : invoices.length === 0 ? (
+                            <tr>
+                                <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
+                                    No invoices yet.
                                 </td>
-                                <td>
-                                    <div className="cd-invoice-actions">
-                                        {inv.status === 'Pending' && (
-                                            <button className="cd-btn cd-btn--pay">
-                                                Pay with Stripe
-                                            </button>
-                                        )}
-                                        {inv.status === 'Paid' && (
-                                            <button className="cd-btn cd-btn--receipt">
+                            </tr>
+                        ) : (
+                            invoices.map(inv => (
+                                <tr key={inv.id}>
+                                    <td className="cd-td-id">#{inv.invoice_number}</td>
+                                    <td className="cd-td-desc">
+                                        <div className="cd-td-desc-main">{inv.description}</div>
+                                        {inv.subtitle && <div className="cd-td-desc-sub">{inv.subtitle}</div>}
+                                    </td>
+                                    <td className="cd-td-date">
+                                        {new Date(inv.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    </td>
+                                    <td className="cd-td-amount">${parseFloat(inv.amount).toFixed(2)}</td>
+                                    <td>
+                                        <span className={`cd-invoice-status cd-invoice-status--${inv.status.toLowerCase()}`}>
+                                            <span className="cd-status-dot" />
+                                            {inv.status}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div className="cd-invoice-actions">
+                                            {inv.status === 'Pending' && (
+                                                <button className="cd-btn cd-btn--pay" onClick={() => alert('Payment processing coming soon.')}>
+                                                    Pay Now
+                                                </button>
+                                            )}
+                                            <button
+                                                className="cd-btn cd-btn--receipt"
+                                                onClick={async () => await downloadInvoicePDF(inv, client)}
+                                                title="Download Invoice PDF"
+                                            >
                                                 <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                                                 </svg>
-                                                Receipt
+                                                {inv.status === 'Paid' ? 'Receipt' : 'Invoice'}
                                             </button>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
 
-                {/* Table footer */}
                 <div className="cd-table-footer">
-                    <span className="cd-table-count">Showing {INVOICES.length} of {INVOICES.length} results</span>
-                    <div className="cd-pagination">
-                        <button className="cd-page-btn">Prev</button>
-                        <button className="cd-page-btn">Next</button>
-                    </div>
+                    <span className="cd-table-count">
+                        {invoices.length} invoice{invoices.length !== 1 ? 's' : ''}
+                    </span>
                 </div>
             </div>
 
-            {/* Payment security footer */}
             <div className="cd-payment-security">
                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" className="cd-security-icon">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                 </svg>
-                <span>All payments are encrypted and processed securely by Stripe.</span>
+                <span>All payments are encrypted and processed securely. Stripe payments coming soon.</span>
             </div>
         </div>
     );
 }
 
-function ResumeTab() {
+// ─── Resume Tab ───────────────────────────────────────────────────────────────
+function ResumeTab({ client }) {
+    const [downloading, setDownloading]     = useState(false);
+    const [previewUrl, setPreviewUrl]       = useState(null);
+    const [numPages, setNumPages]           = useState(null);
+    const [pageWidth, setPageWidth]         = useState(500);
+    const previewRef                        = useRef(null);
+
+    const hasResume = !!client.resume_path;
+
+    // Fetch signed URL for preview
+    useEffect(() => {
+        if (!hasResume || !client.id) return;
+        fetch(`/api/clients/${client.id}/resume/download`)
+            .then(r => r.json())
+            .then(d => { if (d.url) setPreviewUrl(d.url); })
+            .catch(() => {});
+    }, [client.id, hasResume]);
+
+    // Track container width so PDF page fills the card
+    const measureWidth = useCallback(() => {
+        if (previewRef.current) setPageWidth(previewRef.current.clientWidth - 2);
+    }, []);
+
+    useEffect(() => {
+        measureWidth();
+        window.addEventListener('resize', measureWidth);
+        return () => window.removeEventListener('resize', measureWidth);
+    }, [measureWidth]);
+
+    const handleDownload = async () => {
+        setDownloading(true);
+        try {
+            const res  = await fetch(`/api/clients/${client.id}/resume/download`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            window.open(data.url, '_blank');
+        } catch (err) {
+            alert('Could not download resume: ' + err.message);
+        } finally {
+            setDownloading(false);
+        }
+    };
+
     return (
         <div className="cd-tab-content">
-            {/* Page header */}
             <div className="cd-resume-page-header">
                 <div>
                     <h2 className="cd-resume-page-title">My Professional Resume</h2>
@@ -133,154 +171,136 @@ function ResumeTab() {
                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                         </svg>
-                        <span>Last updated by Admin on <strong>October 24, 2023</strong></span>
+                        {hasResume
+                            ? <span>Last updated by your consultant on <strong>{new Date(client.resume_uploaded_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong></span>
+                            : <span>Your resume will appear here once uploaded by your consultant.</span>
+                        }
                     </div>
                 </div>
-                <button className="cd-btn cd-btn--download">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                    </svg>
-                    Download as PDF
-                </button>
+                {hasResume && (
+                    <button className="cd-btn cd-btn--download" onClick={handleDownload} disabled={downloading}>
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                        </svg>
+                        {downloading ? 'Opening…' : 'Download PDF'}
+                    </button>
+                )}
             </div>
 
-            {/* Two-column grid */}
-            <div className="cd-resume-grid">
-                {/* Left sidebar */}
-                <aside className="cd-resume-sidebar">
-                    {/* File details */}
-                    <div className="cd-resume-details-card">
-                        <h3 className="cd-resume-details-title">File Details</h3>
-                        <dl className="cd-resume-details-list">
-                            <div>
-                                <dt>File Name</dt>
-                                <dd>John_Doe_Executive_Resume_v2.pdf</dd>
-                            </div>
-                            <div>
-                                <dt>File Format</dt>
-                                <dd>PDF Document</dd>
-                            </div>
-                            <div>
-                                <dt>File Size</dt>
-                                <dd>1.2 MB</dd>
-                            </div>
-                        </dl>
-                    </div>
-
-                    {/* Revision card */}
-                    <div className="cd-resume-revision-card">
-                        <h3>Need a revision?</h3>
-                        <p>If you need updates or have questions about your resume, please contact your career consultant.</p>
-                        <a href="mailto:support@guzmancareerservices.com" className="cd-revision-link">Contact Consultant</a>
-                    </div>
-                </aside>
-
-                {/* Resume preview */}
-                <section className="cd-resume-preview-wrap">
-                    <div className="cd-resume-doc">
-                        {/* Watermark */}
-                        <div className="cd-resume-watermark" aria-hidden="true">GUZMAN CAREER SERVICES</div>
-
-                        {/* Resume content */}
-                        <div className="cd-resume-body">
-                            <div className="cd-resume-doc-header">
-                                <h3>JOHN DOE</h3>
-                                <p className="cd-resume-doc-title">Senior Project Manager | Tech Solutions Specialist</p>
-                                <p className="cd-resume-doc-contact">123 Career Blvd, New York, NY &bull; (555) 012-3456 &bull; john.doe@email.com</p>
-                            </div>
-
-                            <div className="cd-resume-section cd-resume-section--top-border">
-                                <h4>Professional Summary</h4>
-                                <p>Results-oriented professional with over 10 years of experience in managing high-stakes technology projects. Proven track record of increasing operational efficiency and leading cross-functional teams to deliver projects on time and under budget.</p>
-                            </div>
-
-                            <div className="cd-resume-section">
-                                <h4>Experience</h4>
-                                <div className="cd-resume-job">
-                                    <div className="cd-resume-job-header">
-                                        <strong>Lead Solutions Architect &bull; TechCorp Global</strong>
-                                        <span>2018 – Present</span>
-                                    </div>
-                                    <ul>
-                                        <li>Orchestrated the migration of legacy systems to AWS cloud, reducing costs by 25%.</li>
-                                        <li>Lead a team of 15 developers and 3 designers on mission-critical client projects.</li>
-                                        <li>Implemented Agile methodologies resulting in a 40% increase in sprint velocity.</li>
-                                    </ul>
-                                </div>
-                                <div className="cd-resume-job">
-                                    <div className="cd-resume-job-header">
-                                        <strong>Project Coordinator &bull; Innovate Digital</strong>
-                                        <span>2014 – 2018</span>
-                                    </div>
-                                    <ul>
-                                        <li>Managed project lifecycles for mid-sized enterprise clients across North America.</li>
-                                        <li>Coordinated vendor relations and ensured compliance with SOC2 standards.</li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <div className="cd-resume-two-col">
-                                <div className="cd-resume-section">
-                                    <h4>Education</h4>
-                                    <p className="cd-resume-edu-degree">M.S. in Computer Science</p>
-                                    <p className="cd-resume-edu-school">University of Excellence, 2014</p>
-                                </div>
-                                <div className="cd-resume-section">
-                                    <h4>Skills</h4>
-                                    <div className="cd-resume-skills">
-                                        {['Agile/Scrum', 'Cloud Arch', 'Team Leadership', 'Python'].map(s => (
-                                            <span key={s} className="cd-skill-tag">{s}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
+            {hasResume ? (
+                <div className="cd-resume-grid">
+                    <aside className="cd-resume-sidebar">
+                        <div className="cd-resume-details-card">
+                            <h3 className="cd-resume-details-title">File Details</h3>
+                            <dl className="cd-resume-details-list">
+                                <div><dt>File Name</dt><dd>{client.resume_filename || 'resume.pdf'}</dd></div>
+                                <div><dt>File Format</dt><dd>PDF Document</dd></div>
+                                <div><dt>Uploaded</dt><dd>{new Date(client.resume_uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</dd></div>
+                                {numPages && <div><dt>Pages</dt><dd>{numPages}</dd></div>}
+                            </dl>
                         </div>
-                    </div>
-
-                    {/* Zoom controls */}
-                    <div className="cd-zoom-controls">
-                        <button className="cd-zoom-btn" title="Zoom out">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                            </svg>
-                        </button>
-                        <span className="cd-zoom-pct">100%</span>
-                        <button className="cd-zoom-btn" title="Zoom in">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                            </svg>
-                        </button>
-                    </div>
-                </section>
-            </div>
+                        <div className="cd-resume-revision-card">
+                            <h3>Need a revision?</h3>
+                            <p>If you need updates or have questions about your resume, please contact your career consultant.</p>
+                            <a href="mailto:support@guzmancareerservices.com" className="cd-revision-link">Contact Consultant</a>
+                        </div>
+                    </aside>
+                    <section className="cd-resume-preview-wrap" ref={previewRef}>
+                        {previewUrl ? (
+                            <div className="cd-pdf-scroll">
+                                <Document
+                                    file={previewUrl}
+                                    onLoadSuccess={({ numPages: n }) => setNumPages(n)}
+                                    loading={<div className="cd-pdf-loading"><div className="cd-preview-spinner" /><p>Loading preview…</p></div>}
+                                    error={<div className="cd-pdf-loading"><p>Preview unavailable.</p></div>}
+                                >
+                                    {Array.from({ length: numPages || 0 }, (_, i) => (
+                                        <div key={i} className="cd-pdf-page-wrap">
+                                            <Page
+                                                pageNumber={i + 1}
+                                                width={pageWidth}
+                                                renderTextLayer={false}
+                                                renderAnnotationLayer={false}
+                                            />
+                                        </div>
+                                    ))}
+                                </Document>
+                            </div>
+                        ) : (
+                            <div className="cd-pdf-loading">
+                                <div className="cd-preview-spinner" />
+                                <p>Loading preview…</p>
+                            </div>
+                        )}
+                    </section>
+                </div>
+            ) : (
+                <div style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>
+                    <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ margin: '0 auto 1rem', display: 'block' }}>
+                        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+                    </svg>
+                    <p style={{ margin: 0, fontSize: '0.9rem' }}>No resume uploaded yet. Your consultant will add it here.</p>
+                    <a href="mailto:support@guzmancareerservices.com" style={{ display: 'inline-block', marginTop: '1rem', color: '#2563eb', fontWeight: 600, fontSize: '0.875rem' }}>
+                        Contact Consultant
+                    </a>
+                </div>
+            )}
         </div>
     );
 }
 
+// ─── Main Client Dashboard ────────────────────────────────────────────────────
 function ClientDashboard() {
-    const [activeTab, setActiveTab] = useState('Invoices');
+    const [activeTab, setActiveTab]   = useState('Invoices');
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [invoices, setInvoices]     = useState([]);
+    const [client, setClient]         = useState({});
+    const [loading, setLoading]       = useState(true);
     const navigate = useNavigate();
 
-    const handleLogout = () => {
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            // Fetch client profile + invoices in parallel
+            const [profileRes, invoicesRes] = await Promise.all([
+                supabase.from('clients').select('*').eq('id', user.id).single(),
+                supabase.from('invoices').select('*').eq('client_id', user.id).order('created_at', { ascending: false }),
+            ]);
+
+            if (profileRes.data)  setClient(profileRes.data);
+            if (invoicesRes.data) setInvoices(invoicesRes.data);
+        } catch (err) {
+            console.error('Dashboard load error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
         sessionStorage.removeItem('auth');
         navigate('/');
     };
 
     const tabs = ['Invoices', 'My Resume'];
+    const displayName = client.full_name || 'Client';
+    const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
     return (
         <div className="cd-layout">
-            {sidebarOpen && (
-                <div className="cd-sidebar-overlay" onClick={() => setSidebarOpen(false)} />
-            )}
+            {sidebarOpen && <div className="cd-sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
 
             {/* Sidebar */}
             <aside className={`cd-sidebar ${sidebarOpen ? 'cd-sidebar--open' : ''}`}>
                 <div className="cd-sidebar-logo">
                     <img src="/logo.png" alt="Guzman Career Services" className="cd-sidebar-logo-img" />
                 </div>
-
                 <nav className="cd-nav">
                     {tabs.map(tab => (
                         <button
@@ -301,7 +321,6 @@ function ClientDashboard() {
                         </button>
                     ))}
                 </nav>
-
                 <div className="cd-sidebar-footer">
                     <button onClick={handleLogout} className="cd-logout-btn">
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -314,7 +333,6 @@ function ClientDashboard() {
 
             {/* Main */}
             <div className="cd-main">
-                {/* Top bar */}
                 <header className="cd-topbar">
                     <button className="cd-hamburger" onClick={() => setSidebarOpen(v => !v)} aria-label="Toggle menu">
                         <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -324,16 +342,14 @@ function ClientDashboard() {
                     <h1 className="cd-topbar-title">Client Portal</h1>
                     <div className="cd-topbar-user">
                         <div className="cd-user-text">
-                            <p className="cd-user-name">Eleanor Pena</p>
-                            <p className="cd-user-role">General Client</p>
+                            <p className="cd-user-name">{displayName}</p>
+                            <p className="cd-user-role">{client.intake_form_type === 'tech2mate' ? 'Tech2Mate' : 'General'} Client</p>
                         </div>
-                        <div className="cd-user-avatar">EP</div>
+                        <div className="cd-user-avatar">{initials}</div>
                     </div>
                 </header>
 
-                {/* Tab content */}
                 <section className="cd-content">
-                    {/* Mobile tabs */}
                     <div className="cd-mobile-tabs">
                         {tabs.map(tab => (
                             <button
@@ -346,8 +362,10 @@ function ClientDashboard() {
                         ))}
                     </div>
 
-                    {activeTab === 'Invoices' && <InvoicesTab />}
-                    {activeTab === 'My Resume' && <ResumeTab />}
+                    {activeTab === 'Invoices' && (
+                        <InvoicesTab invoices={invoices} client={client} loading={loading} />
+                    )}
+                    {activeTab === 'My Resume' && <ResumeTab client={client} />}
                 </section>
             </div>
         </div>

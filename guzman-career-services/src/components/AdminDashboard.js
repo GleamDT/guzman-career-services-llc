@@ -1,119 +1,628 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import CreateClientModal from './CreateClientModal';
+import CreateInvoiceModal from './CreateInvoiceModal';
+import { downloadInvoicePDF } from '../lib/invoicePDF';
 import './AdminDashboard.css';
 
-const CLIENTS = [
-    {
-        id: 1,
-        name: 'Eleanor Pena',
-        email: 'eleanor.pena@example.com',
-        status: 'Onboarded',
-        dateJoined: 'Oct 24, 2023',
-        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDaY-_taQgCUdUEp1NxhcHzrtw5AF_SNGMee8sBKrlQ7H6jVn2IhSk1O6caPkGEh5x_GS26PvfBEW2TGknj79pXw0vQouWVIZbu8BNaDBvUB9O-3P61WhDzZ7Q1eapivuGlXxfZVwsP0GcCm_xCjoM3nw0K6Xli-zwTZ9GcllYI3CcS2gudsWT0IJEG7v-K_QiSDZBD2YkvcNvr-zEFj8R5R6HLDYUrVDDjS4LyFCZOUXzxPhhtUOtwk3zXP2wdpnsLlGzPX_oebu6O',
-    },
-    {
-        id: 2,
-        name: 'Arlene McCoy',
-        email: 'arlene.mccoy@example.com',
-        status: 'Pending',
-        dateJoined: 'Nov 02, 2023',
-        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD-lOa5E7f1xu4V7oFGHmP9KYVP6vsMn7qn7qUfgSLuXHsmomcq_3s1OC4so8lcGEqAJgP7vzWTa-YYFHZzdfEyJilB4Z5FrYqaNRgNuqwnzdyd4L68PWG57TE1XshCxoa82J0IyHuDVB2CdLt7tHo5cFIIHKL1LZfduGGBJj24Y6fr6iK4zcaA6p5Q6irIyv8Oi5n8OTsj7qZc3pCrrKbSItdKQ-Q_nmE5pniYkrNpV-3HyUEXL4YKbYGmYe9tEjRHOPv87GjpnYP5',
-    },
-    {
-        id: 3,
-        name: 'Guy Hawkins',
-        email: 'guy.hawkins@example.com',
-        status: 'Onboarded',
-        dateJoined: 'Oct 28, 2023',
-        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA_ChwLFRAthgzt1M3iitRDGhWxw0DvLrgYXMklcIkngPijM9LSGGAANFSY_8eq885Jyu7s4SzE0ix6_7762Dch3jCShpI6fQ9JSAzxwk1QWxqwTp7inzxDfSTYZAJ2BQGa5GrJFaOwdNzBAnw--JY2ORfxk_98xYv83rh2xTr_op7zW0_sajXN7ZYSndqvvSeW_IYkeiPcfTWyOGQZFKaA34yq0A1BEGs9qZvGC6RNlQGnN8Y1cQgJSUiZbzUWQMBEXyNj8Oe-MrNQ',
-    },
-];
-
-const STATS = [
-    {
-        label: 'Total Active Clients',
-        value: '1,284',
-        badge: '+12.5%',
-        badgeColor: 'green',
-        iconBg: '#eff6ff',
-        iconColor: '#2563eb',
-        icon: (
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-            </svg>
-        ),
-    },
-    {
-        label: 'Pending Onboarding',
-        value: '42',
-        badge: '8 new',
-        badgeColor: 'amber',
-        iconBg: '#fffbeb',
-        iconColor: '#d97706',
-        icon: (
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-            </svg>
-        ),
-    },
-    {
-        label: 'Monthly Revenue',
-        value: '$14,250',
-        badge: '+4.3%',
-        badgeColor: 'green',
-        iconBg: '#eef2ff',
-        iconColor: '#4f46e5',
-        icon: (
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-            </svg>
-        ),
-    },
-];
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function getInitials(name) {
+    if (!name) return '?';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+}
+function getAvatarColor(name) {
+    const p = ['#2563eb','#7c3aed','#db2777','#059669','#d97706','#0891b2'];
+    return p[(name || '').charCodeAt(0) % p.length];
+}
+function fmtDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function fmtMoney(n) {
+    return `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+}
 
 const NAV_ITEMS = [
     {
-        label: 'Dashboard',
-        active: true,
+        key: 'dashboard', label: 'Dashboard',
         icon: <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>,
     },
     {
-        label: 'Clients',
-        active: false,
+        key: 'clients', label: 'Clients',
         icon: <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>,
     },
     {
-        label: 'Invoices',
-        active: false,
+        key: 'invoices', label: 'Invoices',
         icon: <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>,
     },
     {
-        label: 'Resumes',
-        active: false,
+        key: 'resumes', label: 'Resumes',
         icon: <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>,
     },
 ];
 
+// ─── Dashboard Section ────────────────────────────────────────────────────────
+function DashboardSection({ stats, onCreateClient, onNavigate }) {
+    const [activity, setActivity] = useState({ recentClients: [], recentInvoices: [] });
+
+    useEffect(() => {
+        fetch('/api/activity')
+            .then(r => r.json())
+            .then(d => setActivity(d))
+            .catch(() => {});
+    }, []);
+
+    const statCards = [
+        { label: 'Total Clients',     value: stats.totalClients,              icon: '👥', color: '#2563eb', bg: '#eff6ff' },
+        { label: 'Active Clients',    value: stats.activeClients,             icon: '✅', color: '#059669', bg: '#ecfdf5' },
+        { label: 'Pending Invoices',  value: fmtMoney(stats.pendingRevenue),  icon: '⏳', color: '#d97706', bg: '#fffbeb' },
+        { label: 'Total Revenue',     value: fmtMoney(stats.totalRevenue),    icon: '💰', color: '#7c3aed', bg: '#f5f3ff' },
+    ];
+
+    return (
+        <div className="ads-section">
+            {/* Welcome */}
+            <div className="ads-welcome">
+                <div>
+                    <h1>Welcome back, Admin</h1>
+                    <p>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                </div>
+                <button className="admin-create-btn" onClick={onCreateClient}>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                    </svg>
+                    New Client
+                </button>
+            </div>
+
+            {/* Stat cards */}
+            <div className="ads-stat-grid">
+                {statCards.map(s => (
+                    <div key={s.label} className="ads-stat-card">
+                        <div className="ads-stat-icon" style={{ background: s.bg, color: s.color }}>{s.icon}</div>
+                        <div>
+                            <p className="ads-stat-label">{s.label}</p>
+                            <h3 className="ads-stat-value">{s.value}</h3>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Activity grid */}
+            <div className="ads-activity-grid">
+                {/* Recent clients */}
+                <div className="ads-activity-card">
+                    <div className="ads-activity-card-header">
+                        <h3>Recently Added Clients</h3>
+                        <button className="ads-view-all" onClick={() => onNavigate('clients')}>View all</button>
+                    </div>
+                    {activity.recentClients.length === 0
+                        ? <p className="ads-empty">No clients yet.</p>
+                        : activity.recentClients.map(c => (
+                            <div key={c.id} className="ads-activity-item">
+                                <div className="ads-activity-avatar" style={{ background: getAvatarColor(c.full_name) }}>
+                                    {getInitials(c.full_name)}
+                                </div>
+                                <div className="ads-activity-info">
+                                    <span className="ads-activity-name">{c.full_name}</span>
+                                    <span className="ads-activity-sub">{c.email}</span>
+                                </div>
+                                <span className={`admin-status admin-status--${(c.status || 'pending').toLowerCase()}`}>
+                                    {c.status}
+                                </span>
+                            </div>
+                        ))
+                    }
+                </div>
+
+                {/* Recent invoices */}
+                <div className="ads-activity-card">
+                    <div className="ads-activity-card-header">
+                        <h3>Recent Invoices</h3>
+                        <button className="ads-view-all" onClick={() => onNavigate('invoices')}>View all</button>
+                    </div>
+                    {activity.recentInvoices.length === 0
+                        ? <p className="ads-empty">No invoices yet.</p>
+                        : activity.recentInvoices.map(inv => (
+                            <div key={inv.id} className="ads-activity-item">
+                                <div className="ads-inv-num">#{inv.invoice_number}</div>
+                                <div className="ads-activity-info">
+                                    <span className="ads-activity-name">{inv.clients?.full_name || '—'}</span>
+                                    <span className="ads-activity-sub">{inv.description}</span>
+                                </div>
+                                <div className="ads-inv-right">
+                                    <span className="ads-inv-amount">{fmtMoney(inv.amount)}</span>
+                                    <span className={`ads-inv-status ads-inv-status--${(inv.status || '').toLowerCase()}`}>
+                                        {inv.status}
+                                    </span>
+                                </div>
+                            </div>
+                        ))
+                    }
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Clients Section ──────────────────────────────────────────────────────────
+function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice }) {
+    const [filter, setFilter] = useState('All');
+
+    const filtered = filter === 'All' ? clients : clients.filter(c => c.status === filter);
+
+    return (
+        <div className="ads-section">
+            <div className="admin-page-header">
+                <div>
+                    <h1>Client Management</h1>
+                    <p>All registered client accounts and their onboarding status.</p>
+                </div>
+                <button className="admin-create-btn" onClick={onCreateClient}>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                    </svg>
+                    Create Client Account
+                </button>
+            </div>
+
+            <div className="admin-table-card">
+                <div className="admin-table-header">
+                    <h2>All Clients ({clients.length})</h2>
+                    <div className="admin-table-tabs">
+                        {['All', 'Active', 'Pending'].map(t => (
+                            <button key={t} className={`admin-tab ${filter === t ? 'admin-tab--active' : ''}`} onClick={() => setFilter(t)}>{t}</button>
+                        ))}
+                    </div>
+                </div>
+                <div className="admin-table-wrap">
+                    <table className="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Client Name</th>
+                                <th>Status</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Date Joined</th>
+                                <th className="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr><td colSpan="6" className="ads-table-msg">Loading clients…</td></tr>
+                            ) : filtered.length === 0 ? (
+                                <tr><td colSpan="6" className="ads-table-msg">No clients found.</td></tr>
+                            ) : filtered.map(client => (
+                                <tr key={client.id}>
+                                    <td>
+                                        <div className="admin-client-name">
+                                            <div className="ads-avatar" style={{ background: getAvatarColor(client.full_name) }}>
+                                                {getInitials(client.full_name)}
+                                            </div>
+                                            <span>{client.full_name}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span className={`admin-status admin-status--${(client.status || 'pending').toLowerCase()}`}>
+                                            {client.status || 'Pending'}
+                                        </span>
+                                    </td>
+                                    <td className="admin-cell-muted">{client.email}</td>
+                                    <td className="admin-cell-muted">{client.phone || '—'}</td>
+                                    <td className="admin-cell-muted">{fmtDate(client.created_at)}</td>
+                                    <td>
+                                        <div className="admin-actions">
+                                            <button title="Create Invoice" onClick={() => onCreateInvoice(client)}>
+                                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                <div className="admin-pagination">
+                    <span>Showing {filtered.length} of {clients.length} clients</span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Invoices Section ─────────────────────────────────────────────────────────
+function InvoicesSection({ onShowToast }) {
+    const [invoices, setInvoices]   = useState([]);
+    const [loading, setLoading]     = useState(true);
+    const [filter, setFilter]       = useState('All');
+    const [markingId, setMarkingId] = useState(null);
+
+    const fetchInvoices = useCallback(async () => {
+        try {
+            const res  = await fetch('/api/invoices');
+            const data = await res.json();
+            setInvoices(data.invoices || []);
+        } catch { /* ignore */ } finally { setLoading(false); }
+    }, []);
+
+    useEffect(() => { fetchInvoices(); }, [fetchInvoices]);
+
+    const markPaid = async (invoiceId) => {
+        setMarkingId(invoiceId);
+        try {
+            const res  = await fetch(`/api/invoices/${invoiceId}/mark-paid`, { method: 'PATCH' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            setInvoices(prev => prev.map(i => i.id === invoiceId ? { ...i, ...data.invoice } : i));
+            onShowToast('✓ Invoice marked as paid.');
+        } catch (err) {
+            onShowToast(`Error: ${err.message}`);
+        } finally { setMarkingId(null); }
+    };
+
+    const filtered = filter === 'All' ? invoices : invoices.filter(i => i.status === filter);
+    const totalAll     = invoices.reduce((s, i) => s + parseFloat(i.amount || 0), 0);
+    const totalPaid    = invoices.filter(i => i.status === 'Paid').reduce((s, i) => s + parseFloat(i.amount || 0), 0);
+    const totalPending = invoices.filter(i => i.status === 'Pending').reduce((s, i) => s + parseFloat(i.amount || 0), 0);
+
+    return (
+        <div className="ads-section">
+            <div className="admin-page-header">
+                <div>
+                    <h1>Invoices</h1>
+                    <p>All billing records across every client account.</p>
+                </div>
+            </div>
+
+            {/* Summary strip */}
+            <div className="ads-inv-summary">
+                {[
+                    { label: 'Total Invoiced', value: fmtMoney(totalAll),     color: '#0f172a' },
+                    { label: 'Collected',       value: fmtMoney(totalPaid),    color: '#059669' },
+                    { label: 'Outstanding',     value: fmtMoney(totalPending), color: '#d97706' },
+                ].map(s => (
+                    <div key={s.label} className="ads-inv-summary-card">
+                        <span className="ads-inv-summary-label">{s.label}</span>
+                        <span className="ads-inv-summary-value" style={{ color: s.color }}>{s.value}</span>
+                    </div>
+                ))}
+            </div>
+
+            <div className="admin-table-card">
+                <div className="admin-table-header">
+                    <h2>Invoice History ({invoices.length})</h2>
+                    <div className="admin-table-tabs">
+                        {['All', 'Pending', 'Paid'].map(t => (
+                            <button key={t} className={`admin-tab ${filter === t ? 'admin-tab--active' : ''}`} onClick={() => setFilter(t)}>{t}</button>
+                        ))}
+                    </div>
+                </div>
+                <div className="admin-table-wrap">
+                    <table className="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Client</th>
+                                <th>Service</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th className="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr><td colSpan="7" className="ads-table-msg">Loading invoices…</td></tr>
+                            ) : filtered.length === 0 ? (
+                                <tr><td colSpan="7" className="ads-table-msg">No invoices found.</td></tr>
+                            ) : filtered.map(inv => (
+                                <tr key={inv.id}>
+                                    <td className="ads-inv-id">#{inv.invoice_number}</td>
+                                    <td>
+                                        <div className="admin-client-name">
+                                            <div className="ads-avatar" style={{ background: getAvatarColor(inv.clients?.full_name) }}>
+                                                {getInitials(inv.clients?.full_name)}
+                                            </div>
+                                            <span>{inv.clients?.full_name || '—'}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className="ads-service-name">{inv.description}</div>
+                                        {inv.subtitle && <div className="ads-service-sub">{inv.subtitle}</div>}
+                                    </td>
+                                    <td className="ads-amount">{fmtMoney(inv.amount)}</td>
+                                    <td>
+                                        <span className={`ads-status-badge ads-status-badge--${(inv.status || '').toLowerCase()}`}>
+                                            <span className="ads-status-dot" />
+                                            {inv.status}
+                                        </span>
+                                    </td>
+                                    <td className="admin-cell-muted">{fmtDate(inv.created_at)}</td>
+                                    <td>
+                                        <div className="admin-actions">
+                                            {inv.status === 'Pending' && (
+                                                <button
+                                                    className="ads-action-btn ads-action-btn--paid"
+                                                    onClick={() => markPaid(inv.id)}
+                                                    disabled={markingId === inv.id}
+                                                    title="Mark as Paid"
+                                                >
+                                                    {markingId === inv.id ? '…' : 'Mark Paid'}
+                                                </button>
+                                            )}
+                                            <button
+                                                className="ads-action-btn ads-action-btn--dl"
+                                                onClick={async () => await downloadInvoicePDF(inv, inv.clients)}
+                                                title="Download Invoice PDF"
+                                            >
+                                                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                                                </svg>
+                                                PDF
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                <div className="admin-pagination">
+                    <span>Showing {filtered.length} of {invoices.length} invoices</span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Resumes Section ──────────────────────────────────────────────────────────
+function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
+    const [uploadingId, setUploadingId]     = useState(null);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [pendingClientId, setPendingClientId] = useState(null);
+    const fileInputRef = useRef(null);
+
+    const triggerUpload = (clientId) => {
+        setPendingClientId(clientId);
+        fileInputRef.current.value = '';
+        fileInputRef.current.click();
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (!file || !pendingClientId) return;
+
+        if (file.type !== 'application/pdf') {
+            onShowToast('Error: Only PDF files are allowed.');
+            return;
+        }
+
+        const clientId = pendingClientId;
+        setUploadingId(clientId);
+        setUploadProgress(0);
+
+        const formData = new FormData();
+        formData.append('resume', file);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `/api/clients/${clientId}/resume`);
+
+        xhr.upload.onprogress = (ev) => {
+            if (ev.lengthComputable) {
+                setUploadProgress(Math.round((ev.loaded / ev.total) * 100));
+            }
+        };
+
+        xhr.onload = () => {
+            try {
+                const data = JSON.parse(xhr.responseText);
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    onResumeUploaded(data.client);
+                    onShowToast(`✓ Resume uploaded for ${data.client.full_name}.`);
+                } else {
+                    onShowToast(`Error: ${data.error || 'Upload failed'}`);
+                }
+            } catch {
+                onShowToast('Error: Unexpected server response.');
+            } finally {
+                setUploadingId(null);
+                setPendingClientId(null);
+                setUploadProgress(0);
+            }
+        };
+
+        xhr.onerror = () => {
+            onShowToast('Error: Network error during upload.');
+            setUploadingId(null);
+            setPendingClientId(null);
+            setUploadProgress(0);
+        };
+
+        xhr.send(formData);
+        setPendingClientId(null);
+    };
+
+    const handleDownload = async (clientId) => {
+        try {
+            const res  = await fetch(`/api/clients/${clientId}/resume/download`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            window.open(data.url, '_blank');
+        } catch (err) {
+            onShowToast(`Error: ${err.message}`);
+        }
+    };
+
+    return (
+        <div className="ads-section">
+            <input ref={fileInputRef} type="file" accept=".pdf,application/pdf" style={{ display: 'none' }} onChange={handleFileChange} />
+
+            <div className="admin-page-header">
+                <div>
+                    <h1>Resume Management</h1>
+                    <p>Upload and manage client resumes. Clients can download their resume from their portal.</p>
+                </div>
+            </div>
+
+            <div className="admin-table-card">
+                <div className="admin-table-header">
+                    <h2>Client Resumes</h2>
+                </div>
+                <div className="admin-table-wrap">
+                    <table className="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Email</th>
+                                <th>Resume Status</th>
+                                <th>File Name</th>
+                                <th>Uploaded</th>
+                                <th className="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {clients.length === 0 ? (
+                                <tr><td colSpan="6" className="ads-table-msg">No clients yet.</td></tr>
+                            ) : clients.map(client => {
+                                const hasResume = !!client.resume_path;
+                                const isUploading = uploadingId === client.id;
+                                return (
+                                    <tr key={client.id}>
+                                        <td>
+                                            <div className="admin-client-name">
+                                                <div className="ads-avatar" style={{ background: getAvatarColor(client.full_name) }}>
+                                                    {getInitials(client.full_name)}
+                                                </div>
+                                                <span>{client.full_name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="admin-cell-muted">{client.email}</td>
+                                        <td>
+                                            <span className={`ads-resume-badge ${hasResume ? 'ads-resume-badge--uploaded' : 'ads-resume-badge--missing'}`}>
+                                                {hasResume ? '✓ Uploaded' : 'Not uploaded'}
+                                            </span>
+                                        </td>
+                                        <td className="admin-cell-muted ads-filename">
+                                            {client.resume_filename || '—'}
+                                        </td>
+                                        <td className="admin-cell-muted">
+                                            {fmtDate(client.resume_uploaded_at)}
+                                        </td>
+                                        <td>
+                                            <div className="admin-actions">
+                                                {hasResume && (
+                                                    <button
+                                                        className="ads-action-btn ads-action-btn--dl"
+                                                        onClick={() => handleDownload(client.id)}
+                                                        title="Download Resume"
+                                                    >
+                                                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                                                        </svg>
+                                                        Download
+                                                    </button>
+                                                )}
+                                                <div className="ads-upload-wrap">
+                                                    <button
+                                                        className="ads-action-btn ads-action-btn--upload"
+                                                        onClick={() => triggerUpload(client.id)}
+                                                        disabled={isUploading}
+                                                        title={hasResume ? 'Replace Resume' : 'Upload Resume'}
+                                                    >
+                                                        {isUploading ? (
+                                                            <>
+                                                                <span className="ads-upload-spinner" />
+                                                                {uploadProgress > 0 ? `${uploadProgress}%` : 'Uploading…'}
+                                                            </>
+                                                        ) : (hasResume ? 'Replace' : 'Upload PDF')}
+                                                    </button>
+                                                    {isUploading && (
+                                                        <div className="ads-progress-bar">
+                                                            <div className="ads-progress-fill" style={{ width: `${uploadProgress}%` }} />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Main AdminDashboard ──────────────────────────────────────────────────────
 function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState('All Clients');
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [activeSection, setActiveSection] = useState('dashboard');
+    const [sidebarOpen, setSidebarOpen]     = useState(false);
+    const [clients, setClients]             = useState([]);
+    const [stats, setStats]                 = useState({ totalClients: 0, activeClients: 0, pendingClients: 0, totalRevenue: '0.00', pendingRevenue: '0.00' });
+    const [loadingClients, setLoadingClients] = useState(true);
+    const [showCreateClient, setShowCreateClient]   = useState(false);
+    const [showCreateInvoice, setShowCreateInvoice] = useState(false);
+    const [selectedClient, setSelectedClient]       = useState(null);
+    const [toast, setToast] = useState('');
     const navigate = useNavigate();
 
-    const handleLogout = () => {
+    useEffect(() => { fetchClients(); fetchStats(); }, []);
+
+    const fetchClients = async () => {
+        try {
+            const res  = await fetch('/api/clients');
+            const data = await res.json();
+            setClients(data.clients || []);
+        } catch { /* ignore */ } finally { setLoadingClients(false); }
+    };
+
+    const fetchStats = async () => {
+        try {
+            const res  = await fetch('/api/stats');
+            const data = await res.json();
+            setStats(data);
+        } catch { /* ignore */ }
+    };
+
+    const handleLogout = async () => {
+        const { supabase } = await import('../lib/supabase');
+        await supabase.auth.signOut();
         sessionStorage.removeItem('auth');
         navigate('/');
     };
 
-    const filteredClients = activeTab === 'All Clients'
-        ? CLIENTS
-        : CLIENTS.filter(c => c.status === activeTab.replace('ed', '').trim() || c.status === activeTab);
+    const showToast = useCallback((msg) => {
+        setToast(msg);
+        setTimeout(() => setToast(''), 4000);
+    }, []);
+
+    const handleClientCreated = (newClient) => {
+        setClients(prev => [newClient, ...prev]);
+        setStats(prev => ({ ...prev, totalClients: prev.totalClients + 1, pendingClients: prev.pendingClients + 1 }));
+        showToast(`✓ Account created and invite sent to ${newClient.email}`);
+    };
+
+    const handleInvoiceCreated = () => {
+        showToast('✓ Invoice created successfully.');
+        fetchStats();
+    };
+
+    const handleResumeUploaded = (updatedClient) => {
+        setClients(prev => prev.map(c => c.id === updatedClient.id ? updatedClient : c));
+    };
+
+    const openInvoiceModal = (client) => {
+        setSelectedClient(client);
+        setShowCreateInvoice(true);
+    };
 
     return (
         <div className="admin-layout">
-            {/* Mobile overlay */}
-            {sidebarOpen && (
-                <div className="admin-sidebar-overlay" onClick={() => setSidebarOpen(false)} />
-            )}
+            {sidebarOpen && <div className="admin-sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
 
             {/* Sidebar */}
             <aside className={`admin-sidebar ${sidebarOpen ? 'admin-sidebar--open' : ''}`}>
@@ -123,8 +632,9 @@ function AdminDashboard() {
                 <nav className="admin-nav">
                     {NAV_ITEMS.map(item => (
                         <button
-                            key={item.label}
-                            className={`admin-nav-link ${item.active ? 'admin-nav-link--active' : ''}`}
+                            key={item.key}
+                            className={`admin-nav-link ${activeSection === item.key ? 'admin-nav-link--active' : ''}`}
+                            onClick={() => { setActiveSection(item.key); setSidebarOpen(false); }}
                         >
                             {item.icon}
                             {item.label}
@@ -141,7 +651,7 @@ function AdminDashboard() {
                 </div>
             </aside>
 
-            {/* Main area */}
+            {/* Main */}
             <div className="admin-main">
                 {/* Top bar */}
                 <header className="admin-topbar">
@@ -154,155 +664,71 @@ function AdminDashboard() {
                         <svg className="admin-search-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                         </svg>
-                        <input type="text" placeholder="Search clients or files..." />
+                        <input type="text" placeholder="Search…" />
                     </div>
                     <div className="admin-topbar-right">
                         <button className="admin-notif-btn">
                             <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                             </svg>
-                            <span className="admin-notif-dot" />
                         </button>
                         <div className="admin-user-info">
                             <div className="admin-user-text">
-                                <p className="admin-user-name">Admin User</p>
+                                <p className="admin-user-name">Admin</p>
                                 <p className="admin-user-role">Operations Manager</p>
                             </div>
-                            <img
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5k97wr8cHcR97PbIoY91EHuSvGUo0Yx5nlV22hJeLoHXJFgt6VmhPVeuFs6Z8nkLmW2ZIfKKHLg-9QBwos4ZH-6e_TmWf4JtXnNBhmv1zvfZm6X-I4el-BWq_p4Qq3sdBXuM3_K1AL25dUG-HVvZxijr6_MV4Q_6wKX4G1COIzI9gVzAXWMkO2UjgjzufI-v1KageM80VaN1fB0a3BLbpsuduyrjta2dNu7xDwuqj0CmymhnFukA-uIF5D5PXUcYqM3RN-Feow9dy"
-                                alt="Admin"
-                                className="admin-avatar"
-                            />
+                            <div className="ads-topbar-avatar">A</div>
                         </div>
                     </div>
                 </header>
 
-                {/* Content */}
+                {/* Section content */}
                 <section className="admin-content">
-                    {/* Page header */}
-                    <div className="admin-page-header">
-                        <div>
-                            <h1>Admin Dashboard</h1>
-                            <p>Overview of career service operations and client lifecycle.</p>
-                        </div>
-                        <button className="admin-create-btn">
-                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                            </svg>
-                            Create Client Account
-                        </button>
-                    </div>
-
-                    {/* Stats */}
-                    <div className="admin-stats-grid">
-                        {STATS.map(stat => (
-                            <div key={stat.label} className="admin-stat-card">
-                                <div className="admin-stat-header">
-                                    <div className="admin-stat-icon" style={{ background: stat.iconBg, color: stat.iconColor }}>
-                                        {stat.icon}
-                                    </div>
-                                    <span className={`admin-stat-badge admin-stat-badge--${stat.badgeColor}`}>
-                                        {stat.badge}
-                                    </span>
-                                </div>
-                                <p className="admin-stat-label">{stat.label}</p>
-                                <h3 className="admin-stat-value">{stat.value}</h3>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Clients table */}
-                    <div className="admin-table-card">
-                        <div className="admin-table-header">
-                            <h2>All Clients</h2>
-                            <div className="admin-table-tabs">
-                                {['All Clients', 'Onboarded', 'Pending'].map(tab => (
-                                    <button
-                                        key={tab}
-                                        className={`admin-tab ${activeTab === tab ? 'admin-tab--active' : ''}`}
-                                        onClick={() => setActiveTab(tab)}
-                                    >
-                                        {tab}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="admin-table-wrap">
-                            <table className="admin-table">
-                                <thead>
-                                    <tr>
-                                        <th>Client Name</th>
-                                        <th>Status</th>
-                                        <th>Email Address</th>
-                                        <th className="text-center">Date Joined</th>
-                                        <th className="text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredClients.map(client => (
-                                        <tr key={client.id}>
-                                            <td>
-                                                <div className="admin-client-name">
-                                                    <img src={client.avatar} alt={client.name} />
-                                                    <span>{client.name}</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span className={`admin-status admin-status--${client.status.toLowerCase()}`}>
-                                                    {client.status}
-                                                </span>
-                                            </td>
-                                            <td className="admin-cell-muted">{client.email}</td>
-                                            <td className="admin-cell-muted text-center">{client.dateJoined}</td>
-                                            <td>
-                                                <div className="admin-actions">
-                                                    <button title="View Profile">
-                                                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                                                            <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                                                        </svg>
-                                                    </button>
-                                                    <button title="Upload Resume">
-                                                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                                                        </svg>
-                                                    </button>
-                                                    <button title="Create Invoice">
-                                                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Pagination */}
-                        <div className="admin-pagination">
-                            <span>Showing 1 to {filteredClients.length} of 1,284 clients</span>
-                            <div className="admin-pagination-controls">
-                                <button className="admin-page-btn">
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                                    </svg>
-                                </button>
-                                <button className="admin-page-num admin-page-num--active">1</button>
-                                <button className="admin-page-num">2</button>
-                                <button className="admin-page-num">3</button>
-                                <button className="admin-page-btn">
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    {activeSection === 'dashboard' && (
+                        <DashboardSection
+                            stats={stats}
+                            onCreateClient={() => setShowCreateClient(true)}
+                            onNavigate={setActiveSection}
+                        />
+                    )}
+                    {activeSection === 'clients' && (
+                        <ClientsSection
+                            clients={clients}
+                            loading={loadingClients}
+                            onCreateClient={() => setShowCreateClient(true)}
+                            onCreateInvoice={openInvoiceModal}
+                        />
+                    )}
+                    {activeSection === 'invoices' && (
+                        <InvoicesSection onShowToast={showToast} />
+                    )}
+                    {activeSection === 'resumes' && (
+                        <ResumesSection
+                            clients={clients}
+                            onResumeUploaded={handleResumeUploaded}
+                            onShowToast={showToast}
+                        />
+                    )}
                 </section>
             </div>
+
+            {/* Modals */}
+            <CreateClientModal
+                isOpen={showCreateClient}
+                onClose={() => setShowCreateClient(false)}
+                onClientCreated={handleClientCreated}
+            />
+            <CreateInvoiceModal
+                isOpen={showCreateInvoice}
+                onClose={() => { setShowCreateInvoice(false); setSelectedClient(null); }}
+                client={selectedClient}
+                onInvoiceCreated={handleInvoiceCreated}
+            />
+
+            {/* Toast */}
+            {toast && (
+                <div className="ads-toast">{toast}</div>
+            )}
         </div>
     );
 }
