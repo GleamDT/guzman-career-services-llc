@@ -1,11 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './GetStartedModal.css';
+import IntakeForm from './IntakeForm';
 
-const GENERAL_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSd0r-Oqtumv--5uwbrTpRnhK7eR8vhk6j0svQVyMLUxEqwdGg/viewform';
 const TECH2MATE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdvjvE3MfW9VrPgMeWrfTepbpbFNqZxr4NIdWBBE_JSsmmAwg/viewform';
 
 function GetStartedModal({ isOpen, onClose }) {
+    const [showIntakeForm, setShowIntakeForm] = useState(false);
+
     if (!isOpen) return null;
+
+    if (showIntakeForm) {
+        return <IntakeForm onClose={onClose} />;
+    }
 
     return (
         <div className="modal-overlay" onClick={onClose}>
@@ -14,16 +20,14 @@ function GetStartedModal({ isOpen, onClose }) {
                 <h2 className="modal-title">How would you like to get started?</h2>
                 <p className="modal-subtitle">Choose the option that best describes you</p>
                 <div className="modal-options">
-                    <a
-                        href={GENERAL_FORM_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    <button
                         className="modal-option"
+                        onClick={() => setShowIntakeForm(true)}
                     >
                         <span className="modal-option-icon">💼</span>
                         <h3>General Client</h3>
                         <p>Professionals seeking career support, resume optimization, and job placement help</p>
-                    </a>
+                    </button>
                     <a
                         href={TECH2MATE_FORM_URL}
                         target="_blank"

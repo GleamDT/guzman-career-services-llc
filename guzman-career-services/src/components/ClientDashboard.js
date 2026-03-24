@@ -11,8 +11,23 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.vers
 
 // ─── Invoices Tab ─────────────────────────────────────────────────────────────
 function InvoicesTab({ invoices, client, loading }) {
+    const [payingId, setPayingId] = useState(null);
+
     const totalPaid    = invoices.filter(i => i.status === 'Paid').reduce((s, i) => s + parseFloat(i.amount || 0), 0);
     const totalPending = invoices.filter(i => i.status === 'Pending').reduce((s, i) => s + parseFloat(i.amount || 0), 0);
+
+    const handlePayNow = async (invoiceId) => {
+        setPayingId(invoiceId);
+        try {
+            const res = await fetch(`/api/invoices/${invoiceId}/checkout`, { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            window.location.href = data.url;
+        } catch (err) {
+            alert('Could not start payment: ' + err.message);
+            setPayingId(null);
+        }
+    };
 
     return (
         <div className="cd-tab-content">
@@ -79,8 +94,12 @@ function InvoicesTab({ invoices, client, loading }) {
                                     <td>
                                         <div className="cd-invoice-actions">
                                             {inv.status === 'Pending' && (
-                                                <button className="cd-btn cd-btn--pay" onClick={() => alert('Payment processing coming soon.')}>
-                                                    Pay Now
+                                                <button
+                                                    className="cd-btn cd-btn--pay"
+                                                    onClick={() => handlePayNow(inv.id)}
+                                                    disabled={payingId === inv.id}
+                                                >
+                                                    {payingId === inv.id ? 'Redirecting…' : 'Pay Now'}
                                                 </button>
                                             )}
                                             <button
@@ -112,7 +131,7 @@ function InvoicesTab({ invoices, client, loading }) {
                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" className="cd-security-icon">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                 </svg>
-                <span>All payments are encrypted and processed securely. Stripe payments coming soon.</span>
+                <span>All payments are encrypted and processed securely via Stripe.</span>
             </div>
         </div>
     );
@@ -251,14 +270,34 @@ function ResumeTab({ client }) {
 
 // ─── Main Client Dashboard ────────────────────────────────────────────────────
 function ClientDashboard() {
-    const [activeTab, setActiveTab]   = useState('Invoices');
+    const [activeTab, setActiveTab]     = useState('Invoices');
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [invoices, setInvoices]     = useState([]);
-    const [client, setClient]         = useState({});
-    const [loading, setLoading]       = useState(true);
+    const [invoices, setInvoices]       = useState([]);
+    const [client, setClient]           = useState({});
+    const [loading, setLoading]         = useState(true);
+    const [paymentBanner, setPaymentBanner] = useState(null); // 'success' | 'cancelled' | null
     const navigate = useNavigate();
 
     useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const payment = params.get('payment');
+        const sessionId = params.get('session_id');
+
+        if (payment === 'success' && sessionId) {
+            window.history.replaceState({}, '', window.location.pathname);
+            fetch('/api/payments/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId }),
+            })
+                .then(() => loadData())
+                .catch(() => loadData());
+            setPaymentBanner('success');
+        } else if (payment === 'cancelled') {
+            window.history.replaceState({}, '', window.location.pathname);
+            setPaymentBanner('cancelled');
+        }
+
         loadData();
     }, []);
 
@@ -348,6 +387,25 @@ function ClientDashboard() {
                         <div className="cd-user-avatar">{initials}</div>
                     </div>
                 </header>
+
+                {paymentBanner === 'success' && (
+                    <div className="cd-payment-banner cd-payment-banner--success">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                        </svg>
+                        Payment successful! Your invoice has been marked as paid.
+                        <button className="cd-banner-close" onClick={() => setPaymentBanner(null)}>✕</button>
+                    </div>
+                )}
+                {paymentBanner === 'cancelled' && (
+                    <div className="cd-payment-banner cd-payment-banner--cancelled">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                        </svg>
+                        Payment cancelled. No charge was made.
+                        <button className="cd-banner-close" onClick={() => setPaymentBanner(null)}>✕</button>
+                    </div>
+                )}
 
                 <section className="cd-content">
                     <div className="cd-mobile-tabs">

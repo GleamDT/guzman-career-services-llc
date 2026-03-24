@@ -2,7 +2,7 @@ const { supabaseAdmin } = require('./_supabase');
 
 module.exports = async function handler(req, res) {
     if (req.method === 'POST') {
-        const { fullName, email, phone, intakeFormType, initialService } = req.body;
+        const { fullName, email, phone, intakeFormType, initialService, intakeId } = req.body;
         if (!fullName || !email) return res.status(400).json({ error: 'Full name and email are required.' });
 
         try {
@@ -27,6 +27,14 @@ module.exports = async function handler(req, res) {
                 .select()
                 .single();
             if (clientError) throw clientError;
+
+            // If created from an intake submission, mark it as converted
+            if (intakeId) {
+                await supabaseAdmin
+                    .from('intake_submissions')
+                    .update({ status: 'converted', converted_client_id: clientData.id })
+                    .eq('id', intakeId);
+            }
 
             return res.json({ success: true, client: clientData });
         } catch (error) {

@@ -779,3 +779,162 @@
     border-radius: 2px;
     transition: width 0.2s ease;
 }
+
+/* ===== Intake Status Badges ===== */
+.idm-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+.idm-status--pending  { background: #fffbeb; color: #b45309; }
+.idm-status--converted { background: #ecfdf5; color: #065f46; }
+
+/* ===== Intake Details Modal ===== */
+.idm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200;
+    padding: 1rem;
+    backdrop-filter: blur(4px);
+}
+.idm-modal {
+    background: #fff;
+    border-radius: 1rem;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    overflow: hidden;
+}
+.idm-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 1.5rem 1.75rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+.idm-header h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 0.2rem;
+}
+.idm-header p {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin: 0;
+}
+.idm-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+.idm-close {
+    background: #f1f5f9;
+    border: none;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    font-size: 0.85rem;
+    cursor: pointer;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+.idm-close:hover { background: #e2e8f0; }
+.idm-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem 1.75rem;
+}
+.idm-section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #94a3b8;
+    margin: 1.25rem 0 0.6rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+.idm-section-title:first-child { margin-top: 0; }
+.idm-row {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid #f8fafc;
+    align-items: flex-start;
+}
+.idm-label {
+    min-width: 155px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+    flex-shrink: 0;
+}
+.idm-value {
+    font-size: 0.875rem;
+    color: #1e293b;
+    line-height: 1.5;
+    word-break: break-word;
+}
+.idm-password {
+    font-family: monospace;
+    background: #f1f5f9;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+    font-size: 0.825rem;
+}
+.idm-resume-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0;
+}
+.idm-btn-secondary {
+    background: #f1f5f9;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.45rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+    transition: background 0.2s;
+}
+.idm-btn-secondary:hover { background: #e2e8f0; }
+.idm-footer {
+    padding: 1rem 1.75rem 1.5rem;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: flex-end;
+}
+.idm-btn-primary {
+    background: #1d4ed8;
+    color: #fff;
+    border: none;
+    border-radius: 0.625rem;
+    padding: 0.7rem 1.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s;
+}
+.idm-btn-primary:hover { background: #1e40af; }

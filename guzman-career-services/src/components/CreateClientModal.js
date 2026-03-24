@@ -1,16 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './CreateClientModal.css';
 
-function CreateClientModal({ isOpen, onClose, onClientCreated }) {
+function CreateClientModal({ isOpen, onClose, onClientCreated, prefillData = null, intakeId = null }) {
     const [formData, setFormData] = useState({
-        fullName: '',
-        email: '',
-        phone: '',
+        fullName: prefillData?.fullName || '',
+        email: prefillData?.email || '',
+        phone: prefillData?.phone || '',
         intakeFormType: 'general',
         initialService: '',
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    // Sync pre-fill whenever modal opens with new intake data
+    useEffect(() => {
+        if (isOpen && prefillData) {
+            setFormData(prev => ({
+                ...prev,
+                fullName: prefillData.fullName || '',
+                email: prefillData.email || '',
+                phone: prefillData.phone || '',
+            }));
+        }
+    }, [isOpen, prefillData]);
 
     if (!isOpen) return null;
 
@@ -35,6 +47,7 @@ function CreateClientModal({ isOpen, onClose, onClientCreated }) {
                     phone: formData.phone,
                     intakeFormType: formData.intakeFormType,
                     initialService: formData.initialService,
+                    ...(intakeId ? { intakeId } : {}),
                 }),
             });
 

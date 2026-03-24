@@ -32,6 +32,10 @@ const NAV_ITEMS = [
         icon: <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>,
     },
     {
+        key: 'intake', label: 'Intake Forms',
+        icon: <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>,
+    },
+    {
         key: 'invoices', label: 'Invoices',
         icon: <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>,
     },
@@ -557,6 +561,226 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
     );
 }
 
+// ─── Intake Details Modal ─────────────────────────────────────────────────────
+function IntakeDetailsModal({ submission, onClose, onCreateAccount }) {
+    const [resumeLoading, setResumeLoading] = useState(false);
+
+    if (!submission) return null;
+
+    const row = (label, value) => value ? (
+        <div className="idm-row">
+            <span className="idm-label">{label}</span>
+            <span className="idm-value">{value}</span>
+        </div>
+    ) : null;
+
+    const handleViewResume = async () => {
+        setResumeLoading(true);
+        try {
+            const res = await fetch(`/api/intake/${submission.id}/resume`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            window.open(data.url, '_blank');
+        } catch (err) {
+            alert('Could not load resume: ' + err.message);
+        } finally {
+            setResumeLoading(false);
+        }
+    };
+
+    return (
+        <div className="idm-overlay" onClick={onClose}>
+            <div className="idm-modal" onClick={e => e.stopPropagation()}>
+                <div className="idm-header">
+                    <div>
+                        <h2>Intake Submission</h2>
+                        <p>Submitted {fmtDate(submission.created_at)}</p>
+                    </div>
+                    <div className="idm-header-right">
+                        <span className={`idm-status-badge idm-status--${submission.status}`}>
+                            {submission.status === 'converted' ? 'Converted' : 'Pending'}
+                        </span>
+                        <button className="idm-close" onClick={onClose}>✕</button>
+                    </div>
+                </div>
+
+                <div className="idm-body">
+                    <div className="idm-section-title">Personal Information</div>
+                    {row('Full Name', submission.full_name)}
+                    {row('Email', submission.email)}
+                    {row('Phone', submission.phone)}
+                    {row('Address', submission.full_address)}
+                    {row('Sex', submission.sex)}
+                    {row('Referred By', submission.referred_by)}
+
+                    <div className="idm-section-title">Identity & Status</div>
+                    {row('Veteran Status', submission.veteran_status)}
+                    {row('Disability Status', submission.disability_status)}
+                    {row('Race / Ethnicity', submission.race_identity)}
+                    {row('Work Authorization', submission.work_authorization)}
+
+                    <div className="idm-section-title">Professional Details</div>
+                    {row('Job Title(s)', submission.job_titles)}
+                    {row('Shared Email', submission.shared_email)}
+                    {submission.shared_password && (
+                        <div className="idm-row">
+                            <span className="idm-label">Shared Password</span>
+                            <span className="idm-value idm-password">{submission.shared_password}</span>
+                        </div>
+                    )}
+
+                    <div className="idm-section-title">Legal Agreement</div>
+                    {row('Legal Name (Signature)', submission.legal_name)}
+                    {row('Signature Date', fmtDate(submission.signature_date))}
+                    {row('T&C Agreed', submission.tc_agreed ? 'Yes' : 'No')}
+
+                    {submission.resume_path && (
+                        <>
+                            <div className="idm-section-title">Resume</div>
+                            <div className="idm-resume-row">
+                                <span className="idm-value">{submission.resume_filename || 'resume.pdf'}</span>
+                                <button
+                                    className="idm-btn-secondary"
+                                    onClick={handleViewResume}
+                                    disabled={resumeLoading}
+                                >
+                                    {resumeLoading ? 'Loading…' : '↓ View / Download'}
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {submission.status === 'pending' && (
+                    <div className="idm-footer">
+                        <button className="idm-btn-primary" onClick={() => { onClose(); onCreateAccount(submission); }}>
+                            Create Client Account
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ─── Intake Section ───────────────────────────────────────────────────────────
+function IntakeSection({ onCreateAccount }) {
+    const [submissions, setSubmissions] = useState([]);
+    const [loading, setLoading]         = useState(true);
+    const [filter, setFilter]           = useState('All');
+    const [selected, setSelected]       = useState(null);
+
+    useEffect(() => {
+        fetch('/api/intakes')
+            .then(r => r.json())
+            .then(d => setSubmissions(d.submissions || []))
+            .catch(() => {})
+            .finally(() => setLoading(false));
+    }, []);
+
+    const filtered = filter === 'All'
+        ? submissions
+        : submissions.filter(s => s.status === filter.toLowerCase());
+
+    return (
+        <div className="ads-section">
+            <div className="admin-page-header">
+                <div>
+                    <h1>Intake Forms</h1>
+                    <p>All general client intake submissions from the website.</p>
+                </div>
+            </div>
+
+            <div className="admin-table-card">
+                <div className="admin-table-header">
+                    <h2>Submissions ({submissions.length})</h2>
+                    <div className="admin-table-tabs">
+                        {['All', 'Pending', 'Converted'].map(t => (
+                            <button
+                                key={t}
+                                className={`admin-tab ${filter === t ? 'admin-tab--active' : ''}`}
+                                onClick={() => setFilter(t)}
+                            >
+                                {t}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="admin-table-wrap">
+                    <table className="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Submitted</th>
+                                <th>Status</th>
+                                <th className="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr><td colSpan="6" className="ads-table-msg">Loading submissions…</td></tr>
+                            ) : filtered.length === 0 ? (
+                                <tr><td colSpan="6" className="ads-table-msg">No submissions found.</td></tr>
+                            ) : filtered.map(s => (
+                                <tr key={s.id}>
+                                    <td>
+                                        <div className="admin-client-name">
+                                            <div className="ads-avatar" style={{ background: getAvatarColor(s.full_name) }}>
+                                                {getInitials(s.full_name)}
+                                            </div>
+                                            <span>{s.full_name}</span>
+                                        </div>
+                                    </td>
+                                    <td className="admin-cell-muted">{s.email}</td>
+                                    <td className="admin-cell-muted">{s.phone || '—'}</td>
+                                    <td className="admin-cell-muted">{fmtDate(s.created_at)}</td>
+                                    <td>
+                                        <span className={`idm-status-badge idm-status--${s.status}`}>
+                                            {s.status === 'converted' ? 'Converted' : 'Pending'}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div className="admin-actions">
+                                            <button
+                                                className="ads-action-btn ads-action-btn--dl"
+                                                onClick={() => setSelected(s)}
+                                                title="View Full Details"
+                                            >
+                                                View Details
+                                            </button>
+                                            {s.status === 'pending' && (
+                                                <button
+                                                    className="ads-action-btn ads-action-btn--paid"
+                                                    onClick={() => onCreateAccount(s)}
+                                                    title="Create Client Account"
+                                                >
+                                                    Create Account
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                <div className="admin-pagination">
+                    <span>Showing {filtered.length} of {submissions.length} submissions</span>
+                </div>
+            </div>
+
+            <IntakeDetailsModal
+                submission={selected}
+                onClose={() => setSelected(null)}
+                onCreateAccount={(sub) => { setSelected(null); onCreateAccount(sub); }}
+            />
+        </div>
+    );
+}
+
 // ─── Main AdminDashboard ──────────────────────────────────────────────────────
 function AdminDashboard() {
     const [activeSection, setActiveSection] = useState('dashboard');
@@ -567,6 +791,8 @@ function AdminDashboard() {
     const [showCreateClient, setShowCreateClient]   = useState(false);
     const [showCreateInvoice, setShowCreateInvoice] = useState(false);
     const [selectedClient, setSelectedClient]       = useState(null);
+    const [prefillData, setPrefillData]             = useState(null);
+    const [activeIntakeId, setActiveIntakeId]       = useState(null);
     const [toast, setToast] = useState('');
     const navigate = useNavigate();
 
@@ -618,6 +844,18 @@ function AdminDashboard() {
     const openInvoiceModal = (client) => {
         setSelectedClient(client);
         setShowCreateInvoice(true);
+    };
+
+    const openCreateFromIntake = (submission) => {
+        setPrefillData({ fullName: submission.full_name, email: submission.email, phone: submission.phone });
+        setActiveIntakeId(submission.id);
+        setShowCreateClient(true);
+    };
+
+    const handleCreateClientClose = () => {
+        setShowCreateClient(false);
+        setPrefillData(null);
+        setActiveIntakeId(null);
     };
 
     return (
@@ -699,6 +937,9 @@ function AdminDashboard() {
                             onCreateInvoice={openInvoiceModal}
                         />
                     )}
+                    {activeSection === 'intake' && (
+                        <IntakeSection onCreateAccount={openCreateFromIntake} />
+                    )}
                     {activeSection === 'invoices' && (
                         <InvoicesSection onShowToast={showToast} />
                     )}
@@ -715,8 +956,10 @@ function AdminDashboard() {
             {/* Modals */}
             <CreateClientModal
                 isOpen={showCreateClient}
-                onClose={() => setShowCreateClient(false)}
+                onClose={handleCreateClientClose}
                 onClientCreated={handleClientCreated}
+                prefillData={prefillData}
+                intakeId={activeIntakeId}
             />
             <CreateInvoiceModal
                 isOpen={showCreateInvoice}
