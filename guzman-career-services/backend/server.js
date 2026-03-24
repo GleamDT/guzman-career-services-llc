@@ -2,6 +2,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const express = require('express');
 const cors    = require('cors');
 const multer  = require('multer');
+const stripe  = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
@@ -29,7 +30,7 @@ const supabaseAdmin = createClient(
 
 // POST /api/clients — create client + send invite email
 app.post('/api/clients', async (req, res) => {
-    const { fullName, email, phone, intakeFormType, initialService } = req.body;
+    const { fullName, email, phone, intakeFormType, initialService, intakeId } = req.body;
     if (!fullName || !email) return res.status(400).json({ error: 'Full name and email are required.' });
 
     try {
@@ -54,6 +55,13 @@ app.post('/api/clients', async (req, res) => {
             .select()
             .single();
         if (clientError) throw clientError;
+
+        if (intakeId) {
+            await supabaseAdmin
+                .from('intake_submissions')
+                .update({ status: 'converted', converted_client_id: clientData.id })
+                .eq('id', intakeId);
+        }
 
         res.json({ success: true, client: clientData });
     } catch (error) {
@@ -178,6 +186,80 @@ app.patch('/api/invoices/:id/mark-paid', async (req, res) => {
     }
 });
 
+// POST /api/invoices/:id/checkout — create Stripe Checkout session
+app.post('/api/invoices/:id/checkout', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const { data: invoice, error } = await supabaseAdmin
+            .from('invoices')
+            .select('*, clients(id, full_name, email)')
+            .eq('id', id)
+            .single();
+
+        if (error || !invoice) return res.status(404).json({ error: 'Invoice not found' });
+        if (invoice.status === 'Paid') return res.status(400).json({ error: 'Invoice is already paid.' });
+
+        const baseUrl = process.env.SITE_URL || 'http://localhost:3000';
+
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            mode: 'payment',
+            customer_email: invoice.clients.email,
+            line_items: [{
+                price_data: {
+                    currency: 'usd',
+                    product_data: {
+                        name: invoice.description,
+                        ...(invoice.subtitle && { description: invoice.subtitle }),
+                    },
+                    unit_amount: Math.round(parseFloat(invoice.amount) * 100),
+                },
+                quantity: 1,
+            }],
+            metadata: {
+                invoice_id: invoice.id,
+                invoice_number: invoice.invoice_number,
+            },
+            success_url: `${baseUrl}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${baseUrl}/dashboard?payment=cancelled`,
+        });
+
+        res.json({ url: session.url });
+    } catch (err) {
+        console.error('[POST /api/invoices/:id/checkout]', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/payments/verify — verify Stripe payment and mark invoice paid
+app.post('/api/payments/verify', async (req, res) => {
+    const { sessionId } = req.body;
+    if (!sessionId) return res.status(400).json({ error: 'sessionId is required' });
+
+    try {
+        const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+        if (session.payment_status !== 'paid') {
+            return res.status(400).json({ error: 'Payment not completed.' });
+        }
+
+        const invoiceId = session.metadata?.invoice_id;
+        if (!invoiceId) return res.status(400).json({ error: 'Invoice reference missing from session.' });
+
+        await supabaseAdmin
+            .from('invoices')
+            .update({ status: 'Paid', paid_at: new Date().toISOString() })
+            .eq('id', invoiceId)
+            .eq('status', 'Pending');
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[POST /api/payments/verify]', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 
 // GET /api/stats — summary numbers for the dashboard
@@ -227,6 +309,91 @@ app.get('/api/activity', async (_req, res) => {
         });
     } catch (error) {
         console.error('[GET /api/activity]', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ─── INTAKE FORMS ────────────────────────────────────────────────────────────
+
+// POST /api/intake — store intake submission (no auth creation)
+app.post('/api/intake', async (req, res) => {
+    const { fullName, email, referredBy, phone, fullAddress, sex, veteranStatus, disabilityStatus,
+        raceIdentity, workAuthorization, jobTitles, sharedEmail, sharedPassword,
+        legalName, signatureDate, tcAgreed } = req.body;
+    if (!fullName || !email || !legalName || !tcAgreed) {
+        return res.status(400).json({ error: 'Please fill in all required fields.' });
+    }
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('intake_submissions')
+            .insert([{
+                full_name: fullName, email,
+                referred_by: referredBy || '', phone: phone || '',
+                full_address: fullAddress || '', sex: sex || '',
+                veteran_status: veteranStatus || '', disability_status: disabilityStatus || '',
+                race_identity: raceIdentity || '', work_authorization: workAuthorization || '',
+                job_titles: jobTitles || '', shared_email: sharedEmail || '',
+                shared_password: sharedPassword || '', legal_name: legalName,
+                signature_date: signatureDate || new Date().toISOString().split('T')[0],
+                tc_agreed: true, status: 'pending',
+            }])
+            .select().single();
+        if (error) throw error;
+        res.json({ success: true, submissionId: data.id });
+    } catch (error) {
+        console.error('[POST /api/intake]', error.message);
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// POST /api/intake/:id/resume — upload intake resume
+app.post('/api/intake/:id/resume', upload.single('resume'), async (req, res) => {
+    const { id } = req.params;
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'No PDF file received.' });
+    try {
+        const storagePath = `intakes/${id}/resume.pdf`;
+        const { error: uploadError } = await supabaseAdmin.storage
+            .from('resumes')
+            .upload(storagePath, file.buffer, { contentType: 'application/pdf', upsert: true });
+        if (uploadError) throw uploadError;
+        await supabaseAdmin.from('intake_submissions').update({
+            resume_path: storagePath,
+            resume_filename: file.originalname,
+            resume_uploaded_at: new Date().toISOString(),
+        }).eq('id', id);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('[POST /api/intake/:id/resume]', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET /api/intake/:id/resume — get signed URL for intake resume
+app.get('/api/intake/:id/resume', async (req, res) => {
+    try {
+        const { data: sub } = await supabaseAdmin
+            .from('intake_submissions').select('resume_path').eq('id', req.params.id).single();
+        if (!sub?.resume_path) return res.status(404).json({ error: 'No resume on file.' });
+        const { data, error } = await supabaseAdmin.storage
+            .from('resumes').createSignedUrl(sub.resume_path, 300);
+        if (error) throw error;
+        res.json({ url: data.signedUrl });
+    } catch (error) {
+        console.error('[GET /api/intake/:id/resume]', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET /api/intakes — list all intake submissions
+app.get('/api/intakes', async (_req, res) => {
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('intake_submissions').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        res.json({ submissions: data || [] });
+    } catch (error) {
+        console.error('[GET /api/intakes]', error.message);
         res.status(500).json({ error: error.message });
     }
 });
