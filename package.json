@@ -1,0 +1,8 @@
+{
+  "name": "guzman-career-services-llc",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd guzman-career-services && npm install && npm run build && cd backend && npm install",
+    "start": "node guzman-career-services/backend/server.js"
+  }
+}
