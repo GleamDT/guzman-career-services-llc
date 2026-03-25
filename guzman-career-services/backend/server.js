@@ -239,7 +239,7 @@ app.post('/api/invoices/:id/checkout', requireAuth, async (req, res) => {
         const baseUrl = process.env.SITE_URL || 'http://localhost:3000';
 
         const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
+            payment_method_types: ['card', 'cashapp'],
             mode: 'payment',
             customer_email: invoice.clients.email,
             line_items: [{
