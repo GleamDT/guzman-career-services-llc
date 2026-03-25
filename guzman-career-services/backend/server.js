@@ -85,6 +85,20 @@ app.get('/api/clients', async (_req, res) => {
     }
 });
 
+// PATCH /api/clients/:id/mark-logged-in — called when client first accesses their dashboard
+app.patch('/api/clients/:id/mark-logged-in', async (req, res) => {
+    try {
+        await supabaseAdmin
+            .from('clients')
+            .update({ has_logged_in: true })
+            .eq('id', req.params.id);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('[PATCH /api/clients/:id/mark-logged-in]', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // PATCH /api/clients/:id/status — update client status (Pending → Active)
 app.patch('/api/clients/:id/status', async (req, res) => {
     const { status } = req.body;

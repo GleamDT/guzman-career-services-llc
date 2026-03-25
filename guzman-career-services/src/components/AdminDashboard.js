@@ -185,6 +185,7 @@ function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice }) {
                             <tr>
                                 <th>Client Name</th>
                                 <th>Status</th>
+                                <th>Login</th>
                                 <th>Email</th>
                                 <th>Phone</th>
                                 <th>Date Joined</th>
@@ -209,6 +210,11 @@ function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice }) {
                                     <td>
                                         <span className={`admin-status admin-status--${(client.status || 'pending').toLowerCase()}`}>
                                             {client.status || 'Pending'}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span className={`admin-status admin-status--${client.has_logged_in ? 'active' : 'pending'}`}>
+                                            {client.has_logged_in ? 'Logged In' : 'Awaiting'}
                                         </span>
                                     </td>
                                     <td className="admin-cell-muted">{client.email}</td>

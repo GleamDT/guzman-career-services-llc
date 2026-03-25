@@ -314,6 +314,10 @@ function ClientDashboard() {
 
             if (profileRes.data)  setClient(profileRes.data);
             if (invoicesRes.data) setInvoices(invoicesRes.data);
+
+            if (profileRes.data && !profileRes.data.has_logged_in) {
+                fetch(`/api/clients/${user.id}/mark-logged-in`, { method: 'PATCH' }).catch(() => {});
+            }
         } catch (err) {
             console.error('Dashboard load error:', err);
         } finally {
