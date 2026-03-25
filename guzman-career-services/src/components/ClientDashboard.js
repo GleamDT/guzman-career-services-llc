@@ -4,6 +4,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { supabase } from '../lib/supabase';
+import { authFetch } from '../lib/authFetch';
 import { downloadInvoicePDF } from '../lib/invoicePDF';
 import './ClientDashboard.css';
 
@@ -19,7 +20,7 @@ function InvoicesTab({ invoices, client, loading }) {
     const handlePayNow = async (invoiceId) => {
         setPayingId(invoiceId);
         try {
-            const res = await fetch(`/api/invoices/${invoiceId}/checkout`, { method: 'POST' });
+            const res = await authFetch(`/api/invoices/${invoiceId}/checkout`, { method: 'POST' });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
             window.location.href = data.url;
@@ -150,7 +151,7 @@ function ResumeTab({ client }) {
     // Fetch signed URL for preview
     useEffect(() => {
         if (!hasResume || !client.id) return;
-        fetch(`/api/clients/${client.id}/resume/download`)
+        authFetch(`/api/clients/${client.id}/resume/download`)
             .then(r => r.json())
             .then(d => { if (d.url) setPreviewUrl(d.url); })
             .catch(() => {});
@@ -285,7 +286,7 @@ function ClientDashboard() {
 
         if (payment === 'success' && sessionId) {
             window.history.replaceState({}, '', window.location.pathname);
-            fetch('/api/payments/verify', {
+            authFetch('/api/payments/verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sessionId }),
@@ -316,7 +317,7 @@ function ClientDashboard() {
             if (invoicesRes.data) setInvoices(invoicesRes.data);
 
             if (profileRes.data && !profileRes.data.has_logged_in) {
-                fetch(`/api/clients/${user.id}/mark-logged-in`, { method: 'PATCH' }).catch(() => {});
+                authFetch(`/api/clients/${user.id}/mark-logged-in`, { method: 'PATCH' }).catch(() => {});
             }
         } catch (err) {
             console.error('Dashboard load error:', err);
@@ -326,7 +327,7 @@ function ClientDashboard() {
     };
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: 'global' });
         sessionStorage.removeItem('auth');
         navigate('/');
     };

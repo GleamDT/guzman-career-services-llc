@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { authFetch } from '../lib/authFetch';
 import './CreateInvoiceModal.css';
 
 function CreateInvoiceModal({ isOpen, onClose, client, onInvoiceCreated }) {
@@ -20,7 +21,7 @@ function CreateInvoiceModal({ isOpen, onClose, client, onInvoiceCreated }) {
         setError('');
 
         try {
-            const res = await fetch('/api/invoices', {
+            const res = await authFetch('/api/invoices', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

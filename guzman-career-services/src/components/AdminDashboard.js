@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import CreateClientModal from './CreateClientModal';
 import CreateInvoiceModal from './CreateInvoiceModal';
 import { downloadInvoicePDF } from '../lib/invoicePDF';
+import { authFetch, getAuthToken } from '../lib/authFetch';
 import './AdminDashboard.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -50,7 +51,7 @@ function DashboardSection({ stats, onCreateClient, onNavigate }) {
     const [activity, setActivity] = useState({ recentClients: [], recentInvoices: [] });
 
     useEffect(() => {
-        fetch('/api/activity')
+        authFetch('/api/activity')
             .then(r => r.json())
             .then(d => setActivity(d))
             .catch(() => {});
@@ -251,7 +252,7 @@ function InvoicesSection({ onShowToast }) {
 
     const fetchInvoices = useCallback(async () => {
         try {
-            const res  = await fetch('/api/invoices');
+            const res  = await authFetch('/api/invoices');
             const data = await res.json();
             setInvoices(data.invoices || []);
         } catch { /* ignore */ } finally { setLoading(false); }
@@ -262,7 +263,7 @@ function InvoicesSection({ onShowToast }) {
     const markPaid = async (invoiceId) => {
         setMarkingId(invoiceId);
         try {
-            const res  = await fetch(`/api/invoices/${invoiceId}/mark-paid`, { method: 'PATCH' });
+            const res  = await authFetch(`/api/invoices/${invoiceId}/mark-paid`, { method: 'PATCH' });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
             setInvoices(prev => prev.map(i => i.id === invoiceId ? { ...i, ...data.invoice } : i));
@@ -418,6 +419,7 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `/api/clients/${clientId}/resume`);
+        getAuthToken().then(token => { if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`); });
 
         xhr.upload.onprogress = (ev) => {
             if (ev.lengthComputable) {
@@ -456,7 +458,7 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
 
     const handleDownload = async (clientId) => {
         try {
-            const res  = await fetch(`/api/clients/${clientId}/resume/download`);
+            const res  = await authFetch(`/api/clients/${clientId}/resume/download`);
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
             window.open(data.url, '_blank');
@@ -583,7 +585,7 @@ function IntakeDetailsModal({ submission, onClose, onCreateAccount }) {
     const handleViewResume = async () => {
         setResumeLoading(true);
         try {
-            const res = await fetch(`/api/intake/${submission.id}/resume`);
+            const res = await authFetch(`/api/intake/${submission.id}/resume`);
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
             window.open(data.url, '_blank');
@@ -677,7 +679,7 @@ function IntakeSection({ onCreateAccount }) {
     const [selected, setSelected]       = useState(null);
 
     useEffect(() => {
-        fetch('/api/intakes')
+        authFetch('/api/intakes')
             .then(r => r.json())
             .then(d => setSubmissions(d.submissions || []))
             .catch(() => {})
@@ -806,7 +808,7 @@ function AdminDashboard() {
 
     const fetchClients = async () => {
         try {
-            const res  = await fetch('/api/clients');
+            const res  = await authFetch('/api/clients');
             const data = await res.json();
             setClients(data.clients || []);
         } catch { /* ignore */ } finally { setLoadingClients(false); }
@@ -814,7 +816,7 @@ function AdminDashboard() {
 
     const fetchStats = async () => {
         try {
-            const res  = await fetch('/api/stats');
+            const res  = await authFetch('/api/stats');
             const data = await res.json();
             setStats(data);
         } catch { /* ignore */ }
@@ -822,7 +824,7 @@ function AdminDashboard() {
 
     const handleLogout = async () => {
         const { supabase } = await import('../lib/supabase');
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: 'global' });
         sessionStorage.removeItem('auth');
         navigate('/');
     };

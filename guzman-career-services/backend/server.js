@@ -26,10 +26,32 @@ const supabaseAdmin = createClient(
     { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
+// ─── AUTH MIDDLEWARE ──────────────────────────────────────────────────────────
+
+async function requireAdmin(req, res, next) {
+    const token = (req.headers.authorization || '').replace('Bearer ', '');
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !user || user.user_metadata?.role !== 'admin') {
+        return res.status(403).json({ error: 'Forbidden' });
+    }
+    req.user = user;
+    next();
+}
+
+async function requireAuth(req, res, next) {
+    const token = (req.headers.authorization || '').replace('Bearer ', '');
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !user) return res.status(401).json({ error: 'Unauthorized' });
+    req.user = user;
+    next();
+}
+
 // ─── CLIENTS ──────────────────────────────────────────────────────────────────
 
 // POST /api/clients — create client + send invite email
-app.post('/api/clients', async (req, res) => {
+app.post('/api/clients', requireAdmin, async (req, res) => {
     const { fullName, email, phone, intakeFormType, initialService, intakeId } = req.body;
     if (!fullName || !email) return res.status(400).json({ error: 'Full name and email are required.' });
 
@@ -71,7 +93,7 @@ app.post('/api/clients', async (req, res) => {
 });
 
 // GET /api/clients — list all clients
-app.get('/api/clients', async (_req, res) => {
+app.get('/api/clients', requireAdmin, async (_req, res) => {
     try {
         const { data, error } = await supabaseAdmin
             .from('clients')
@@ -86,7 +108,7 @@ app.get('/api/clients', async (_req, res) => {
 });
 
 // PATCH /api/clients/:id/mark-logged-in — called when client first accesses their dashboard
-app.patch('/api/clients/:id/mark-logged-in', async (req, res) => {
+app.patch('/api/clients/:id/mark-logged-in', requireAuth, async (req, res) => {
     try {
         await supabaseAdmin
             .from('clients')
@@ -100,7 +122,7 @@ app.patch('/api/clients/:id/mark-logged-in', async (req, res) => {
 });
 
 // PATCH /api/clients/:id/status — update client status (Pending → Active)
-app.patch('/api/clients/:id/status', async (req, res) => {
+app.patch('/api/clients/:id/status', requireAdmin, async (req, res) => {
     const { status } = req.body;
     try {
         const { data, error } = await supabaseAdmin
@@ -120,7 +142,7 @@ app.patch('/api/clients/:id/status', async (req, res) => {
 // ─── INVOICES ────────────────────────────────────────────────────────────────
 
 // POST /api/invoices — create invoice for a client
-app.post('/api/invoices', async (req, res) => {
+app.post('/api/invoices', requireAdmin, async (req, res) => {
     const { clientId, description, subtitle, amount } = req.body;
     if (!clientId || !description || !amount) return res.status(400).json({ error: 'Client, description, and amount are required.' });
 
@@ -153,7 +175,7 @@ app.post('/api/invoices', async (req, res) => {
 });
 
 // GET /api/invoices — all invoices with client info (admin view)
-app.get('/api/invoices', async (_req, res) => {
+app.get('/api/invoices', requireAdmin, async (_req, res) => {
     try {
         const { data, error } = await supabaseAdmin
             .from('invoices')
@@ -168,7 +190,7 @@ app.get('/api/invoices', async (_req, res) => {
 });
 
 // GET /api/clients/:clientId/invoices — invoices for one client (admin view)
-app.get('/api/clients/:clientId/invoices', async (req, res) => {
+app.get('/api/clients/:clientId/invoices', requireAdmin, async (req, res) => {
     try {
         const { data, error } = await supabaseAdmin
             .from('invoices')
@@ -184,7 +206,7 @@ app.get('/api/clients/:clientId/invoices', async (req, res) => {
 });
 
 // PATCH /api/invoices/:id/mark-paid — mark invoice as paid
-app.patch('/api/invoices/:id/mark-paid', async (req, res) => {
+app.patch('/api/invoices/:id/mark-paid', requireAdmin, async (req, res) => {
     try {
         const { data, error } = await supabaseAdmin
             .from('invoices')
@@ -201,7 +223,7 @@ app.patch('/api/invoices/:id/mark-paid', async (req, res) => {
 });
 
 // POST /api/invoices/:id/checkout — create Stripe Checkout session
-app.post('/api/invoices/:id/checkout', async (req, res) => {
+app.post('/api/invoices/:id/checkout', requireAuth, async (req, res) => {
     const { id } = req.params;
 
     try {
@@ -247,7 +269,7 @@ app.post('/api/invoices/:id/checkout', async (req, res) => {
 });
 
 // POST /api/payments/verify — verify Stripe payment and mark invoice paid
-app.post('/api/payments/verify', async (req, res) => {
+app.post('/api/payments/verify', requireAuth, async (req, res) => {
     const { sessionId } = req.body;
     if (!sessionId) return res.status(400).json({ error: 'sessionId is required' });
 
@@ -277,7 +299,7 @@ app.post('/api/payments/verify', async (req, res) => {
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 
 // GET /api/stats — summary numbers for the dashboard
-app.get('/api/stats', async (_req, res) => {
+app.get('/api/stats', requireAdmin, async (_req, res) => {
     try {
         const [totalRes, pendingClientsRes, activeClientsRes, invoicesRes] = await Promise.all([
             supabaseAdmin.from('clients').select('*', { count: 'exact', head: true }),
@@ -304,7 +326,7 @@ app.get('/api/stats', async (_req, res) => {
 });
 
 // GET /api/activity — recent clients + invoices for the dashboard feed
-app.get('/api/activity', async (_req, res) => {
+app.get('/api/activity', requireAdmin, async (_req, res) => {
     try {
         const [clientsRes, invoicesRes] = await Promise.all([
             supabaseAdmin.from('clients')
@@ -384,7 +406,7 @@ app.post('/api/intake/:id/resume', upload.single('resume'), async (req, res) => 
 });
 
 // GET /api/intake/:id/resume — get signed URL for intake resume
-app.get('/api/intake/:id/resume', async (req, res) => {
+app.get('/api/intake/:id/resume', requireAdmin, async (req, res) => {
     try {
         const { data: sub } = await supabaseAdmin
             .from('intake_submissions').select('resume_path').eq('id', req.params.id).single();
@@ -400,7 +422,7 @@ app.get('/api/intake/:id/resume', async (req, res) => {
 });
 
 // GET /api/intakes — list all intake submissions
-app.get('/api/intakes', async (_req, res) => {
+app.get('/api/intakes', requireAdmin, async (_req, res) => {
     try {
         const { data, error } = await supabaseAdmin
             .from('intake_submissions').select('*').order('created_at', { ascending: false });
@@ -415,7 +437,7 @@ app.get('/api/intakes', async (_req, res) => {
 // ─── RESUMES ─────────────────────────────────────────────────────────────────
 
 // POST /api/clients/:clientId/resume — upload a PDF resume
-app.post('/api/clients/:clientId/resume', upload.single('resume'), async (req, res) => {
+app.post('/api/clients/:clientId/resume', requireAdmin, upload.single('resume'), async (req, res) => {
     const { clientId } = req.params;
     const file = req.file;
     if (!file) return res.status(400).json({ error: 'No PDF file received.' });
@@ -448,7 +470,10 @@ app.post('/api/clients/:clientId/resume', upload.single('resume'), async (req, r
 });
 
 // GET /api/clients/:clientId/resume/download — get a short-lived signed URL
-app.get('/api/clients/:clientId/resume/download', async (req, res) => {
+app.get('/api/clients/:clientId/resume/download', requireAuth, async (req, res) => {
+    const isAdmin = req.user.user_metadata?.role === 'admin';
+    const isOwner = req.user.id === req.params.clientId;
+    if (!isAdmin && !isOwner) return res.status(403).json({ error: 'Forbidden' });
     try {
         const storagePath = `${req.params.clientId}/resume.pdf`;
         const { data, error } = await supabaseAdmin.storage

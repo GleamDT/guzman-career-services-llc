@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { authFetch } from '../lib/authFetch';
 import './CreateClientModal.css';
 
 function CreateClientModal({ isOpen, onClose, onClientCreated, prefillData = null, intakeId = null }) {
@@ -38,7 +39,7 @@ function CreateClientModal({ isOpen, onClose, onClientCreated, prefillData = nul
         setError('');
 
         try {
-            const res = await fetch('/api/clients', {
+            const res = await authFetch('/api/clients', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
