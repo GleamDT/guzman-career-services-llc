@@ -48,7 +48,7 @@ function Footer() {
                             </li>
                             <li>
                                 <span className="footer-contact-icon">🕒</span>
-                                <span>Mon-Fri: 9AM-2PM CST</span>
+                                <span>Mon-Fri: 9AM-3PM CST</span>
                             </li>
                         </ul>
                     </div>

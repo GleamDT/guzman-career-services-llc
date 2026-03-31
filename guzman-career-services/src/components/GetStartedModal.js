@@ -38,7 +38,7 @@ function GetStartedModal({ isOpen, onClose }) {
                     >
                         <span className="modal-option-icon">🤝</span>
                         <h3>Tech2Mate Student</h3>
-                        <p>Tech2Mate students applying for exclusive career support and opportunities</p>
+                        <p>Tech2mates students looking to take advantage of our Job Application service</p>
                     </button>
                 </div>
             </div>
