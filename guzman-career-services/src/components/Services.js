@@ -1,40 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './Services.css';
+import IntakeForm from './IntakeForm';
 
 function Services() {
-    const serviceCategories = [
-        {
-            id: 'general',
-            icon: '💼',
-            title: 'General Client Services',
-            tagline: 'Comprehensive Career Support',
-            description: 'Our full-service career support is designed for professionals at every stage. From resume optimization to interview coaching, we provide personalized guidance to help you land your dream job and advance your career.',
-            features: [
-                'Professional resume & CV optimization',
-                'Career profile enhancement',
-                'Job application strategy & support'
-            ],
-            formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSd0r-Oqtumv--5uwbrTpRnhK7eR8vhk6j0svQVyMLUxEqwdGg/viewform',
-            buttonText: 'Get Started Today',
-            gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
-        },
-        // Tech2mates temporarily hidden — uncomment to re-enable
-        // {
-        //     id: 'tech2mates',
-        //     icon: '🤝',
-        //     title: 'Tech2mates Students Apply Here',
-        //     tagline: 'Student Applications',
-        //     description: 'Tech2mates students can apply here to access exclusive career support and opportunities. We provide comprehensive career guidance tailored for tech students to help launch your professional journey.',
-        //     features: [
-        //         'Professional resume & CV optimization',
-        //         'Career profile enhancement',
-        //         'Job application strategy & support'
-        //     ],
-        //     formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSdvjvE3MfW9VrPgMeWrfTepbpbFNqZxr4NIdWBBE_JSsmmAwg/viewform',
-        //     buttonText: 'Apply Here',
-        //     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-        // }
-    ];
+    const [showIntakeForm, setShowIntakeForm] = useState(false);
+
+    const generalService = {
+        id: 'general',
+        icon: '💼',
+        title: 'General Client Services',
+        tagline: 'Comprehensive Career Support',
+        description: 'Our full-service career support is designed for professionals at every stage. From resume optimization to interview coaching, we provide personalized guidance to help you land your dream job and advance your career.',
+        features: [
+            'Professional resume & CV optimization',
+            'Career profile enhancement',
+            'Job application strategy & support'
+        ],
+        buttonText: 'Get Started Today',
+        gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+    };
+
+    // Tech2mates temporarily hidden — uncomment to re-enable
+    // const tech2matesService = { ... }
 
     return (
         <section id="services" className="section">
@@ -47,47 +34,44 @@ function Services() {
                 </div>
 
                 <div className="service-categories">
-                    {serviceCategories.map((category, index) => (
-                        <div
-                            key={category.id}
-                            className="service-category-card"
-                            style={{ animationDelay: `${index * 0.2}s` }}
-                        >
-                            <div className="category-header" style={{ background: category.gradient }}>
-                                <div className="category-icon">{category.icon}</div>
-                                <div className="category-title-group">
-                                    <span className="category-tagline">{category.tagline}</span>
-                                    <h3 className="category-title">{category.title}</h3>
-                                </div>
-                            </div>
-
-                            <div className="category-content">
-                                <p className="category-description">{category.description}</p>
-
-                                <ul className="category-features">
-                                    {category.features.map((feature, idx) => (
-                                        <li key={idx} className="feature-item">
-                                            <span className="feature-icon">✓</span>
-                                            <span>{feature}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-
-                                <a
-                                    href={category.formUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="category-button"
-                                    style={{ background: category.gradient }}
-                                >
-                                    {category.buttonText}
-                                    <span className="button-arrow">→</span>
-                                </a>
+                    <div
+                        key={generalService.id}
+                        className="service-category-card"
+                    >
+                        <div className="category-header" style={{ background: generalService.gradient }}>
+                            <div className="category-icon">{generalService.icon}</div>
+                            <div className="category-title-group">
+                                <span className="category-tagline">{generalService.tagline}</span>
+                                <h3 className="category-title">{generalService.title}</h3>
                             </div>
                         </div>
-                    ))}
+
+                        <div className="category-content">
+                            <p className="category-description">{generalService.description}</p>
+
+                            <ul className="category-features">
+                                {generalService.features.map((feature, idx) => (
+                                    <li key={idx} className="feature-item">
+                                        <span className="feature-icon">✓</span>
+                                        <span>{feature}</span>
+                                    </li>
+                                ))}
+                            </ul>
+
+                            <button
+                                className="category-button"
+                                style={{ background: generalService.gradient }}
+                                onClick={() => setShowIntakeForm(true)}
+                            >
+                                {generalService.buttonText}
+                                <span className="button-arrow">→</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            {showIntakeForm && <IntakeForm onClose={() => setShowIntakeForm(false)} />}
         </section>
     );
 }
