@@ -420,7 +420,7 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
         setSelectedFile(file);
     };
 
-    const handleUploadSubmit = () => {
+    const handleUploadSubmit = async () => {
         if (!selectedFile || !uploadModal) return;
         const { clientId } = uploadModal;
         setUploadingId(clientId);
@@ -430,9 +430,11 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
         formData.append('resume', selectedFile);
         if (jdLink.trim()) formData.append('jd_link', jdLink.trim());
 
+        const token = await getAuthToken();
+
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `/api/clients/${clientId}/resume`);
-        getAuthToken().then(token => { if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`); });
+        if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
 
         xhr.upload.onprogress = (ev) => {
             if (ev.lengthComputable) {
