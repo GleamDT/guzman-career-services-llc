@@ -18,21 +18,22 @@ function Services() {
             buttonText: 'Get Started Today',
             gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
         },
-        {
-            id: 'tech2mates',
-            icon: '🤝',
-            title: 'Tech2mates Students Apply Here',
-            tagline: 'Student Applications',
-            description: 'Tech2mates students can apply here to access exclusive career support and opportunities. We provide comprehensive career guidance tailored for tech students to help launch your professional journey.',
-            features: [
-                'Professional resume & CV optimization',
-                'Career profile enhancement',
-                'Job application strategy & support'
-            ],
-            formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSdvjvE3MfW9VrPgMeWrfTepbpbFNqZxr4NIdWBBE_JSsmmAwg/viewform',
-            buttonText: 'Apply Here',
-            gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-        }
+        // Tech2mates temporarily hidden — uncomment to re-enable
+        // {
+        //     id: 'tech2mates',
+        //     icon: '🤝',
+        //     title: 'Tech2mates Students Apply Here',
+        //     tagline: 'Student Applications',
+        //     description: 'Tech2mates students can apply here to access exclusive career support and opportunities. We provide comprehensive career guidance tailored for tech students to help launch your professional journey.',
+        //     features: [
+        //         'Professional resume & CV optimization',
+        //         'Career profile enhancement',
+        //         'Job application strategy & support'
+        //     ],
+        //     formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSdvjvE3MfW9VrPgMeWrfTepbpbFNqZxr4NIdWBBE_JSsmmAwg/viewform',
+        //     buttonText: 'Apply Here',
+        //     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        // }
     ];
 
     return (

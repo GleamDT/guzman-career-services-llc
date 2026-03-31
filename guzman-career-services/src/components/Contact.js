@@ -49,7 +49,7 @@ function Contact() {
                 <div className="section-header text-center">
                     <h2 className="section-title">Contact Us</h2>
                     <p className="section-subtitle">
-                        We are available to respond to all inquiries and requests from 9:00 AM - 2:00 PM CST Monday - Friday (Except on public holidays)
+                        We are available to respond to all inquiries and requests from 9:00 AM - 3:00 PM CST Monday - Friday (Except on public holidays)
                     </p>
                 </div>
                 <div className="contact-content">
@@ -69,7 +69,7 @@ function Contact() {
                             <div className="contact-details">
                                 <div className="contact-label">Business Hours</div>
                                 <div className="contact-value">
-                                    Monday - Friday: 9:00 AM - 2:00 PM CST<br />
+                                    Monday - Friday: 9:00 AM - 3:00 PM CST<br />
                                     (Except on public holidays)
                                 </div>
                             </div>

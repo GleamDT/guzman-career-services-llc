@@ -436,20 +436,34 @@ app.get('/api/intakes', requireAdmin, async (_req, res) => {
 
 // ─── RESUMES ─────────────────────────────────────────────────────────────────
 
-// POST /api/clients/:clientId/resume — upload a PDF resume
+// POST /api/clients/:clientId/resume — upload a PDF resume (supports multiple + JD link)
 app.post('/api/clients/:clientId/resume', requireAdmin, upload.single('resume'), async (req, res) => {
     const { clientId } = req.params;
     const file = req.file;
     if (!file) return res.status(400).json({ error: 'No PDF file received.' });
 
-    try {
-        const storagePath = `${clientId}/resume.pdf`;
+    const jdLink = req.body.jd_link || null;
+    const timestamp = Date.now();
+    const storagePath = `${clientId}/${timestamp}_resume.pdf`;
 
+    try {
         const { error: uploadError } = await supabaseAdmin.storage
             .from('resumes')
-            .upload(storagePath, file.buffer, { contentType: 'application/pdf', upsert: true });
+            .upload(storagePath, file.buffer, { contentType: 'application/pdf', upsert: false });
         if (uploadError) throw uploadError;
 
+        // Insert into client_resumes for full history
+        const { error: insertError } = await supabaseAdmin
+            .from('client_resumes')
+            .insert({
+                client_id:       clientId,
+                resume_path:     storagePath,
+                resume_filename: file.originalname,
+                jd_link:         jdLink,
+            });
+        if (insertError) throw insertError;
+
+        // Keep clients table updated with latest resume (backward compat)
         const { data, error } = await supabaseAdmin
             .from('clients')
             .update({
@@ -469,13 +483,45 @@ app.post('/api/clients/:clientId/resume', requireAdmin, upload.single('resume'),
     }
 });
 
+// GET /api/clients/:clientId/resumes — list all uploaded resumes for a client
+app.get('/api/clients/:clientId/resumes', requireAuth, async (req, res) => {
+    const isAdmin = req.user.user_metadata?.role === 'admin';
+    const isOwner = req.user.id === req.params.clientId;
+    if (!isAdmin && !isOwner) return res.status(403).json({ error: 'Forbidden' });
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('client_resumes')
+            .select('id, resume_filename, jd_link, uploaded_at')
+            .eq('client_id', req.params.clientId)
+            .order('uploaded_at', { ascending: false });
+        if (error) throw error;
+        res.json({ resumes: data || [] });
+    } catch (error) {
+        console.error('[GET /api/clients/:clientId/resumes]', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // GET /api/clients/:clientId/resume/download — get a short-lived signed URL
+// Optional query param: ?resumeId=uuid (for a specific resume from client_resumes)
 app.get('/api/clients/:clientId/resume/download', requireAuth, async (req, res) => {
     const isAdmin = req.user.user_metadata?.role === 'admin';
     const isOwner = req.user.id === req.params.clientId;
     if (!isAdmin && !isOwner) return res.status(403).json({ error: 'Forbidden' });
     try {
-        const storagePath = `${req.params.clientId}/resume.pdf`;
+        let storagePath;
+        if (req.query.resumeId) {
+            const { data: row, error: rowErr } = await supabaseAdmin
+                .from('client_resumes')
+                .select('resume_path')
+                .eq('id', req.query.resumeId)
+                .eq('client_id', req.params.clientId)
+                .single();
+            if (rowErr || !row) return res.status(404).json({ error: 'Resume not found.' });
+            storagePath = row.resume_path;
+        } else {
+            storagePath = `${req.params.clientId}/resume.pdf`;
+        }
         const { data, error } = await supabaseAdmin.storage
             .from('resumes')
             .createSignedUrl(storagePath, 300); // 5-minute URL

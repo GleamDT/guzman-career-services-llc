@@ -390,32 +390,45 @@ function InvoicesSection({ onShowToast }) {
 
 // ─── Resumes Section ──────────────────────────────────────────────────────────
 function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
-    const [uploadingId, setUploadingId]     = useState(null);
+    const [uploadingId, setUploadingId]   = useState(null);
     const [uploadProgress, setUploadProgress] = useState(0);
-    const [pendingClientId, setPendingClientId] = useState(null);
+    const [uploadModal, setUploadModal]   = useState(null); // { clientId, clientName }
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [jdLink, setJdLink]             = useState('');
     const fileInputRef = useRef(null);
 
-    const triggerUpload = (clientId) => {
-        setPendingClientId(clientId);
-        fileInputRef.current.value = '';
-        fileInputRef.current.click();
+    const openUploadModal = (client) => {
+        setUploadModal({ clientId: client.id, clientName: client.full_name });
+        setSelectedFile(null);
+        setJdLink('');
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (!file || !pendingClientId) return;
+    const closeUploadModal = () => {
+        if (uploadingId) return; // don't close while uploading
+        setUploadModal(null);
+        setSelectedFile(null);
+        setJdLink('');
+    };
 
+    const handleFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
         if (file.type !== 'application/pdf') {
             onShowToast('Error: Only PDF files are allowed.');
             return;
         }
+        setSelectedFile(file);
+    };
 
-        const clientId = pendingClientId;
+    const handleUploadSubmit = () => {
+        if (!selectedFile || !uploadModal) return;
+        const { clientId } = uploadModal;
         setUploadingId(clientId);
         setUploadProgress(0);
 
         const formData = new FormData();
-        formData.append('resume', file);
+        formData.append('resume', selectedFile);
+        if (jdLink.trim()) formData.append('jd_link', jdLink.trim());
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `/api/clients/${clientId}/resume`);
@@ -433,6 +446,9 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
                 if (xhr.status >= 200 && xhr.status < 300) {
                     onResumeUploaded(data.client);
                     onShowToast(`✓ Resume uploaded for ${data.client.full_name}.`);
+                    setUploadModal(null);
+                    setSelectedFile(null);
+                    setJdLink('');
                 } else {
                     onShowToast(`Error: ${data.error || 'Upload failed'}`);
                 }
@@ -440,7 +456,6 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
                 onShowToast('Error: Unexpected server response.');
             } finally {
                 setUploadingId(null);
-                setPendingClientId(null);
                 setUploadProgress(0);
             }
         };
@@ -448,12 +463,10 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
         xhr.onerror = () => {
             onShowToast('Error: Network error during upload.');
             setUploadingId(null);
-            setPendingClientId(null);
             setUploadProgress(0);
         };
 
         xhr.send(formData);
-        setPendingClientId(null);
     };
 
     const handleDownload = async (clientId) => {
@@ -469,12 +482,64 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
 
     return (
         <div className="ads-section">
-            <input ref={fileInputRef} type="file" accept=".pdf,application/pdf" style={{ display: 'none' }} onChange={handleFileChange} />
+            <input ref={fileInputRef} type="file" accept=".pdf,application/pdf" style={{ display: 'none' }} onChange={handleFileSelect} />
+
+            {/* Upload Modal */}
+            {uploadModal && (
+                <div className="ads-modal-overlay" onClick={closeUploadModal}>
+                    <div className="ads-modal" onClick={e => e.stopPropagation()}>
+                        <div className="ads-modal-header">
+                            <h3>Upload Resume</h3>
+                            <button className="ads-modal-close" onClick={closeUploadModal} disabled={!!uploadingId}>✕</button>
+                        </div>
+                        <p className="ads-modal-client">Client: <strong>{uploadModal.clientName}</strong></p>
+
+                        <div className="ads-modal-field">
+                            <label>PDF File</label>
+                            <div className="ads-modal-file-row">
+                                <span className="ads-modal-filename">{selectedFile ? selectedFile.name : 'No file selected'}</span>
+                                <button className="ads-action-btn ads-action-btn--upload" onClick={() => { fileInputRef.current.value = ''; fileInputRef.current.click(); }}>
+                                    Browse
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="ads-modal-field">
+                            <label>Job Description Link <span className="ads-modal-optional">(optional)</span></label>
+                            <input
+                                className="ads-modal-input"
+                                type="url"
+                                placeholder="https://..."
+                                value={jdLink}
+                                onChange={e => setJdLink(e.target.value)}
+                                disabled={!!uploadingId}
+                            />
+                        </div>
+
+                        {uploadingId && (
+                            <div className="ads-progress-bar" style={{ margin: '0.5rem 0' }}>
+                                <div className="ads-progress-fill" style={{ width: `${uploadProgress}%` }} />
+                            </div>
+                        )}
+
+                        <div className="ads-modal-actions">
+                            <button className="ads-action-btn" onClick={closeUploadModal} disabled={!!uploadingId}>Cancel</button>
+                            <button
+                                className="ads-action-btn ads-action-btn--paid"
+                                onClick={handleUploadSubmit}
+                                disabled={!selectedFile || !!uploadingId}
+                            >
+                                {uploadingId ? `Uploading… ${uploadProgress}%` : 'Upload'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="admin-page-header">
                 <div>
                     <h1>Resume Management</h1>
-                    <p>Upload and manage client resumes. Clients can download their resume from their portal.</p>
+                    <p>Upload resumes and job description links for clients. Clients see their full history in the portal.</p>
                 </div>
             </div>
 
@@ -489,8 +554,8 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
                                 <th>Client</th>
                                 <th>Email</th>
                                 <th>Resume Status</th>
-                                <th>File Name</th>
-                                <th>Uploaded</th>
+                                <th>Latest File</th>
+                                <th>Last Uploaded</th>
                                 <th className="text-right">Actions</th>
                             </tr>
                         </thead>
@@ -499,7 +564,6 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
                                 <tr><td colSpan="6" className="ads-table-msg">No clients yet.</td></tr>
                             ) : clients.map(client => {
                                 const hasResume = !!client.resume_path;
-                                const isUploading = uploadingId === client.id;
                                 return (
                                     <tr key={client.id}>
                                         <td>
@@ -528,7 +592,7 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
                                                     <button
                                                         className="ads-action-btn ads-action-btn--dl"
                                                         onClick={() => handleDownload(client.id)}
-                                                        title="Download Resume"
+                                                        title="Download Latest Resume"
                                                     >
                                                         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -536,26 +600,13 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
                                                         Download
                                                     </button>
                                                 )}
-                                                <div className="ads-upload-wrap">
-                                                    <button
-                                                        className="ads-action-btn ads-action-btn--upload"
-                                                        onClick={() => triggerUpload(client.id)}
-                                                        disabled={isUploading}
-                                                        title={hasResume ? 'Replace Resume' : 'Upload Resume'}
-                                                    >
-                                                        {isUploading ? (
-                                                            <>
-                                                                <span className="ads-upload-spinner" />
-                                                                {uploadProgress > 0 ? `${uploadProgress}%` : 'Uploading…'}
-                                                            </>
-                                                        ) : (hasResume ? 'Replace' : 'Upload PDF')}
-                                                    </button>
-                                                    {isUploading && (
-                                                        <div className="ads-progress-bar">
-                                                            <div className="ads-progress-fill" style={{ width: `${uploadProgress}%` }} />
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                <button
+                                                    className="ads-action-btn ads-action-btn--upload"
+                                                    onClick={() => openUploadModal(client)}
+                                                    title="Upload New Resume"
+                                                >
+                                                    Upload PDF
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>

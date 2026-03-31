@@ -140,22 +140,33 @@ function InvoicesTab({ invoices, client, loading }) {
 
 // ─── Resume Tab ───────────────────────────────────────────────────────────────
 function ResumeTab({ client }) {
-    const [downloading, setDownloading]     = useState(false);
+    const [resumes, setResumes]             = useState(null); // null = loading
     const [previewUrl, setPreviewUrl]       = useState(null);
+    const [previewResumeId, setPreviewResumeId] = useState(null);
     const [numPages, setNumPages]           = useState(null);
     const [pageWidth, setPageWidth]         = useState(500);
+    const [downloadingId, setDownloadingId] = useState(null);
     const previewRef                        = useRef(null);
 
-    const hasResume = !!client.resume_path;
-
-    // Fetch signed URL for preview
+    // Load resume list
     useEffect(() => {
-        if (!hasResume || !client.id) return;
-        authFetch(`/api/clients/${client.id}/resume/download`)
+        if (!client.id) return;
+        authFetch(`/api/clients/${client.id}/resumes`)
+            .then(r => r.json())
+            .then(d => setResumes(d.resumes || []))
+            .catch(() => setResumes([]));
+    }, [client.id]);
+
+    // Auto-preview the most recent resume
+    useEffect(() => {
+        if (!resumes || resumes.length === 0 || previewResumeId) return;
+        const latest = resumes[0];
+        setPreviewResumeId(latest.id);
+        authFetch(`/api/clients/${client.id}/resume/download?resumeId=${latest.id}`)
             .then(r => r.json())
             .then(d => { if (d.url) setPreviewUrl(d.url); })
             .catch(() => {});
-    }, [client.id, hasResume]);
+    }, [resumes, client.id, previewResumeId]);
 
     // Track container width so PDF page fills the card
     const measureWidth = useCallback(() => {
@@ -168,19 +179,23 @@ function ResumeTab({ client }) {
         return () => window.removeEventListener('resize', measureWidth);
     }, [measureWidth]);
 
-    const handleDownload = async () => {
-        setDownloading(true);
+    const handleDownload = async (resumeId, filename) => {
+        setDownloadingId(resumeId);
         try {
-            const res  = await fetch(`/api/clients/${client.id}/resume/download`);
+            const res  = await authFetch(`/api/clients/${client.id}/resume/download?resumeId=${resumeId}`);
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
             window.open(data.url, '_blank');
         } catch (err) {
             alert('Could not download resume: ' + err.message);
         } finally {
-            setDownloading(false);
+            setDownloadingId(null);
         }
     };
+
+    const loading = resumes === null;
+    const hasResumes = resumes && resumes.length > 0;
+    const latestResume = hasResumes ? resumes[0] : null;
 
     return (
         <div className="cd-tab-content">
@@ -191,38 +206,69 @@ function ResumeTab({ client }) {
                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                         </svg>
-                        {hasResume
-                            ? <span>Last updated by your consultant on <strong>{new Date(client.resume_uploaded_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong></span>
+                        {hasResumes
+                            ? <span>Last updated by your consultant on <strong>{new Date(latestResume.uploaded_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong></span>
                             : <span>Your resume will appear here once uploaded by your consultant.</span>
                         }
                     </div>
                 </div>
-                {hasResume && (
-                    <button className="cd-btn cd-btn--download" onClick={handleDownload} disabled={downloading}>
+                {hasResumes && (
+                    <button className="cd-btn cd-btn--download" onClick={() => handleDownload(latestResume.id, latestResume.resume_filename)} disabled={downloadingId === latestResume.id}>
                         <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                         </svg>
-                        {downloading ? 'Opening…' : 'Download PDF'}
+                        {downloadingId === latestResume.id ? 'Opening…' : 'Download Latest'}
                     </button>
                 )}
             </div>
 
-            {hasResume ? (
+            {loading ? (
+                <div className="cd-pdf-loading">
+                    <div className="cd-preview-spinner" />
+                    <p>Loading your resumes…</p>
+                </div>
+            ) : hasResumes ? (
                 <div className="cd-resume-grid">
                     <aside className="cd-resume-sidebar">
+                        {/* Resume history list */}
                         <div className="cd-resume-details-card">
-                            <h3 className="cd-resume-details-title">File Details</h3>
-                            <dl className="cd-resume-details-list">
-                                <div><dt>File Name</dt><dd>{client.resume_filename || 'resume.pdf'}</dd></div>
-                                <div><dt>File Format</dt><dd>PDF Document</dd></div>
-                                <div><dt>Uploaded</dt><dd>{new Date(client.resume_uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</dd></div>
-                                {numPages && <div><dt>Pages</dt><dd>{numPages}</dd></div>}
-                            </dl>
+                            <h3 className="cd-resume-details-title">Resume History</h3>
+                            <div className="cd-resume-history-list">
+                                {resumes.map((r, idx) => (
+                                    <div key={r.id} className={`cd-resume-history-item ${previewResumeId === r.id ? 'cd-resume-history-item--active' : ''}`}>
+                                        <div className="cd-resume-history-info">
+                                            <span className="cd-resume-history-name">
+                                                {idx === 0 && <span className="cd-resume-latest-badge">Latest</span>}
+                                                {r.resume_filename || 'resume.pdf'}
+                                            </span>
+                                            <span className="cd-resume-history-date">
+                                                {new Date(r.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                            </span>
+                                            {r.jd_link && (
+                                                <span className="cd-resume-jd-link">
+                                                    Please find the job description link here{' '}
+                                                    <a href={r.jd_link} target="_blank" rel="noopener noreferrer">here</a>
+                                                </span>
+                                            )}
+                                        </div>
+                                        <button
+                                            className="cd-btn cd-btn--receipt"
+                                            onClick={() => handleDownload(r.id, r.resume_filename)}
+                                            disabled={downloadingId === r.id}
+                                            title="Download this version"
+                                        >
+                                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                         <div className="cd-resume-revision-card">
                             <h3>Need a revision?</h3>
                             <p>If you need updates or have questions about your resume, please contact your career consultant.</p>
-                            <a href="mailto:support@guzmancareerservices.com" className="cd-revision-link">Contact Consultant</a>
+                            <a href="mailto:info@guzmancareerservices.com" className="cd-revision-link">Contact Consultant</a>
                         </div>
                     </aside>
                     <section className="cd-resume-preview-wrap" ref={previewRef}>
@@ -260,7 +306,7 @@ function ResumeTab({ client }) {
                         <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
                     </svg>
                     <p style={{ margin: 0, fontSize: '0.9rem' }}>No resume uploaded yet. Your consultant will add it here.</p>
-                    <a href="mailto:support@guzmancareerservices.com" style={{ display: 'inline-block', marginTop: '1rem', color: '#2563eb', fontWeight: 600, fontSize: '0.875rem' }}>
+                    <a href="mailto:info@guzmancareerservices.com" style={{ display: 'inline-block', marginTop: '1rem', color: '#2563eb', fontWeight: 600, fontSize: '0.875rem' }}>
                         Contact Consultant
                     </a>
                 </div>

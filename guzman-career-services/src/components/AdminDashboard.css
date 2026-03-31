@@ -938,3 +938,74 @@
     transition: background 0.2s;
 }
 .idm-btn-primary:hover { background: #1e40af; }
+
+/* ===== Upload Modal ===== */
+.ads-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.ads-modal {
+    background: #fff;
+    border-radius: 1rem;
+    width: 100%;
+    max-width: 460px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    padding: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+.ads-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.ads-modal-header h3 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a; }
+.ads-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    color: #64748b;
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.375rem;
+    transition: background 0.15s;
+}
+.ads-modal-close:hover { background: #f1f5f9; }
+.ads-modal-client { margin: 0; font-size: 0.875rem; color: #475569; }
+.ads-modal-field { display: flex; flex-direction: column; gap: 0.4rem; }
+.ads-modal-field label { font-size: 0.8rem; font-weight: 600; color: #374151; }
+.ads-modal-optional { font-weight: 400; color: #94a3b8; }
+.ads-modal-file-row { display: flex; align-items: center; gap: 0.75rem; }
+.ads-modal-filename {
+    flex: 1;
+    font-size: 0.8rem;
+    color: #64748b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+}
+.ads-modal-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: #0f172a;
+    outline: none;
+    transition: border-color 0.15s;
+    font-family: inherit;
+}
+.ads-modal-input:focus { border-color: #2563eb; }
+.ads-modal-actions { display: flex; justify-content: flex-end; gap: 0.6rem; padding-top: 0.25rem; }
