@@ -179,6 +179,21 @@ function ResumeTab({ client }) {
         return () => window.removeEventListener('resize', measureWidth);
     }, [measureWidth]);
 
+    const handlePreview = async (resumeId) => {
+        if (previewResumeId === resumeId) return;
+        setPreviewResumeId(resumeId);
+        setPreviewUrl(null);
+        setNumPages(null);
+        try {
+            const res  = await authFetch(`/api/clients/${client.id}/resume/download?resumeId=${resumeId}`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            setPreviewUrl(data.url);
+        } catch (err) {
+            alert('Could not load preview: ' + err.message);
+        }
+    };
+
     const handleDownload = async (resumeId, filename) => {
         setDownloadingId(resumeId);
         try {
@@ -212,12 +227,12 @@ function ResumeTab({ client }) {
                         }
                     </div>
                 </div>
-                {hasResumes && (
-                    <button className="cd-btn cd-btn--download" onClick={() => handleDownload(latestResume.id, latestResume.resume_filename)} disabled={downloadingId === latestResume.id}>
+                {hasResumes && previewResumeId && (
+                    <button className="cd-btn cd-btn--download" onClick={() => { const r = resumes.find(x => x.id === previewResumeId); if (r) handleDownload(r.id, r.resume_filename); }} disabled={!!downloadingId}>
                         <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                         </svg>
-                        {downloadingId === latestResume.id ? 'Opening…' : 'Download Latest'}
+                        {downloadingId ? 'Opening…' : 'Download PDF'}
                     </button>
                 )}
             </div>
@@ -235,7 +250,12 @@ function ResumeTab({ client }) {
                             <h3 className="cd-resume-details-title">Resume History</h3>
                             <div className="cd-resume-history-list">
                                 {resumes.map((r, idx) => (
-                                    <div key={r.id} className={`cd-resume-history-item ${previewResumeId === r.id ? 'cd-resume-history-item--active' : ''}`}>
+                                    <div
+                                        key={r.id}
+                                        className={`cd-resume-history-item ${previewResumeId === r.id ? 'cd-resume-history-item--active' : ''}`}
+                                        onClick={() => handlePreview(r.id)}
+                                        style={{ cursor: previewResumeId === r.id ? 'default' : 'pointer' }}
+                                    >
                                         <div className="cd-resume-history-info">
                                             <span className="cd-resume-history-name">
                                                 {idx === 0 && <span className="cd-resume-latest-badge">Latest</span>}
@@ -247,13 +267,13 @@ function ResumeTab({ client }) {
                                             {r.jd_link && (
                                                 <span className="cd-resume-jd-link">
                                                     Please find the job description link here{' '}
-                                                    <a href={r.jd_link} target="_blank" rel="noopener noreferrer">here</a>
+                                                    <a href={r.jd_link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>here</a>
                                                 </span>
                                             )}
                                         </div>
                                         <button
                                             className="cd-btn cd-btn--receipt"
-                                            onClick={() => handleDownload(r.id, r.resume_filename)}
+                                            onClick={e => { e.stopPropagation(); handleDownload(r.id, r.resume_filename); }}
                                             disabled={downloadingId === r.id}
                                             title="Download this version"
                                         >

@@ -355,7 +355,8 @@ app.get('/api/activity', requireAdmin, async (_req, res) => {
 app.post('/api/intake', async (req, res) => {
     const { fullName, email, referredBy, phone, fullAddress, sex, veteranStatus, disabilityStatus,
         raceIdentity, workAuthorization, jobTitles, sharedEmail, sharedPassword,
-        legalName, signatureDate, tcAgreed } = req.body;
+        legalName, signatureDate, tcAgreed,
+        linkedinProfile, additionalNotes, intakeFormType } = req.body;
     if (!fullName || !email || !legalName || !tcAgreed) {
         return res.status(400).json({ error: 'Please fill in all required fields.' });
     }
@@ -372,6 +373,9 @@ app.post('/api/intake', async (req, res) => {
                 shared_password: sharedPassword || '', legal_name: legalName,
                 signature_date: signatureDate || new Date().toISOString().split('T')[0],
                 tc_agreed: true, status: 'pending',
+                linkedin_profile: linkedinProfile || '',
+                additional_notes: additionalNotes || '',
+                intake_form_type: intakeFormType || 'general',
             }])
             .select().single();
         if (error) throw error;

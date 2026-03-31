@@ -679,7 +679,9 @@ function IntakeDetailsModal({ submission, onClose, onCreateAccount }) {
                     {row('Work Authorization', submission.work_authorization)}
 
                     <div className="idm-section-title">Professional Details</div>
+                    {row('Form Type', submission.intake_form_type === 'tech2mate' ? 'Tech2Mate Student' : 'General Client')}
                     {row('Job Title(s)', submission.job_titles)}
+                    {row('LinkedIn Profile', submission.linkedin_profile)}
                     {row('Shared Email', submission.shared_email)}
                     {submission.shared_password && (
                         <div className="idm-row">
@@ -692,6 +694,15 @@ function IntakeDetailsModal({ submission, onClose, onCreateAccount }) {
                     {row('Legal Name (Signature)', submission.legal_name)}
                     {row('Signature Date', fmtDate(submission.signature_date))}
                     {row('T&C Agreed', submission.tc_agreed ? 'Yes' : 'No')}
+
+                    {submission.additional_notes && (
+                        <>
+                            <div className="idm-section-title">Additional Notes</div>
+                            <div className="idm-row">
+                                <span className="idm-value" style={{ whiteSpace: 'pre-wrap' }}>{submission.additional_notes}</span>
+                            </div>
+                        </>
+                    )}
 
                     {submission.resume_path && (
                         <>
