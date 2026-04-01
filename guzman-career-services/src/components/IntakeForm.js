@@ -348,14 +348,15 @@ function IntakeForm({ onClose }) {
                                     onDrop={e => {
                                         e.preventDefault();
                                         const f = e.dataTransfer.files[0];
-                                        if (f && f.type === 'application/pdf') setResumeFile(f);
-                                        else setError('Only PDF files are accepted.');
+                                        const allowed = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+                                        if (f && allowed.includes(f.type)) setResumeFile(f);
+                                        else setError('Only PDF or Word documents are accepted.');
                                     }}
                                 >
                                     <input
                                         id="resume-input"
                                         type="file"
-                                        accept="application/pdf"
+                                        accept="application/pdf,.pdf,application/msword,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
                                         style={{ display: 'none' }}
                                         onChange={e => {
                                             const f = e.target.files[0];
@@ -379,7 +380,7 @@ function IntakeForm({ onClose }) {
                                         <>
                                             <div className="intake-dz-icon">📎</div>
                                             <p className="intake-dz-prompt">Click or drag &amp; drop your resume here</p>
-                                            <p className="intake-dz-sub">PDF only · Max 10 MB</p>
+                                            <p className="intake-dz-sub">PDF or Word · Max 10 MB</p>
                                         </>
                                     )}
                                 </div>

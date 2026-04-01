@@ -413,8 +413,9 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
     const handleFileSelect = (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        if (file.type !== 'application/pdf') {
-            onShowToast('Error: Only PDF files are allowed.');
+        const allowed = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        if (!allowed.includes(file.type)) {
+            onShowToast('Error: Only PDF or Word documents are allowed.');
             return;
         }
         setSelectedFile(file);
@@ -484,7 +485,7 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
 
     return (
         <div className="ads-section">
-            <input ref={fileInputRef} type="file" accept=".pdf,application/pdf" style={{ display: 'none' }} onChange={handleFileSelect} />
+            <input ref={fileInputRef} type="file" accept=".pdf,application/pdf,.doc,application/msword,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style={{ display: 'none' }} onChange={handleFileSelect} />
 
             {/* Upload Modal */}
             {uploadModal && (
@@ -497,7 +498,7 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
                         <p className="ads-modal-client">Client: <strong>{uploadModal.clientName}</strong></p>
 
                         <div className="ads-modal-field">
-                            <label>PDF File</label>
+                            <label>PDF or Word File</label>
                             <div className="ads-modal-file-row">
                                 <span className="ads-modal-filename">{selectedFile ? selectedFile.name : 'No file selected'}</span>
                                 <button className="ads-action-btn ads-action-btn--upload" onClick={() => { fileInputRef.current.value = ''; fileInputRef.current.click(); }}>

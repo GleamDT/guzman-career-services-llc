@@ -10,15 +10,27 @@ const allowedOrigins = ['http://localhost:3000', process.env.SITE_URL].filter(Bo
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
+const ALLOWED_MIME_TYPES = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
-        file.mimetype === 'application/pdf'
+        ALLOWED_MIME_TYPES.includes(file.mimetype)
             ? cb(null, true)
-            : cb(new Error('Only PDF files are allowed.'));
+            : cb(new Error('Only PDF or Word documents are allowed.'));
     },
 });
+
+function getFileExt(mimetype) {
+    if (mimetype === 'application/msword') return '.doc';
+    if (mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return '.docx';
+    return '.pdf';
+}
 
 const supabaseAdmin = createClient(
     process.env.REACT_APP_SUPABASE_URL,
@@ -390,12 +402,13 @@ app.post('/api/intake', async (req, res) => {
 app.post('/api/intake/:id/resume', upload.single('resume'), async (req, res) => {
     const { id } = req.params;
     const file = req.file;
-    if (!file) return res.status(400).json({ error: 'No PDF file received.' });
+    if (!file) return res.status(400).json({ error: 'No file received.' });
     try {
-        const storagePath = `intakes/${id}/resume.pdf`;
+        const ext = getFileExt(file.mimetype);
+        const storagePath = `intakes/${id}/resume${ext}`;
         const { error: uploadError } = await supabaseAdmin.storage
             .from('resumes')
-            .upload(storagePath, file.buffer, { contentType: 'application/pdf', upsert: true });
+            .upload(storagePath, file.buffer, { contentType: file.mimetype, upsert: true });
         if (uploadError) throw uploadError;
         await supabaseAdmin.from('intake_submissions').update({
             resume_path: storagePath,
@@ -444,16 +457,17 @@ app.get('/api/intakes', requireAdmin, async (_req, res) => {
 app.post('/api/clients/:clientId/resume', requireAdmin, upload.single('resume'), async (req, res) => {
     const { clientId } = req.params;
     const file = req.file;
-    if (!file) return res.status(400).json({ error: 'No PDF file received.' });
+    if (!file) return res.status(400).json({ error: 'No file received.' });
 
     const jdLink = req.body.jd_link || null;
     const timestamp = Date.now();
-    const storagePath = `${clientId}/${timestamp}_resume.pdf`;
+    const ext = getFileExt(file.mimetype);
+    const storagePath = `${clientId}/${timestamp}_resume${ext}`;
 
     try {
         const { error: uploadError } = await supabaseAdmin.storage
             .from('resumes')
-            .upload(storagePath, file.buffer, { contentType: 'application/pdf', upsert: false });
+            .upload(storagePath, file.buffer, { contentType: file.mimetype, upsert: false });
         if (uploadError) throw uploadError;
 
         // Insert into client_resumes for full history
