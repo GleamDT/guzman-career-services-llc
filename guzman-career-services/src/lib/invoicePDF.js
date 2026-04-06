@@ -94,6 +94,18 @@ export async function downloadInvoicePDF(invoice, client) {
     doc.setFont('helvetica', 'bold');
     doc.text(invoice.status?.toUpperCase() || 'PENDING', 130, 78);
 
+    if (invoice.due_date) {
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...gray);
+        doc.text('DUE DATE', 130, 88);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...dark);
+        doc.setFontSize(9);
+        const dueDate = new Date(invoice.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        doc.text(dueDate, 130, 95);
+    }
+
     // ── Divider ──────────────────────────────────────────────────────────────
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.4);

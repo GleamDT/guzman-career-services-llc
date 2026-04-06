@@ -19,9 +19,10 @@ function getAuth() {
   try { return JSON.parse(sessionStorage.getItem('auth')); } catch { return null; }
 }
 
-function ProtectedRoute({ requiredRole, children }) {
+function ProtectedRoute({ requiredRole, allowedRoles, children }) {
   const auth = getAuth();
   if (!auth) return <Navigate to="/" replace />;
+  if (allowedRoles && !allowedRoles.includes(auth.role)) return <Navigate to="/" replace />;
   if (requiredRole && auth.role !== requiredRole) return <Navigate to="/" replace />;
   return children;
 }
@@ -57,6 +58,8 @@ function AuthCallback() {
         sessionStorage.setItem('auth', JSON.stringify({ role, email: session.user.email }));
         if (role === 'admin') {
           navigate('/admin', { replace: true });
+        } else if (role === 'staff') {
+          navigate('/staff', { replace: true });
         } else if (passwordSet === false) {
           navigate('/set-password', { replace: true });
         } else {
@@ -110,7 +113,10 @@ function App() {
       <Route path="/" element={<MainSite />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/admin" element={
-        <ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>
+        <ProtectedRoute requiredRole="admin"><AdminDashboard userRole="admin" /></ProtectedRoute>
+      } />
+      <Route path="/staff" element={
+        <ProtectedRoute requiredRole="staff"><AdminDashboard userRole="staff" /></ProtectedRoute>
       } />
       <Route path="/dashboard" element={
         <ProtectedRoute requiredRole="client"><ClientDashboard /></ProtectedRoute>

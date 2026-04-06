@@ -83,7 +83,12 @@ function InvoicesTab({ invoices, client, loading }) {
                                         {inv.subtitle && <div className="cd-td-desc-sub">{inv.subtitle}</div>}
                                     </td>
                                     <td className="cd-td-date">
-                                        {new Date(inv.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        <div>{new Date(inv.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                                        {inv.due_date && (
+                                            <div style={{ fontSize: '0.78rem', color: '#d97706', marginTop: '2px' }}>
+                                                Due: {new Date(inv.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="cd-td-amount">${parseFloat(inv.amount).toFixed(2)}</td>
                                     <td>
@@ -200,7 +205,16 @@ function ResumeTab({ client }) {
             const res  = await authFetch(`/api/clients/${client.id}/resume/download?resumeId=${resumeId}`);
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
-            window.open(data.url, '_blank');
+            const fileRes = await fetch(data.url);
+            const blob = await fileRes.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename || 'resume.pdf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
         } catch (err) {
             alert('Could not download resume: ' + err.message);
         } finally {
@@ -257,7 +271,7 @@ function ResumeTab({ client }) {
                                         style={{ cursor: previewResumeId === r.id ? 'default' : 'pointer' }}
                                     >
                                         <div className="cd-resume-history-info">
-                                            <span className="cd-resume-history-name">
+                                            <span className="cd-resume-history-name" title={r.resume_filename || 'resume.pdf'}>
                                                 {idx === 0 && <span className="cd-resume-latest-badge">Latest</span>}
                                                 {r.resume_filename || 'resume.pdf'}
                                             </span>

@@ -151,7 +151,7 @@ function DashboardSection({ stats, onCreateClient, onNavigate }) {
 }
 
 // ─── Clients Section ──────────────────────────────────────────────────────────
-function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice }) {
+function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice, isStaff = false }) {
     const [filter, setFilter] = useState('All');
 
     const filtered = filter === 'All' ? clients : clients.filter(c => c.status === filter);
@@ -163,12 +163,14 @@ function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice }) {
                     <h1>Client Management</h1>
                     <p>All registered client accounts and their onboarding status.</p>
                 </div>
-                <button className="admin-create-btn" onClick={onCreateClient}>
-                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
-                    </svg>
-                    Create Client Account
-                </button>
+                {!isStaff && (
+                    <button className="admin-create-btn" onClick={onCreateClient}>
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                        </svg>
+                        Create Client Account
+                    </button>
+                )}
             </div>
 
             <div className="admin-table-card">
@@ -223,11 +225,13 @@ function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice }) {
                                     <td className="admin-cell-muted">{fmtDate(client.created_at)}</td>
                                     <td>
                                         <div className="admin-actions">
-                                            <button title="Create Invoice" onClick={() => onCreateInvoice(client)}>
-                                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                                                </svg>
-                                            </button>
+                                            {!isStaff && (
+                                                <button title="Create Invoice" onClick={() => onCreateInvoice(client)}>
+                                                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                                                    </svg>
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -350,7 +354,14 @@ function InvoicesSection({ onShowToast }) {
                                             {inv.status}
                                         </span>
                                     </td>
-                                    <td className="admin-cell-muted">{fmtDate(inv.created_at)}</td>
+                                    <td className="admin-cell-muted">
+                                        <div>{fmtDate(inv.created_at)}</div>
+                                        {inv.due_date && (
+                                            <div style={{ fontSize: '0.78rem', color: '#d97706', marginTop: '2px' }}>
+                                                Due: {fmtDate(inv.due_date)}
+                                            </div>
+                                        )}
+                                    </td>
                                     <td>
                                         <div className="admin-actions">
                                             {inv.status === 'Pending' && (
@@ -472,12 +483,21 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
         xhr.send(formData);
     };
 
-    const handleDownload = async (clientId) => {
+    const handleDownload = async (clientId, filename) => {
         try {
             const res  = await authFetch(`/api/clients/${clientId}/resume/download`);
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
-            window.open(data.url, '_blank');
+            const fileRes = await fetch(data.url);
+            const blob = await fileRes.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename || 'resume.pdf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
         } catch (err) {
             onShowToast(`Error: ${err.message}`);
         }
@@ -583,7 +603,7 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
                                                 {hasResume ? '✓ Uploaded' : 'Not uploaded'}
                                             </span>
                                         </td>
-                                        <td className="admin-cell-muted ads-filename">
+                                        <td className="admin-cell-muted ads-filename" title={client.resume_filename || undefined}>
                                             {client.resume_filename || '—'}
                                         </td>
                                         <td className="admin-cell-muted">
@@ -594,7 +614,7 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
                                                 {hasResume && (
                                                     <button
                                                         className="ads-action-btn ads-action-btn--dl"
-                                                        onClick={() => handleDownload(client.id)}
+                                                        onClick={() => handleDownload(client.id, client.resume_filename)}
                                                         title="Download Latest Resume"
                                                     >
                                                         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -855,8 +875,9 @@ function IntakeSection({ onCreateAccount }) {
 }
 
 // ─── Main AdminDashboard ──────────────────────────────────────────────────────
-function AdminDashboard() {
-    const [activeSection, setActiveSection] = useState('dashboard');
+function AdminDashboard({ userRole = 'admin' }) {
+    const isStaff = userRole === 'staff';
+    const [activeSection, setActiveSection] = useState(isStaff ? 'clients' : 'dashboard');
     const [sidebarOpen, setSidebarOpen]     = useState(false);
     const [clients, setClients]             = useState([]);
     const [stats, setStats]                 = useState({ totalClients: 0, activeClients: 0, pendingClients: 0, totalRevenue: '0.00', pendingRevenue: '0.00' });
@@ -941,16 +962,19 @@ function AdminDashboard() {
                     <img src="/logo.png" alt="Guzman Career Services" className="admin-sidebar-logo-img" />
                 </div>
                 <nav className="admin-nav">
-                    {NAV_ITEMS.map(item => (
-                        <button
-                            key={item.key}
-                            className={`admin-nav-link ${activeSection === item.key ? 'admin-nav-link--active' : ''}`}
-                            onClick={() => { setActiveSection(item.key); setSidebarOpen(false); }}
-                        >
-                            {item.icon}
-                            {item.label}
-                        </button>
-                    ))}
+                    {NAV_ITEMS
+                        .filter(item => !isStaff || item.key === 'clients' || item.key === 'resumes')
+                        .map(item => (
+                            <button
+                                key={item.key}
+                                className={`admin-nav-link ${activeSection === item.key ? 'admin-nav-link--active' : ''}`}
+                                onClick={() => { setActiveSection(item.key); setSidebarOpen(false); }}
+                            >
+                                {item.icon}
+                                {item.label}
+                            </button>
+                        ))
+                    }
                 </nav>
                 <div className="admin-sidebar-footer">
                     <button onClick={handleLogout} className="admin-logout-btn">
@@ -985,10 +1009,10 @@ function AdminDashboard() {
                         </button>
                         <div className="admin-user-info">
                             <div className="admin-user-text">
-                                <p className="admin-user-name">Admin</p>
-                                <p className="admin-user-role">Operations Manager</p>
+                                <p className="admin-user-name">{isStaff ? 'Staff' : 'Admin'}</p>
+                                <p className="admin-user-role">{isStaff ? 'Staff Member' : 'Operations Manager'}</p>
                             </div>
-                            <div className="ads-topbar-avatar">A</div>
+                            <div className="ads-topbar-avatar">{isStaff ? 'S' : 'A'}</div>
                         </div>
                     </div>
                 </header>
@@ -1008,6 +1032,7 @@ function AdminDashboard() {
                             loading={loadingClients}
                             onCreateClient={() => setShowCreateClient(true)}
                             onCreateInvoice={openInvoiceModal}
+                            isStaff={isStaff}
                         />
                     )}
                     {activeSection === 'intake' && (

@@ -51,6 +51,17 @@ async function requireAdmin(req, res, next) {
     next();
 }
 
+async function requireAdminOrStaff(req, res, next) {
+    const token = (req.headers.authorization || '').replace('Bearer ', '');
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !user) return res.status(401).json({ error: 'Unauthorized' });
+    const role = user.user_metadata?.role;
+    if (role !== 'admin' && role !== 'staff') return res.status(403).json({ error: 'Forbidden' });
+    req.user = user;
+    next();
+}
+
 async function requireAuth(req, res, next) {
     const token = (req.headers.authorization || '').replace('Bearer ', '');
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
@@ -105,7 +116,7 @@ app.post('/api/clients', requireAdmin, async (req, res) => {
 });
 
 // GET /api/clients — list all clients
-app.get('/api/clients', requireAdmin, async (_req, res) => {
+app.get('/api/clients', requireAdminOrStaff, async (_req, res) => {
     try {
         const { data, error } = await supabaseAdmin
             .from('clients')
@@ -155,7 +166,7 @@ app.patch('/api/clients/:id/status', requireAdmin, async (req, res) => {
 
 // POST /api/invoices — create invoice for a client
 app.post('/api/invoices', requireAdmin, async (req, res) => {
-    const { clientId, description, subtitle, amount } = req.body;
+    const { clientId, description, subtitle, amount, due_date } = req.body;
     if (!clientId || !description || !amount) return res.status(400).json({ error: 'Client, description, and amount are required.' });
 
     try {
@@ -165,16 +176,19 @@ app.post('/api/invoices', requireAdmin, async (req, res) => {
 
         const invoiceNumber = `INV-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`;
 
+        const insertPayload = {
+            client_id: clientId,
+            invoice_number: invoiceNumber,
+            description,
+            subtitle: subtitle || '',
+            amount: parseFloat(amount),
+            status: 'Pending',
+        };
+        if (due_date) insertPayload.due_date = due_date;
+
         const { data, error } = await supabaseAdmin
             .from('invoices')
-            .insert([{
-                client_id: clientId,
-                invoice_number: invoiceNumber,
-                description,
-                subtitle: subtitle || '',
-                amount: parseFloat(amount),
-                status: 'Pending',
-            }])
+            .insert([insertPayload])
             .select()
             .single();
         if (error) throw error;
@@ -454,7 +468,7 @@ app.get('/api/intakes', requireAdmin, async (_req, res) => {
 // ─── RESUMES ─────────────────────────────────────────────────────────────────
 
 // POST /api/clients/:clientId/resume — upload a PDF resume (supports multiple + JD link)
-app.post('/api/clients/:clientId/resume', requireAdmin, upload.single('resume'), async (req, res) => {
+app.post('/api/clients/:clientId/resume', requireAdminOrStaff, upload.single('resume'), async (req, res) => {
     const { clientId } = req.params;
     const file = req.file;
     if (!file) return res.status(400).json({ error: 'No file received.' });

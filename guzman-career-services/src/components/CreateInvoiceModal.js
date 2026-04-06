@@ -3,7 +3,7 @@ import { authFetch } from '../lib/authFetch';
 import './CreateInvoiceModal.css';
 
 function CreateInvoiceModal({ isOpen, onClose, client, onInvoiceCreated }) {
-    const [formData, setFormData] = useState({ description: '', subtitle: '', amount: '' });
+    const [formData, setFormData] = useState({ description: '', subtitle: '', amount: '', due_date: '' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -29,6 +29,7 @@ function CreateInvoiceModal({ isOpen, onClose, client, onInvoiceCreated }) {
                     description: formData.description,
                     subtitle: formData.subtitle,
                     amount: formData.amount,
+                    due_date: formData.due_date || null,
                 }),
             });
 
@@ -45,7 +46,7 @@ function CreateInvoiceModal({ isOpen, onClose, client, onInvoiceCreated }) {
     };
 
     const handleClose = () => {
-        setFormData({ description: '', subtitle: '', amount: '' });
+        setFormData({ description: '', subtitle: '', amount: '', due_date: '' });
         setError('');
         onClose();
     };
@@ -111,6 +112,19 @@ function CreateInvoiceModal({ isOpen, onClose, client, onInvoiceCreated }) {
                                 required
                             />
                         </div>
+                    </div>
+
+                    <div className="cim-field">
+                        <label htmlFor="cim-due-date">
+                            Due Date <span className="cim-optional">(optional)</span>
+                        </label>
+                        <input
+                            id="cim-due-date"
+                            type="date"
+                            name="due_date"
+                            value={formData.due_date}
+                            onChange={handleChange}
+                        />
                     </div>
 
                     {error && <p className="cim-error">{error}</p>}

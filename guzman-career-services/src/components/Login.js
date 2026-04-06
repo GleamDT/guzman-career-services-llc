@@ -75,7 +75,8 @@ function Login({ isOpen, onClose }) {
         sessionStorage.setItem('auth', JSON.stringify({ role, email: data.user.email }));
         setLoading(false);
         onClose();
-        navigate(role === 'admin' ? '/admin' : '/dashboard');
+        const dest = role === 'admin' ? '/admin' : role === 'staff' ? '/staff' : '/dashboard';
+        navigate(dest);
     };
 
     return (
