@@ -1,8 +1,9 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
-const express = require('express');
-const cors    = require('cors');
-const multer  = require('multer');
-const stripe  = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const express    = require('express');
+const cors       = require('cors');
+const multer     = require('multer');
+const nodemailer = require('nodemailer');
+const stripe     = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
@@ -37,6 +38,46 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY,
     { auth: { autoRefreshToken: false, persistSession: false } }
 );
+
+// ─── EMAIL ────────────────────────────────────────────────────────────────────
+
+const emailTransporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+    },
+});
+
+async function sendPortalNotification(toEmail, toName) {
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) return;
+    const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
+    try {
+        await emailTransporter.sendMail({
+            from: `"Guzman Career Services" <${process.env.GMAIL_USER}>`,
+            to: toEmail,
+            subject: 'You have an important message on your portal',
+            html: `
+                <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;">
+                    <img src="${siteUrl}/logo.png" alt="Guzman Career Services" style="height:48px;margin-bottom:24px;" />
+                    <h2 style="color:#0f172a;margin:0 0 12px;">Hello, ${toName}!</h2>
+                    <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 24px;">
+                        You have an important message waiting for you on your client portal.
+                        Please log in to view it.
+                    </p>
+                    <a href="${siteUrl}/login" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px;">
+                        Login to Your Portal
+                    </a>
+                    <p style="color:#94a3b8;font-size:12px;margin-top:32px;">
+                        Guzman Career Services &bull; This is an automated notification.
+                    </p>
+                </div>
+            `,
+        });
+    } catch (err) {
+        console.error('[sendPortalNotification] Email failed:', err.message);
+    }
+}
 
 // ─── AUTH MIDDLEWARE ──────────────────────────────────────────────────────────
 
@@ -162,6 +203,28 @@ app.patch('/api/clients/:id/status', requireAdmin, async (req, res) => {
     }
 });
 
+// ─── STAFF ───────────────────────────────────────────────────────────────────
+
+// POST /api/staff — create a staff account and send invite email (admin only)
+app.post('/api/staff', requireAdmin, async (req, res) => {
+    const { fullName, email } = req.body;
+    if (!fullName || !email) return res.status(400).json({ error: 'Full name and email are required.' });
+
+    try {
+        const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
+        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+            data: { role: 'staff', full_name: fullName, password_set: false },
+            redirectTo: `${siteUrl}/auth/callback`,
+        });
+        if (authError) throw authError;
+
+        res.json({ success: true, user: { id: authData.user.id, email, full_name: fullName } });
+    } catch (error) {
+        console.error('[POST /api/staff]', error.message);
+        res.status(400).json({ error: error.message });
+    }
+});
+
 // ─── INVOICES ────────────────────────────────────────────────────────────────
 
 // POST /api/invoices — create invoice for a client
@@ -170,11 +233,9 @@ app.post('/api/invoices', requireAdmin, async (req, res) => {
     if (!clientId || !description || !amount) return res.status(400).json({ error: 'Client, description, and amount are required.' });
 
     try {
-        const { count } = await supabaseAdmin
-            .from('invoices')
-            .select('*', { count: 'exact', head: true });
-
-        const invoiceNumber = `INV-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`;
+        const year = new Date().getFullYear();
+        const unique = Date.now().toString().slice(-7);
+        const invoiceNumber = `INV-${year}-${unique}`;
 
         const insertPayload = {
             client_id: clientId,
@@ -192,6 +253,14 @@ app.post('/api/invoices', requireAdmin, async (req, res) => {
             .select()
             .single();
         if (error) throw error;
+
+        // Notify client by email
+        const { data: clientRow } = await supabaseAdmin
+            .from('clients')
+            .select('email, full_name')
+            .eq('id', clientId)
+            .single();
+        if (clientRow) sendPortalNotification(clientRow.email, clientRow.full_name);
 
         res.json({ success: true, invoice: data });
     } catch (error) {
@@ -507,6 +576,9 @@ app.post('/api/clients/:clientId/resume', requireAdminOrStaff, upload.single('re
             .select()
             .single();
         if (error) throw error;
+
+        // Notify client by email
+        sendPortalNotification(data.email, data.full_name);
 
         res.json({ success: true, client: data });
     } catch (error) {

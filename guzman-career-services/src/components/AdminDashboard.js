@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateClientModal from './CreateClientModal';
+import CreateStaffModal from './CreateStaffModal';
 import CreateInvoiceModal from './CreateInvoiceModal';
 import { downloadInvoicePDF } from '../lib/invoicePDF';
 import { authFetch, getAuthToken } from '../lib/authFetch';
@@ -47,7 +48,7 @@ const NAV_ITEMS = [
 ];
 
 // ─── Dashboard Section ────────────────────────────────────────────────────────
-function DashboardSection({ stats, onCreateClient, onNavigate }) {
+function DashboardSection({ stats, onCreateClient, onCreateStaff, onNavigate }) {
     const [activity, setActivity] = useState({ recentClients: [], recentInvoices: [] });
 
     useEffect(() => {
@@ -72,12 +73,20 @@ function DashboardSection({ stats, onCreateClient, onNavigate }) {
                     <h1>Welcome back, Admin</h1>
                     <p>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
                 </div>
-                <button className="admin-create-btn" onClick={onCreateClient}>
-                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
-                    </svg>
-                    New Client
-                </button>
+                <div style={{ display: 'flex', gap: '0.625rem' }}>
+                    <button className="admin-create-btn" onClick={onCreateClient}>
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                        </svg>
+                        New Client
+                    </button>
+                    <button className="admin-create-btn" style={{ background: '#7c3aed' }} onClick={onCreateStaff}>
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                        </svg>
+                        New Staff
+                    </button>
+                </div>
             </div>
 
             {/* Stat cards */}
@@ -189,17 +198,17 @@ function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice, isS
                                 <th>Client Name</th>
                                 <th>Status</th>
                                 <th>Login</th>
-                                <th>Email</th>
-                                <th>Phone</th>
+                                {!isStaff && <th>Email</th>}
+                                {!isStaff && <th>Phone</th>}
                                 <th>Date Joined</th>
                                 <th className="text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr><td colSpan="6" className="ads-table-msg">Loading clients…</td></tr>
+                                <tr><td colSpan={isStaff ? 5 : 7} className="ads-table-msg">Loading clients…</td></tr>
                             ) : filtered.length === 0 ? (
-                                <tr><td colSpan="6" className="ads-table-msg">No clients found.</td></tr>
+                                <tr><td colSpan={isStaff ? 5 : 7} className="ads-table-msg">No clients found.</td></tr>
                             ) : filtered.map(client => (
                                 <tr key={client.id}>
                                     <td>
@@ -220,8 +229,8 @@ function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice, isS
                                             {client.has_logged_in ? 'Logged In' : 'Awaiting'}
                                         </span>
                                     </td>
-                                    <td className="admin-cell-muted">{client.email}</td>
-                                    <td className="admin-cell-muted">{client.phone || '—'}</td>
+                                    {!isStaff && <td className="admin-cell-muted">{client.email}</td>}
+                                    {!isStaff && <td className="admin-cell-muted">{client.phone || '—'}</td>}
                                     <td className="admin-cell-muted">{fmtDate(client.created_at)}</td>
                                     <td>
                                         <div className="admin-actions">
@@ -400,7 +409,7 @@ function InvoicesSection({ onShowToast }) {
 }
 
 // ─── Resumes Section ──────────────────────────────────────────────────────────
-function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
+function ResumesSection({ clients, onResumeUploaded, onShowToast, isStaff = false }) {
     const [uploadingId, setUploadingId]   = useState(null);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadModal, setUploadModal]   = useState(null); // { clientId, clientName }
@@ -575,7 +584,7 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
                         <thead>
                             <tr>
                                 <th>Client</th>
-                                <th>Email</th>
+                                {!isStaff && <th>Email</th>}
                                 <th>Resume Status</th>
                                 <th>Latest File</th>
                                 <th>Last Uploaded</th>
@@ -584,7 +593,7 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
                         </thead>
                         <tbody>
                             {clients.length === 0 ? (
-                                <tr><td colSpan="6" className="ads-table-msg">No clients yet.</td></tr>
+                                <tr><td colSpan={isStaff ? 5 : 6} className="ads-table-msg">No clients yet.</td></tr>
                             ) : clients.map(client => {
                                 const hasResume = !!client.resume_path;
                                 return (
@@ -597,7 +606,7 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast }) {
                                                 <span>{client.full_name}</span>
                                             </div>
                                         </td>
-                                        <td className="admin-cell-muted">{client.email}</td>
+                                        {!isStaff && <td className="admin-cell-muted">{client.email}</td>}
                                         <td>
                                             <span className={`ads-resume-badge ${hasResume ? 'ads-resume-badge--uploaded' : 'ads-resume-badge--missing'}`}>
                                                 {hasResume ? '✓ Uploaded' : 'Not uploaded'}
@@ -883,6 +892,7 @@ function AdminDashboard({ userRole = 'admin' }) {
     const [stats, setStats]                 = useState({ totalClients: 0, activeClients: 0, pendingClients: 0, totalRevenue: '0.00', pendingRevenue: '0.00' });
     const [loadingClients, setLoadingClients] = useState(true);
     const [showCreateClient, setShowCreateClient]   = useState(false);
+    const [showCreateStaff, setShowCreateStaff]     = useState(false);
     const [showCreateInvoice, setShowCreateInvoice] = useState(false);
     const [selectedClient, setSelectedClient]       = useState(null);
     const [prefillData, setPrefillData]             = useState(null);
@@ -924,6 +934,10 @@ function AdminDashboard({ userRole = 'admin' }) {
         setClients(prev => [newClient, ...prev]);
         setStats(prev => ({ ...prev, totalClients: prev.totalClients + 1, pendingClients: prev.pendingClients + 1 }));
         showToast(`✓ Account created and invite sent to ${newClient.email}`);
+    };
+
+    const handleStaffCreated = (user) => {
+        showToast(`✓ Staff account created and invite sent to ${user.email}`);
     };
 
     const handleInvoiceCreated = () => {
@@ -1023,6 +1037,7 @@ function AdminDashboard({ userRole = 'admin' }) {
                         <DashboardSection
                             stats={stats}
                             onCreateClient={() => setShowCreateClient(true)}
+                            onCreateStaff={() => setShowCreateStaff(true)}
                             onNavigate={setActiveSection}
                         />
                     )}
@@ -1046,6 +1061,7 @@ function AdminDashboard({ userRole = 'admin' }) {
                             clients={clients}
                             onResumeUploaded={handleResumeUploaded}
                             onShowToast={showToast}
+                            isStaff={isStaff}
                         />
                     )}
                 </section>
@@ -1064,6 +1080,11 @@ function AdminDashboard({ userRole = 'admin' }) {
                 onClose={() => { setShowCreateInvoice(false); setSelectedClient(null); }}
                 client={selectedClient}
                 onInvoiceCreated={handleInvoiceCreated}
+            />
+            <CreateStaffModal
+                isOpen={showCreateStaff}
+                onClose={() => setShowCreateStaff(false)}
+                onStaffCreated={handleStaffCreated}
             />
 
             {/* Toast */}
