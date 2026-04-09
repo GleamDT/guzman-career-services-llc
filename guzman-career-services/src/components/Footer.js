@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './Footer.css';
 
 function Footer() {
@@ -59,9 +60,9 @@ function Footer() {
                         © {currentYear} Guzman Career Services. All rights reserved.
                     </div>
                     <div className="footer-legal">
-                        <a href="#privacy">Privacy Policy</a>
+                        <Link to="/privacy-policy">Privacy Policy</Link>
                         <span className="footer-separator">•</span>
-                        <a href="#terms">Terms of Service</a>
+                        <Link to="/terms-of-service">Terms of Service</Link>
                     </div>
                 </div>
             </div>

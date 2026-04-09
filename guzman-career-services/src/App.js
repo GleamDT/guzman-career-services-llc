@@ -13,6 +13,8 @@ import Footer from './components/Footer';
 import AdminDashboard from './components/AdminDashboard';
 import ClientDashboard from './components/ClientDashboard';
 import SetPassword from './components/SetPassword';
+import TermsOfService from './components/TermsOfService';
+import PrivacyPolicy from './components/PrivacyPolicy';
 import './App.css';
 
 function getAuth() {
@@ -122,6 +124,8 @@ function App() {
         <ProtectedRoute requiredRole="client"><ClientDashboard /></ProtectedRoute>
       } />
       <Route path="/set-password" element={<SetPassword />} />
+      <Route path="/terms-of-service" element={<TermsOfService />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
     </Routes>
   );
 }

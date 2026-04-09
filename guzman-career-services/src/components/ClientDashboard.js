@@ -6,6 +6,8 @@ import 'react-pdf/dist/Page/TextLayer.css';
 import { supabase } from '../lib/supabase';
 import { authFetch } from '../lib/authFetch';
 import { downloadInvoicePDF } from '../lib/invoicePDF';
+import { TERMS_VERSION } from '../lib/legalContent';
+import TermsAcceptanceModal from './TermsAcceptanceModal';
 import './ClientDashboard.css';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -357,6 +359,7 @@ function ClientDashboard() {
     const [client, setClient]           = useState({});
     const [loading, setLoading]         = useState(true);
     const [paymentBanner, setPaymentBanner] = useState(null); // 'success' | 'cancelled' | null
+    const [showTermsModal, setShowTermsModal] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -393,7 +396,13 @@ function ClientDashboard() {
                 supabase.from('invoices').select('*').eq('client_id', user.id).order('created_at', { ascending: false }),
             ]);
 
-            if (profileRes.data)  setClient(profileRes.data);
+            if (profileRes.data) {
+                setClient(profileRes.data);
+                // Check if user needs to accept updated terms
+                if (profileRes.data.tc_accepted_version !== TERMS_VERSION) {
+                    setShowTermsModal(true);
+                }
+            }
             if (invoicesRes.data) setInvoices(invoicesRes.data);
 
             if (profileRes.data && !profileRes.data.has_logged_in) {
@@ -404,6 +413,28 @@ function ClientDashboard() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleAcceptTerms = async (termsVersion) => {
+        try {
+            const res = await authFetch(`/api/clients/${client.id}/accept-terms`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ termsVersion }),
+            });
+            if (!res.ok) throw new Error('Failed to save acceptance');
+            setClient(prev => ({ ...prev, tc_accepted_version: termsVersion }));
+            setShowTermsModal(false);
+        } catch (err) {
+            console.error('Failed to accept terms:', err);
+            throw err;
+        }
+    };
+
+    const handleDeclineTerms = async () => {
+        await supabase.auth.signOut({ scope: 'global' });
+        sessionStorage.removeItem('auth');
+        navigate('/');
     };
 
     const handleLogout = async () => {
@@ -418,6 +449,12 @@ function ClientDashboard() {
 
     return (
         <div className="cd-layout">
+            {showTermsModal && (
+                <TermsAcceptanceModal 
+                    onAccept={handleAcceptTerms}
+                    onDecline={handleDeclineTerms}
+                />
+            )}
             {sidebarOpen && <div className="cd-sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
 
             {/* Sidebar */}

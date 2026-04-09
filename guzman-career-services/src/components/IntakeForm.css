@@ -464,6 +464,248 @@
     margin-bottom: 1.75rem !important;
 }
 
+/* ── T&C Buttons ── */
+.intake-tc-buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.intake-tc-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1d4ed8;
+    padding: 0.6rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.intake-tc-link-btn:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+}
+
+/* ── T&C Modal ── */
+.intake-tc-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200;
+    padding: 1rem;
+}
+
+.intake-tc-modal {
+    background: #fff;
+    border-radius: 1rem;
+    width: 100%;
+    max-width: 700px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+}
+
+.intake-tc-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.intake-tc-modal-tabs {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.intake-tc-tab {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+}
+
+.intake-tc-tab:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.intake-tc-tab.active {
+    background: #1d4ed8;
+    color: #fff;
+}
+
+.intake-tc-modal-close {
+    background: #f1f5f9;
+    border: none;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
+
+.intake-tc-modal-close:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.intake-tc-modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+}
+
+.intake-tc-document {
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: #475569;
+}
+
+.intake-tc-document h3 {
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 0.25rem 0;
+}
+
+.intake-tc-document h4 {
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #2563eb;
+    margin: 0 0 0.5rem 0;
+}
+
+.intake-tc-effective {
+    text-align: center;
+    font-size: 0.825rem;
+    color: #64748b;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.intake-tc-section {
+    margin-bottom: 1.25rem;
+}
+
+.intake-tc-section h5 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 0.5rem 0;
+}
+
+.intake-tc-section p {
+    margin: 0 0 0.5rem 0;
+    white-space: pre-line;
+}
+
+.intake-tc-section ul {
+    margin: 0.5rem 0;
+    padding-left: 1.25rem;
+}
+
+.intake-tc-section li {
+    margin-bottom: 0.25rem;
+}
+
+.intake-tc-footer {
+    font-size: 0.825rem;
+    color: #64748b;
+    padding: 0.75rem;
+    background: #f8fafc;
+    border-radius: 0.375rem;
+    border-left: 3px solid #2563eb;
+    white-space: pre-line;
+}
+
+.intake-tc-subsection {
+    margin: 0.75rem 0;
+}
+
+.intake-tc-subsection h6 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #334155;
+    margin: 0 0 0.5rem 0;
+}
+
+.intake-tc-final {
+    background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #bfdbfe;
+    margin-top: 1rem;
+}
+
+.intake-tc-final h5 {
+    color: #1e40af;
+}
+
+.intake-tc-final-footer {
+    font-weight: 600;
+    color: #1e40af;
+}
+
+.intake-tc-modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: #f8fafc;
+}
+
+.intake-tc-modal-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    font-size: 0.875rem;
+    color: #374151;
+    cursor: pointer;
+    line-height: 1.4;
+    flex: 1;
+}
+
+.intake-tc-modal-checkbox input[type="checkbox"] {
+    accent-color: #1d4ed8;
+    width: 1.1rem;
+    height: 1.1rem;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+    cursor: pointer;
+}
+
+.intake-tc-modal-checkbox span {
+    font-weight: 500;
+}
+
 /* ── Responsive ── */
 @media (max-width: 600px) {
     .intake-container {
@@ -492,5 +734,40 @@
 
     .intake-success-card {
         padding: 2.5rem 1.5rem;
+    }
+
+    .intake-tc-buttons {
+        flex-direction: column;
+    }
+
+    .intake-tc-link-btn {
+        justify-content: center;
+    }
+
+    .intake-tc-modal {
+        max-height: 95vh;
+    }
+
+    .intake-tc-modal-tabs {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .intake-tc-tab {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
+    }
+
+    .intake-tc-modal-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .intake-tc-modal-checkbox {
+        margin-bottom: 0.5rem;
+    }
+
+    .intake-tc-modal-footer .intake-btn-primary {
+        width: 100%;
     }
 }

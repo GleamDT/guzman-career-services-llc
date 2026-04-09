@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
+import { TERMS_OF_SERVICE, PRIVACY_POLICY } from '../lib/legalContent';
 import './IntakeForm.css';
-
-const TC_URL = 'https://docs.google.com/document/d/1V4y8OH2cxijXqzTjnr8-9zAwZNKYOVMt/edit';
 
 const STEPS = [
     { label: 'Personal Info' },
@@ -39,6 +38,8 @@ function IntakeForm({ onClose }) {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [showTermsModal, setShowTermsModal] = useState(false);
+    const [termsModalTab, setTermsModalTab] = useState('terms');
 
     const set = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
 
@@ -409,10 +410,23 @@ function IntakeForm({ onClose }) {
                             </div>
 
                             <div className="intake-field intake-field-full">
-                                <label>Terms &amp; Conditions</label>
-                                <a href={TC_URL} target="_blank" rel="noopener noreferrer" className="intake-tc-link">
-                                    Read Full Terms &amp; Conditions ↗
-                                </a>
+                                <label>Terms &amp; Conditions and Privacy Policy</label>
+                                <div className="intake-tc-buttons">
+                                    <button 
+                                        type="button" 
+                                        className="intake-tc-link-btn"
+                                        onClick={() => { setTermsModalTab('terms'); setShowTermsModal(true); }}
+                                    >
+                                        📄 Read Terms &amp; Conditions
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        className="intake-tc-link-btn"
+                                        onClick={() => { setTermsModalTab('privacy'); setShowTermsModal(true); }}
+                                    >
+                                        🔒 Read Privacy Policy
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="intake-field intake-field-full">
@@ -422,7 +436,7 @@ function IntakeForm({ onClose }) {
                                         checked={formData.tcAgreed}
                                         onChange={e => set('tcAgreed', e.target.checked)}
                                     />
-                                    <span>I have read and agree to the Terms &amp; Conditions. <span className="req">*</span></span>
+                                    <span>I have read and agree to the Terms &amp; Conditions and Privacy Policy. <span className="req">*</span></span>
                                 </label>
                             </div>
 
@@ -439,6 +453,120 @@ function IntakeForm({ onClose }) {
                                         information to provide career support on my behalf. <span className="req">*</span>
                                     </span>
                                 </label>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* T&C Modal */}
+                    {showTermsModal && (
+                        <div className="intake-tc-modal-overlay" onClick={() => setShowTermsModal(false)}>
+                            <div className="intake-tc-modal" onClick={e => e.stopPropagation()}>
+                                <div className="intake-tc-modal-header">
+                                    <div className="intake-tc-modal-tabs">
+                                        <button 
+                                            className={`intake-tc-tab ${termsModalTab === 'terms' ? 'active' : ''}`}
+                                            onClick={() => setTermsModalTab('terms')}
+                                        >
+                                            Terms & Conditions
+                                        </button>
+                                        <button 
+                                            className={`intake-tc-tab ${termsModalTab === 'privacy' ? 'active' : ''}`}
+                                            onClick={() => setTermsModalTab('privacy')}
+                                        >
+                                            Privacy Policy
+                                        </button>
+                                    </div>
+                                    <button className="intake-tc-modal-close" onClick={() => setShowTermsModal(false)}>✕</button>
+                                </div>
+                                <div className="intake-tc-modal-content">
+                                    {termsModalTab === 'terms' && (
+                                        <div className="intake-tc-document">
+                                            <h3>{TERMS_OF_SERVICE.title}</h3>
+                                            <h4>{TERMS_OF_SERVICE.subtitle}</h4>
+                                            <p className="intake-tc-effective">Effective Date: {TERMS_OF_SERVICE.effectiveDate}</p>
+                                            
+                                            {TERMS_OF_SERVICE.sections.map((section) => (
+                                                <div key={section.number} className="intake-tc-section">
+                                                    <h5>{section.number}. {section.title}</h5>
+                                                    {section.content && <p>{section.content}</p>}
+                                                    {section.items && (
+                                                        <ul>
+                                                            {section.items.map((item, idx) => (
+                                                                <li key={idx}>{item}</li>
+                                                            ))}
+                                                        </ul>
+                                                    )}
+                                                    {section.footer && <p className="intake-tc-footer">{section.footer}</p>}
+                                                </div>
+                                            ))}
+
+                                            <div className="intake-tc-section intake-tc-final">
+                                                <h5>{TERMS_OF_SERVICE.finalAcknowledgment.title}</h5>
+                                                <p>{TERMS_OF_SERVICE.finalAcknowledgment.content}</p>
+                                                <ul>
+                                                    {TERMS_OF_SERVICE.finalAcknowledgment.items.map((item, idx) => (
+                                                        <li key={idx}>{item}</li>
+                                                    ))}
+                                                </ul>
+                                                <p className="intake-tc-final-footer">{TERMS_OF_SERVICE.finalAcknowledgment.footer}</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {termsModalTab === 'privacy' && (
+                                        <div className="intake-tc-document">
+                                            <h3>{PRIVACY_POLICY.title}</h3>
+                                            <h4>{PRIVACY_POLICY.subtitle}</h4>
+                                            <p className="intake-tc-effective">Effective Date: {PRIVACY_POLICY.effectiveDate}</p>
+                                            
+                                            {PRIVACY_POLICY.sections.map((section) => (
+                                                <div key={section.number} className="intake-tc-section">
+                                                    <h5>{section.number}. {section.title}</h5>
+                                                    {section.content && <p>{section.content}</p>}
+                                                    {section.subsections && section.subsections.map((sub, subIdx) => (
+                                                        <div key={subIdx} className="intake-tc-subsection">
+                                                            <h6>{sub.subtitle}</h6>
+                                                            <ul>
+                                                                {sub.items.map((item, idx) => (
+                                                                    <li key={idx}>{item}</li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    ))}
+                                                    {section.items && (
+                                                        <ul>
+                                                            {section.items.map((item, idx) => (
+                                                                <li key={idx}>{item}</li>
+                                                            ))}
+                                                        </ul>
+                                                    )}
+                                                    {section.footer && <p className="intake-tc-footer">{section.footer}</p>}
+                                                </div>
+                                            ))}
+
+                                            <div className="intake-tc-section intake-tc-final">
+                                                <h5>{PRIVACY_POLICY.acknowledgment.title}</h5>
+                                                <p>{PRIVACY_POLICY.acknowledgment.content}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="intake-tc-modal-footer">
+                                    <label className="intake-tc-modal-checkbox">
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.tcAgreed}
+                                            onChange={e => set('tcAgreed', e.target.checked)}
+                                        />
+                                        <span>I have read and agree to the Terms &amp; Conditions and Privacy Policy</span>
+                                    </label>
+                                    <button 
+                                        className="intake-btn-primary" 
+                                        onClick={() => setShowTermsModal(false)}
+                                    >
+                                        {formData.tcAgreed ? 'Continue' : 'Close'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}

@@ -185,6 +185,29 @@ app.patch('/api/clients/:id/mark-logged-in', requireAuth, async (req, res) => {
     }
 });
 
+// PATCH /api/clients/:id/accept-terms — record T&C acceptance with version
+app.patch('/api/clients/:id/accept-terms', requireAuth, async (req, res) => {
+    const { termsVersion } = req.body;
+    if (!termsVersion) return res.status(400).json({ error: 'Terms version is required.' });
+    
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('clients')
+            .update({ 
+                tc_accepted_version: termsVersion,
+                tc_accepted_at: new Date().toISOString()
+            })
+            .eq('id', req.params.id)
+            .select()
+            .single();
+        if (error) throw error;
+        res.json({ success: true, client: data });
+    } catch (error) {
+        console.error('[PATCH /api/clients/:id/accept-terms]', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // PATCH /api/clients/:id/status — update client status (Pending → Active)
 app.patch('/api/clients/:id/status', requireAdmin, async (req, res) => {
     const { status } = req.body;
