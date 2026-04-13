@@ -107,7 +107,7 @@
     flex: 1;
     overflow-y: auto;
     padding: 1.5rem 2rem;
-    min-height: 300px;
+    min-height: 0;
     max-height: 400px;
     position: relative;
 }
@@ -343,34 +343,60 @@
 }
 
 @media (max-width: 640px) {
+    .tam-overlay {
+        padding: 0.5rem;
+        padding-bottom: 88px; /* clear JivoChat widget at bottom */
+        align-items: flex-start;
+        overflow-y: auto;
+    }
+
     .tam-modal {
-        max-height: 100vh;
-        border-radius: 0;
+        max-height: calc(100dvh - 96px); /* full viewport minus JivoChat + padding */
+        border-radius: 12px;
+    }
+
+    .tam-logo img {
+        height: 36px;
+        margin-bottom: 0.5rem;
     }
 
     .tam-header {
-        padding: 1rem 1.5rem;
+        padding: 0.75rem 1.25rem;
     }
 
     .tam-header h2 {
-        font-size: 1.25rem;
+        font-size: 1.1rem;
+    }
+
+    .tam-header p {
+        font-size: 0.82rem;
+    }
+
+    .tam-tab {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.88rem;
     }
 
     .tam-content {
-        padding: 1rem 1.5rem;
+        padding: 0.75rem 1.25rem;
+        min-height: 120px;
+        max-height: 30vh;
     }
 
     .tam-checkboxes {
-        padding: 1rem 1.5rem;
+        padding: 0.75rem 1.25rem;
+        gap: 0.5rem;
     }
 
     .tam-actions {
-        padding: 1rem 1.5rem;
+        padding: 0.75rem 1.25rem 1rem;
         flex-direction: column;
+        gap: 0.5rem;
     }
 
     .tam-btn {
         width: 100%;
-        justify-content: center;
+        text-align: center;
+        padding: 0.7rem 1rem;
     }
 }
