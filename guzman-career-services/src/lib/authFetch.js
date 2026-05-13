@@ -1,8 +1,7 @@
-import { supabase } from './supabase';
+import { getToken } from './auth';
 
 export async function authFetch(url, options = {}) {
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
+    const token = getToken();
     return fetch(url, {
         ...options,
         headers: {
@@ -12,7 +11,6 @@ export async function authFetch(url, options = {}) {
     });
 }
 
-export async function getAuthToken() {
-    const { data: { session } } = await supabase.auth.getSession();
-    return session?.access_token || null;
+export function getAuthToken() {
+    return getToken();
 }

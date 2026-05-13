@@ -5,6 +5,7 @@ import CreateStaffModal from './CreateStaffModal';
 import CreateInvoiceModal from './CreateInvoiceModal';
 import { downloadInvoicePDF } from '../lib/invoicePDF';
 import { authFetch, getAuthToken } from '../lib/authFetch';
+import { clearToken } from '../lib/auth';
 import './AdminDashboard.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -918,10 +919,8 @@ function AdminDashboard({ userRole = 'admin' }) {
         } catch { /* ignore */ }
     };
 
-    const handleLogout = async () => {
-        const { supabase } = await import('../lib/supabase');
-        await supabase.auth.signOut({ scope: 'global' });
-        sessionStorage.removeItem('auth');
+    const handleLogout = () => {
+        clearToken();
         navigate('/');
     };
 

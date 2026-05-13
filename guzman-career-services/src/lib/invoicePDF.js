@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 
-const LOGO_URL = 'https://nrudubbkecsjafrdsexq.supabase.co/storage/v1/object/public/Public_assets/logo.png';
+const LOGO_URL = 'https://guzmancareerservices.com/logo.png';
 
 function loadImage(url) {
     return new Promise((resolve, reject) => {

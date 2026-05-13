@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { setToken } from '../lib/auth';
 import './Login.css';
 
 const BG_IMAGE = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBlS2U5YOmfaEXB3S-f2PexiqM6jAAuNUdaDWS12VDdXnj1WztSPF6k_e6vYOe603W6XTnqbFOiL844KUwOZAGJWa7rwOfnEusljxVVTkQg4TdQzH2kUF1LLU25NYnU9h7Wn9IfCU4OB5B1dkm0uFjPCt9YNRiYWW7Cbfm5J1p2dJTMEn9vJ2X9OIN5LLCpq3LrQX-pU0UI6VLnxxyVuEVl-HQDO0d6dqqbqzZipRYeBOpsNtEaUJsdSOuncBg86tzQM3OYcTaoG7Ml';
@@ -28,8 +28,10 @@ function Login({ isOpen, onClose }) {
         e.preventDefault();
         setLoading(true);
         setError('');
-        await supabase.auth.resetPasswordForEmail(forgotEmail, {
-            redirectTo: `${window.location.origin}/set-password`,
+        await fetch('/api/auth/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: forgotEmail }),
         });
         setLoading(false);
         setResetSent(true);
@@ -60,22 +62,24 @@ function Login({ isOpen, onClose }) {
         setLoading(true);
         setError('');
 
-        const { data, error: authError } = await supabase.auth.signInWithPassword({
-            email: formData.email,
-            password: formData.password,
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: formData.email, password: formData.password }),
         });
+        const data = await res.json();
 
-        if (authError) {
-            setError('Incorrect email or password. Please try again.');
+        if (!res.ok) {
+            setError(data.error || 'Incorrect email or password. Please try again.');
             setLoading(false);
             return;
         }
 
-        const role = data.user?.user_metadata?.role || 'client';
-        sessionStorage.setItem('auth', JSON.stringify({ role, email: data.user.email }));
+        setToken(data.token);
+        sessionStorage.setItem('auth', JSON.stringify({ role: data.role, email: data.email }));
         setLoading(false);
         onClose();
-        const dest = role === 'admin' ? '/admin' : role === 'staff' ? '/staff' : '/dashboard';
+        const dest = data.role === 'admin' ? '/admin' : data.role === 'staff' ? '/staff' : '/dashboard';
         navigate(dest);
     };
 

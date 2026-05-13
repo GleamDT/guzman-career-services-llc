@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { setToken } from '../lib/auth';
 import './SetPassword.css';
 
 function SetPassword() {
@@ -9,6 +9,10 @@ function SetPassword() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+
+    const token = searchParams.get('token');
+    const type = searchParams.get('type') || 'invite';
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -26,20 +30,30 @@ function SetPassword() {
             setError('Passwords do not match.');
             return;
         }
+        if (!token) {
+            setError('Invalid or missing token. Please use the link from your email.');
+            return;
+        }
 
         setLoading(true);
-        const { error: updateError } = await supabase.auth.updateUser({
-            password: formData.password,
-            data: { password_set: true },
+        const res = await fetch('/api/auth/set-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, password: formData.password, type }),
         });
+        const data = await res.json();
 
-        if (updateError) {
-            setError(updateError.message);
+        if (!res.ok) {
+            setError(data.error || 'Something went wrong. Please try again.');
             setLoading(false);
             return;
         }
 
-        navigate('/dashboard', { replace: true });
+        setToken(data.token);
+        sessionStorage.setItem('auth', JSON.stringify({ role: data.role, email: data.email }));
+
+        const dest = data.role === 'admin' ? '/admin' : data.role === 'staff' ? '/staff' : '/dashboard';
+        navigate(dest, { replace: true });
     };
 
     return (
@@ -48,7 +62,9 @@ function SetPassword() {
                 <div className="sp-logo">
                     <img src="/logo.png" alt="Guzman Career Services" />
                 </div>
-                <h2 className="sp-title">Welcome! Set Your Password</h2>
+                <h2 className="sp-title">
+                    {type === 'reset' ? 'Reset Your Password' : 'Welcome! Set Your Password'}
+                </h2>
                 <p className="sp-subtitle">
                     Create a password so you can log in anytime from the main page.
                 </p>
@@ -102,7 +118,7 @@ function SetPassword() {
 
                     <button type="submit" className="sp-submit" disabled={loading}>
                         <span className="material-symbols-outlined">check_circle</span>
-                        {loading ? 'Saving...' : 'Set Password & Go to Dashboard'}
+                        {loading ? 'Saving...' : type === 'reset' ? 'Reset Password' : 'Set Password & Go to Dashboard'}
                     </button>
                 </form>
             </div>

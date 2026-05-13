@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { supabase } from './lib/supabase';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { getAuthUser } from './lib/auth';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Services from './components/Services';
@@ -47,63 +47,16 @@ function MainSite() {
   );
 }
 
-// Handles the invite/magic-link callback — Supabase redirects here with a token
-// in the URL hash. We read the session and redirect to the right dashboard.
-function AuthCallback() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        const role = session.user?.user_metadata?.role || 'client';
-        const passwordSet = session.user?.user_metadata?.password_set;
-        sessionStorage.setItem('auth', JSON.stringify({ role, email: session.user.email }));
-        if (role === 'admin') {
-          navigate('/admin', { replace: true });
-        } else if (role === 'staff') {
-          navigate('/staff', { replace: true });
-        } else if (passwordSet === false) {
-          navigate('/set-password', { replace: true });
-        } else {
-          navigate('/dashboard', { replace: true });
-        }
-      } else {
-        navigate('/', { replace: true });
-      }
-    });
-  }, [navigate]);
-
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontFamily: 'Inter, sans-serif', color: '#64748b' }}>
-      Setting up your account…
-    </div>
-  );
-}
-
 function App() {
   const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    // Restore session on page load (handles returning users and invite links)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        const role = session.user?.user_metadata?.role || 'client';
-        sessionStorage.setItem('auth', JSON.stringify({ role, email: session.user.email }));
-      }
-      setAuthReady(true);
-    }).catch(() => setAuthReady(true));
-
-    // Keep sessionStorage in sync with Supabase auth state
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        const role = session.user?.user_metadata?.role || 'client';
-        sessionStorage.setItem('auth', JSON.stringify({ role, email: session.user.email }));
-      } else if (event === 'SIGNED_OUT') {
-        sessionStorage.removeItem('auth');
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    // Restore session on page load from JWT stored in localStorage
+    const user = getAuthUser();
+    if (user) {
+      sessionStorage.setItem('auth', JSON.stringify({ role: user.role, email: user.email }));
+    }
+    setAuthReady(true);
   }, []);
 
   // Wait until we've checked session before rendering routes
@@ -113,7 +66,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<MainSite />} />
-      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/auth/callback" element={<Navigate to="/" replace />} />
       <Route path="/admin" element={
         <ProtectedRoute requiredRole="admin"><AdminDashboard userRole="admin" /></ProtectedRoute>
       } />

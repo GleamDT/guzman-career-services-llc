@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
-import { supabase } from '../lib/supabase';
+import { getAuthUser, clearToken } from '../lib/auth';
 import { authFetch } from '../lib/authFetch';
 import { downloadInvoicePDF } from '../lib/invoicePDF';
 import { TERMS_VERSION } from '../lib/legalContent';
@@ -387,27 +387,28 @@ function ClientDashboard() {
 
     const loadData = async () => {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
+            const user = getAuthUser();
             if (!user) return;
 
             // Fetch client profile + invoices in parallel
             const [profileRes, invoicesRes] = await Promise.all([
-                supabase.from('clients').select('*').eq('id', user.id).single(),
-                supabase.from('invoices').select('*').eq('client_id', user.id).order('created_at', { ascending: false }),
+                authFetch('/api/clients/me'),
+                authFetch('/api/clients/me/invoices'),
             ]);
 
-            if (profileRes.data) {
-                setClient(profileRes.data);
-                // Check if user needs to accept updated terms
-                if (profileRes.data.tc_accepted_version !== TERMS_VERSION) {
+            const profileData = await profileRes.json();
+            const invoicesData = await invoicesRes.json();
+
+            if (profileData.client) {
+                setClient(profileData.client);
+                if (profileData.client.tc_accepted_version !== TERMS_VERSION) {
                     setShowTermsModal(true);
                 }
+                if (!profileData.client.has_logged_in) {
+                    authFetch(`/api/clients/${profileData.client.id}/mark-logged-in`, { method: 'PATCH' }).catch(() => {});
+                }
             }
-            if (invoicesRes.data) setInvoices(invoicesRes.data);
-
-            if (profileRes.data && !profileRes.data.has_logged_in) {
-                authFetch(`/api/clients/${user.id}/mark-logged-in`, { method: 'PATCH' }).catch(() => {});
-            }
+            if (invoicesData.invoices) setInvoices(invoicesData.invoices);
         } catch (err) {
             console.error('Dashboard load error:', err);
         } finally {
@@ -431,15 +432,13 @@ function ClientDashboard() {
         }
     };
 
-    const handleDeclineTerms = async () => {
-        await supabase.auth.signOut({ scope: 'global' });
-        sessionStorage.removeItem('auth');
+    const handleDeclineTerms = () => {
+        clearToken();
         navigate('/');
     };
 
-    const handleLogout = async () => {
-        await supabase.auth.signOut({ scope: 'global' });
-        sessionStorage.removeItem('auth');
+    const handleLogout = () => {
+        clearToken();
         navigate('/');
     };
 
