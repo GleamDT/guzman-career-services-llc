@@ -979,6 +979,33 @@ app.delete('/api/intake/:id', requireAdmin, async (req, res) => {
     }
 });
 
+// DELETE /api/clients/:id — delete a client account and all associated data
+app.delete('/api/clients/:id', requireAdmin, async (req, res) => {
+    try {
+        const clientRes = await pool.query('SELECT * FROM clients WHERE id = $1', [req.params.id]);
+        if (!clientRes.rows[0]) return res.status(404).json({ error: 'Client not found.' });
+        const client = clientRes.rows[0];
+
+        // Delete all resume files from storage
+        const resumeRecords = await pool.query('SELECT resume_path FROM client_resumes WHERE client_id = $1', [req.params.id]);
+        for (const row of resumeRecords.rows) {
+            if (row.resume_path) await deleteFile(row.resume_path).catch(() => {});
+        }
+        if (client.resume_path) await deleteFile(client.resume_path).catch(() => {});
+
+        // Delete associated records
+        await pool.query('DELETE FROM client_resumes WHERE client_id = $1', [req.params.id]);
+        await pool.query('DELETE FROM invoices WHERE client_id = $1', [req.params.id]);
+        await pool.query('DELETE FROM clients WHERE id = $1', [req.params.id]);
+        await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('[DELETE /api/clients/:id]', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // DELETE /api/invoices/:id — delete an invoice
 app.delete('/api/invoices/:id', requireAdmin, async (req, res) => {
     try {

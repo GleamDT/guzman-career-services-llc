@@ -290,9 +290,25 @@ function ClientDetailsModal({ client, onClose, onClientUpdated }) {
 }
 
 // ─── Clients Section ──────────────────────────────────────────────────────────
-function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice, onClientUpdated, isStaff = false }) {
+function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice, onClientUpdated, onClientDeleted, isStaff = false }) {
     const [filter, setFilter] = useState('All');
     const [selectedClient, setSelectedClient] = useState(null);
+    const [pendingDeleteClient, setPendingDeleteClient] = useState(null);
+    const [deleting, setDeleting] = useState(false);
+
+    const handleDeleteClient = async () => {
+        if (!pendingDeleteClient) return;
+        setDeleting(true);
+        try {
+            const res = await authFetch(`/api/clients/${pendingDeleteClient.id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            onClientDeleted(pendingDeleteClient.id);
+            setPendingDeleteClient(null);
+        } catch (err) {
+            alert('Error: ' + err.message);
+        } finally { setDeleting(false); }
+    };
 
     const filtered = filter === 'All' ? clients : clients.filter(c => c.status === filter);
     const { page, setPage, pageCount, paged } = usePagination(filtered);
@@ -381,6 +397,17 @@ function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice, onC
                                             >
                                                 Details
                                             </button>
+                                            {!isStaff && (
+                                                <button
+                                                    className="ads-action-btn ads-action-btn--del"
+                                                    title="Delete Client"
+                                                    onClick={() => setPendingDeleteClient(client)}
+                                                >
+                                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                                                    </svg>
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -390,6 +417,23 @@ function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice, onC
                 </div>
                 <Paginator page={page} pageCount={pageCount} total={filtered.length} setPage={setPage} />
             </div>
+
+            {pendingDeleteClient && (
+                <div className="idm-confirm-overlay" onClick={() => setPendingDeleteClient(null)}>
+                    <div className="idm-confirm-box" onClick={e => e.stopPropagation()}>
+                        <h4 className="idm-confirm-title">Delete {pendingDeleteClient.full_name}?</h4>
+                        <p className="idm-confirm-warn">
+                            This will permanently delete the client account, all their invoices, and all associated resume files. This action cannot be undone.
+                        </p>
+                        <div className="idm-confirm-actions">
+                            <button className="idm-btn-secondary" onClick={() => setPendingDeleteClient(null)} disabled={deleting}>Cancel</button>
+                            <button className="idm-btn-delete" onClick={handleDeleteClient} disabled={deleting}>
+                                {deleting ? 'Deleting…' : 'Yes, Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <ClientDetailsModal
                 client={selectedClient}
@@ -1198,6 +1242,12 @@ function AdminDashboard({ userRole = 'admin' }) {
         setClients(prev => prev.map(c => c.id === updatedClient.id ? updatedClient : c));
     };
 
+    const handleClientDeleted = (clientId) => {
+        setClients(prev => prev.filter(c => c.id !== clientId));
+        setStats(prev => ({ ...prev, totalClients: Math.max(0, prev.totalClients - 1) }));
+        showToast('Client deleted.');
+    };
+
     const openInvoiceModal = (client) => {
         setSelectedClient(client);
         setShowCreateInvoice(true);
@@ -1297,6 +1347,7 @@ function AdminDashboard({ userRole = 'admin' }) {
                             onCreateClient={() => setShowCreateClient(true)}
                             onCreateInvoice={openInvoiceModal}
                             onClientUpdated={handleClientUpdated}
+                            onClientDeleted={handleClientDeleted}
                             isStaff={isStaff}
                         />
                     )}
