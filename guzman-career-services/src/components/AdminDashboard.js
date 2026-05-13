@@ -55,7 +55,7 @@ function DashboardSection({ stats, onCreateClient, onCreateStaff, onNavigate }) 
     useEffect(() => {
         authFetch('/api/activity')
             .then(r => r.json())
-            .then(d => setActivity(d))
+            .then(d => { if (Array.isArray(d.recentClients)) setActivity(d); })
             .catch(() => {});
     }, []);
 
@@ -111,9 +111,9 @@ function DashboardSection({ stats, onCreateClient, onCreateStaff, onNavigate }) 
                         <h3>Recently Added Clients</h3>
                         <button className="ads-view-all" onClick={() => onNavigate('clients')}>View all</button>
                     </div>
-                    {activity.recentClients.length === 0
+                    {(activity.recentClients || []).length === 0
                         ? <p className="ads-empty">No clients yet.</p>
-                        : activity.recentClients.map(c => (
+                        : (activity.recentClients || []).map(c => (
                             <div key={c.id} className="ads-activity-item">
                                 <div className="ads-activity-avatar" style={{ background: getAvatarColor(c.full_name) }}>
                                     {getInitials(c.full_name)}
@@ -136,9 +136,9 @@ function DashboardSection({ stats, onCreateClient, onCreateStaff, onNavigate }) 
                         <h3>Recent Invoices</h3>
                         <button className="ads-view-all" onClick={() => onNavigate('invoices')}>View all</button>
                     </div>
-                    {activity.recentInvoices.length === 0
+                    {(activity.recentInvoices || []).length === 0
                         ? <p className="ads-empty">No invoices yet.</p>
-                        : activity.recentInvoices.map(inv => (
+                        : (activity.recentInvoices || []).map(inv => (
                             <div key={inv.id} className="ads-activity-item">
                                 <div className="ads-inv-num">#{inv.invoice_number}</div>
                                 <div className="ads-activity-info">
@@ -160,9 +160,98 @@ function DashboardSection({ stats, onCreateClient, onCreateStaff, onNavigate }) 
     );
 }
 
+// ─── Client Details Modal ─────────────────────────────────────────────────────
+function ClientDetailsModal({ client, onClose, onClientUpdated }) {
+    const [loading, setLoading] = useState(false);
+
+    if (!client) return null;
+
+    const handleHibernate = async () => {
+        setLoading(true);
+        try {
+            const res = await authFetch(`/api/clients/${client.id}/hibernate`, { method: 'PATCH' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            onClientUpdated(data.client);
+        } catch (err) {
+            alert('Error: ' + err.message);
+        } finally { setLoading(false); }
+    };
+
+    const handleUnhibernate = async () => {
+        setLoading(true);
+        try {
+            const res = await authFetch(`/api/clients/${client.id}/unhibernate`, { method: 'PATCH' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            onClientUpdated(data.client);
+        } catch (err) {
+            alert('Error: ' + err.message);
+        } finally { setLoading(false); }
+    };
+
+    return (
+        <div className="idm-overlay" onClick={onClose}>
+            <div className="idm-modal" onClick={e => e.stopPropagation()}>
+                <div className="idm-header">
+                    <div>
+                        <h2>{client.full_name}</h2>
+                        <p>Client since {fmtDate(client.created_at)}</p>
+                    </div>
+                    <div className="idm-header-right">
+                        {client.hibernated
+                            ? <span className="idm-status-badge" style={{ background: '#fef3c7', color: '#92400e' }}>Hibernated</span>
+                            : <span className={`idm-status-badge idm-status--${(client.status || 'pending').toLowerCase()}`}>{client.status}</span>
+                        }
+                        <button className="idm-close" onClick={onClose}>✕</button>
+                    </div>
+                </div>
+
+                <div className="idm-body">
+                    <div className="idm-section-title">Contact</div>
+                    <div className="idm-row"><span className="idm-label">Email</span><span className="idm-value">{client.email}</span></div>
+                    <div className="idm-row"><span className="idm-label">Phone</span><span className="idm-value">{client.phone || '—'}</span></div>
+
+                    <div className="idm-section-title">Account</div>
+                    <div className="idm-row"><span className="idm-label">Status</span><span className="idm-value">{client.status}</span></div>
+                    <div className="idm-row"><span className="idm-label">Has Logged In</span><span className="idm-value">{client.has_logged_in ? 'Yes' : 'No'}</span></div>
+                    <div className="idm-row"><span className="idm-label">Service</span><span className="idm-value">{client.initial_service || '—'}</span></div>
+                    <div className="idm-row"><span className="idm-label">T&amp;C Accepted</span><span className="idm-value">{client.tc_accepted_at ? fmtDate(client.tc_accepted_at) : 'Not yet'}</span></div>
+
+                    {client.resume_filename && (
+                        <>
+                            <div className="idm-section-title">Resume</div>
+                            <div className="idm-row"><span className="idm-label">File</span><span className="idm-value">{client.resume_filename}</span></div>
+                            <div className="idm-row"><span className="idm-label">Uploaded</span><span className="idm-value">{fmtDate(client.resume_uploaded_at)}</span></div>
+                        </>
+                    )}
+                </div>
+
+                <div className="idm-footer" style={{ gap: '0.75rem' }}>
+                    {client.hibernated ? (
+                        <button className="idm-btn-primary" onClick={handleUnhibernate} disabled={loading}>
+                            {loading ? 'Updating…' : '▶ Unhibernate Account'}
+                        </button>
+                    ) : (
+                        <button
+                            className="idm-btn-secondary"
+                            style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }}
+                            onClick={handleHibernate}
+                            disabled={loading}
+                        >
+                            {loading ? 'Updating…' : '⏸ Hibernate Account'}
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ─── Clients Section ──────────────────────────────────────────────────────────
-function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice, isStaff = false }) {
+function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice, onClientUpdated, isStaff = false }) {
     const [filter, setFilter] = useState('All');
+    const [selectedClient, setSelectedClient] = useState(null);
 
     const filtered = filter === 'All' ? clients : clients.filter(c => c.status === filter);
 
@@ -242,6 +331,13 @@ function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice, isS
                                                     </svg>
                                                 </button>
                                             )}
+                                            <button
+                                                className="ads-action-btn ads-action-btn--dl"
+                                                title="View Details"
+                                                onClick={() => setSelectedClient(client)}
+                                            >
+                                                Details
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -253,16 +349,24 @@ function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice, isS
                     <span>Showing {filtered.length} of {clients.length} clients</span>
                 </div>
             </div>
+
+            <ClientDetailsModal
+                client={selectedClient}
+                onClose={() => setSelectedClient(null)}
+                onClientUpdated={(updated) => { onClientUpdated(updated); setSelectedClient(updated); }}
+            />
         </div>
     );
 }
 
 // ─── Invoices Section ─────────────────────────────────────────────────────────
 function InvoicesSection({ onShowToast }) {
-    const [invoices, setInvoices]   = useState([]);
-    const [loading, setLoading]     = useState(true);
-    const [filter, setFilter]       = useState('All');
-    const [markingId, setMarkingId] = useState(null);
+    const [invoices, setInvoices]             = useState([]);
+    const [loading, setLoading]               = useState(true);
+    const [filter, setFilter]                 = useState('All');
+    const [markingId, setMarkingId]           = useState(null);
+    const [pendingDeleteInv, setPendingDeleteInv] = useState(null);
+    const [deleting, setDeleting]             = useState(false);
 
     const fetchInvoices = useCallback(async () => {
         try {
@@ -285,6 +389,21 @@ function InvoicesSection({ onShowToast }) {
         } catch (err) {
             onShowToast(`Error: ${err.message}`);
         } finally { setMarkingId(null); }
+    };
+
+    const handleDeleteInvoice = async () => {
+        if (!pendingDeleteInv) return;
+        setDeleting(true);
+        try {
+            const res  = await authFetch(`/api/invoices/${pendingDeleteInv.id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            setInvoices(prev => prev.filter(i => i.id !== pendingDeleteInv.id));
+            setPendingDeleteInv(null);
+            onShowToast('Invoice deleted.');
+        } catch (err) {
+            onShowToast(`Error: ${err.message}`);
+        } finally { setDeleting(false); }
     };
 
     const filtered = filter === 'All' ? invoices : invoices.filter(i => i.status === filter);
@@ -394,6 +513,15 @@ function InvoicesSection({ onShowToast }) {
                                                 </svg>
                                                 PDF
                                             </button>
+                                            <button
+                                                className="ads-action-btn ads-action-btn--del"
+                                                onClick={() => setPendingDeleteInv(inv)}
+                                                title="Delete Invoice"
+                                            >
+                                                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                                                </svg>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -405,6 +533,27 @@ function InvoicesSection({ onShowToast }) {
                     <span>Showing {filtered.length} of {invoices.length} invoices</span>
                 </div>
             </div>
+
+            {pendingDeleteInv && (
+                <div className="idm-confirm-overlay" onClick={() => setPendingDeleteInv(null)}>
+                    <div className="idm-confirm-box" onClick={e => e.stopPropagation()}>
+                        <h4 className="idm-confirm-title">Delete Invoice #{pendingDeleteInv.invoice_number}?</h4>
+                        {pendingDeleteInv.status === 'Paid' ? (
+                            <p className="idm-confirm-warn">
+                                Warning: This invoice has already been marked as paid. Deleting it will permanently remove all payment records associated with it.
+                            </p>
+                        ) : (
+                            <p className="idm-confirm-body">This action cannot be undone.</p>
+                        )}
+                        <div className="idm-confirm-actions">
+                            <button className="idm-btn-secondary" onClick={() => setPendingDeleteInv(null)} disabled={deleting}>Cancel</button>
+                            <button className="idm-btn-delete" onClick={handleDeleteInvoice} disabled={deleting}>
+                                {deleting ? 'Deleting…' : 'Yes, Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -654,10 +803,29 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast, isStaff = fals
 }
 
 // ─── Intake Details Modal ─────────────────────────────────────────────────────
-function IntakeDetailsModal({ submission, onClose, onCreateAccount }) {
+function IntakeDetailsModal({ submission, onClose, onCreateAccount, onDeleted }) {
     const [resumeLoading, setResumeLoading] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleteFile, setDeleteFile] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
-    if (!submission) return null;
+    const handleDelete = async () => {
+        if (!submission) return;
+        setDeleting(true);
+        try {
+            const res = await authFetch(`/api/intake/${submission.id}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deleteFile }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            onDeleted(submission.id);
+            onClose();
+        } catch (err) {
+            alert('Error: ' + err.message);
+        } finally { setDeleting(false); }
+    };
 
     const row = (label, value) => value ? (
         <div className="idm-row">
@@ -754,11 +922,43 @@ function IntakeDetailsModal({ submission, onClose, onCreateAccount }) {
                     )}
                 </div>
 
-                {submission.status === 'pending' && (
-                    <div className="idm-footer">
+                <div className="idm-footer" style={{ justifyContent: 'space-between' }}>
+                    <button
+                        className="idm-btn-delete"
+                        onClick={() => setShowDeleteConfirm(true)}
+                        disabled={deleting}
+                    >
+                        🗑 Delete Intake
+                    </button>
+                    {submission.status === 'pending' && (
                         <button className="idm-btn-primary" onClick={() => { onClose(); onCreateAccount(submission); }}>
                             Create Client Account
                         </button>
+                    )}
+                </div>
+
+                {showDeleteConfirm && (
+                    <div className="idm-confirm-overlay" onClick={() => setShowDeleteConfirm(false)}>
+                        <div className="idm-confirm-box" onClick={e => e.stopPropagation()}>
+                            <h4 className="idm-confirm-title">Delete this intake?</h4>
+                            <p className="idm-confirm-body">This action cannot be undone.</p>
+                            {submission.resume_path && (
+                                <label className="idm-confirm-check">
+                                    <input
+                                        type="checkbox"
+                                        checked={deleteFile}
+                                        onChange={e => setDeleteFile(e.target.checked)}
+                                    />
+                                    Also delete the attached resume file from storage
+                                </label>
+                            )}
+                            <div className="idm-confirm-actions">
+                                <button className="idm-btn-secondary" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>Cancel</button>
+                                <button className="idm-btn-delete" onClick={handleDelete} disabled={deleting}>
+                                    {deleting ? 'Deleting…' : 'Yes, Delete'}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
@@ -879,6 +1079,7 @@ function IntakeSection({ onCreateAccount }) {
                 submission={selected}
                 onClose={() => setSelected(null)}
                 onCreateAccount={(sub) => { setSelected(null); onCreateAccount(sub); }}
+                onDeleted={(id) => { setSubmissions(prev => prev.filter(s => s.id !== id)); }}
             />
         </div>
     );
@@ -915,7 +1116,7 @@ function AdminDashboard({ userRole = 'admin' }) {
         try {
             const res  = await authFetch('/api/stats');
             const data = await res.json();
-            setStats(data);
+            if (res.ok) setStats(data);
         } catch { /* ignore */ }
     };
 
@@ -945,6 +1146,10 @@ function AdminDashboard({ userRole = 'admin' }) {
     };
 
     const handleResumeUploaded = (updatedClient) => {
+        setClients(prev => prev.map(c => c.id === updatedClient.id ? updatedClient : c));
+    };
+
+    const handleClientUpdated = (updatedClient) => {
         setClients(prev => prev.map(c => c.id === updatedClient.id ? updatedClient : c));
     };
 
@@ -1046,6 +1251,7 @@ function AdminDashboard({ userRole = 'admin' }) {
                             loading={loadingClients}
                             onCreateClient={() => setShowCreateClient(true)}
                             onCreateInvoice={openInvoiceModal}
+                            onClientUpdated={handleClientUpdated}
                             isStaff={isStaff}
                         />
                     )}

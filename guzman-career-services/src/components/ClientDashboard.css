@@ -1343,3 +1343,57 @@
     text-decoration: underline;
     word-break: break-all;
 }
+
+/* ─── Hibernate Overlay ─────────────────────────────────────────────────────── */
+.cd-hibernate-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+.cd-hibernate-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    max-width: 440px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+.cd-hibernate-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #fef3c7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem;
+    font-size: 2rem;
+}
+.cd-hibernate-title {
+    margin: 0 0 0.75rem;
+    font-size: 1.25rem;
+    color: #0f172a;
+    font-weight: 700;
+}
+.cd-hibernate-body {
+    margin: 0 0 1.5rem;
+    font-size: 0.95rem;
+    color: #64748b;
+    line-height: 1.6;
+}
+.cd-hibernate-footer {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+.cd-hibernate-footer a {
+    color: #2563eb;
+    text-decoration: none;
+}

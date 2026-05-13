@@ -449,11 +449,31 @@ function ClientDashboard() {
     return (
         <div className="cd-layout">
             {showTermsModal && (
-                <TermsAcceptanceModal 
+                <TermsAcceptanceModal
                     onAccept={handleAcceptTerms}
                     onDecline={handleDeclineTerms}
                 />
             )}
+
+            {client.hibernated && (
+                <div className="cd-hibernate-overlay">
+                    <div className="cd-hibernate-card">
+                        <div className="cd-hibernate-icon">⏸️</div>
+                        <h2 className="cd-hibernate-title">Account Hibernated</h2>
+                        <p className="cd-hibernate-body">
+                            Your account has been temporarily hibernated. You cannot perform any actions at this time.
+                            Please contact our team via the chat box on this page and we will get back to you as soon as possible.
+                        </p>
+                        <p className="cd-hibernate-footer">
+                            You may also reach us at{' '}
+                            <a href="mailto:support@guzmancareerservices.com">
+                                support@guzmancareerservices.com
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {sidebarOpen && <div className="cd-sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
 
             {/* Sidebar */}

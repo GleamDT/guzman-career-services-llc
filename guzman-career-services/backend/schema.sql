@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS clients (
     resume_path TEXT,
     resume_filename TEXT,
     resume_uploaded_at TIMESTAMPTZ,
+    hibernated BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

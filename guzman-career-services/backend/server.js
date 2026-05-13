@@ -8,7 +8,7 @@ const jwt        = require('jsonwebtoken');
 const bcrypt     = require('bcryptjs');
 const crypto     = require('crypto');
 const { pool }   = require('./db');
-const { uploadFile, getSignedDownloadUrl } = require('./r2');
+const { uploadFile, getSignedDownloadUrl, deleteFile } = require('./r2');
 
 const app = express();
 const allowedOrigins = ['http://localhost:3000', process.env.SITE_URL].filter(Boolean);
@@ -636,6 +636,36 @@ app.patch('/api/clients/:id/status', requireAdmin, async (req, res) => {
     }
 });
 
+// PATCH /api/clients/:id/hibernate
+app.patch('/api/clients/:id/hibernate', requireAdmin, async (req, res) => {
+    try {
+        const result = await pool.query(
+            `UPDATE clients SET hibernated = true WHERE id = $1 RETURNING *`,
+            [req.params.id]
+        );
+        if (!result.rows[0]) return res.status(404).json({ error: 'Client not found.' });
+        res.json({ client: result.rows[0] });
+    } catch (error) {
+        console.error('[PATCH /api/clients/:id/hibernate]', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// PATCH /api/clients/:id/unhibernate
+app.patch('/api/clients/:id/unhibernate', requireAdmin, async (req, res) => {
+    try {
+        const result = await pool.query(
+            `UPDATE clients SET hibernated = false WHERE id = $1 RETURNING *`,
+            [req.params.id]
+        );
+        if (!result.rows[0]) return res.status(404).json({ error: 'Client not found.' });
+        res.json({ client: result.rows[0] });
+    } catch (error) {
+        console.error('[PATCH /api/clients/:id/unhibernate]', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ─── STAFF ───────────────────────────────────────────────────────────────────
 
 // POST /api/staff — create staff account and send invite
@@ -928,6 +958,35 @@ app.get('/api/intakes', requireAdmin, async (_req, res) => {
         res.json({ submissions: result.rows });
     } catch (error) {
         console.error('[GET /api/intakes]', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// DELETE /api/intake/:id — delete an intake submission (optionally its file)
+app.delete('/api/intake/:id', requireAdmin, async (req, res) => {
+    try {
+        const { deleteFile: shouldDeleteFile } = req.body;
+        const intake = await pool.query('SELECT * FROM intake_submissions WHERE id = $1', [req.params.id]);
+        if (!intake.rows[0]) return res.status(404).json({ error: 'Intake not found.' });
+        if (shouldDeleteFile && intake.rows[0].resume_path) {
+            await deleteFile(intake.rows[0].resume_path);
+        }
+        await pool.query('DELETE FROM intake_submissions WHERE id = $1', [req.params.id]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('[DELETE /api/intake/:id]', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// DELETE /api/invoices/:id — delete an invoice
+app.delete('/api/invoices/:id', requireAdmin, async (req, res) => {
+    try {
+        const result = await pool.query('DELETE FROM invoices WHERE id = $1 RETURNING *', [req.params.id]);
+        if (!result.rows[0]) return res.status(404).json({ error: 'Invoice not found.' });
+        res.json({ success: true });
+    } catch (error) {
+        console.error('[DELETE /api/invoices/:id]', error.message);
         res.status(500).json({ error: error.message });
     }
 });

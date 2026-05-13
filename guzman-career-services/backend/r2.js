@@ -30,4 +30,12 @@ async function getSignedDownloadUrl(key, expiresIn = 300) {
     });
 }
 
-module.exports = { uploadFile, getSignedDownloadUrl };
+async function deleteFile(key) {
+    try {
+        await cloudinary.uploader.destroy(key, { resource_type: 'raw' });
+    } catch (err) {
+        console.error('[deleteFile] Cloudinary delete failed:', err.message);
+    }
+}
+
+module.exports = { uploadFile, getSignedDownloadUrl, deleteFile };
