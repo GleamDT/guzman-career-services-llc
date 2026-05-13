@@ -848,6 +848,8 @@ function IntakeDetailsModal({ submission, onClose, onCreateAccount, onDeleted })
         }
     };
 
+    if (!submission) return null;
+
     return (
         <div className="idm-overlay" onClick={onClose}>
             <div className="idm-modal" onClick={e => e.stopPropagation()}>
