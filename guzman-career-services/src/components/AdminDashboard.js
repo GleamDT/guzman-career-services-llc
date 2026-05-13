@@ -25,6 +25,47 @@ function fmtMoney(n) {
     return `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 }
 
+const PAGE_SIZE = 10;
+
+function usePagination(items) {
+    const [page, setPage] = useState(1);
+    const pageCount = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+    const safePage = Math.min(page, pageCount);
+    const paged = items.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+    return { page: safePage, setPage, pageCount, paged };
+}
+
+function Paginator({ page, pageCount, total, setPage }) {
+    const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+    const to = Math.min(page * PAGE_SIZE, total);
+
+    const left = Math.max(1, page - 2);
+    const right = Math.min(pageCount, page + 2);
+    const pages = [];
+    for (let i = left; i <= right; i++) pages.push(i);
+
+    return (
+        <div className="admin-pagination">
+            <span>Showing {from}{total > 0 ? `–${to}` : ''} of {total}</span>
+            {pageCount > 1 && (
+                <div className="admin-pagination-controls">
+                    <button className="admin-page-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>
+                    </button>
+                    {left > 1 && <><button className="admin-page-num" onClick={() => setPage(1)}>1</button>{left > 2 && <span style={{ color: '#94a3b8', padding: '0 2px' }}>…</span>}</>}
+                    {pages.map(p => (
+                        <button key={p} className={`admin-page-num${p === page ? ' admin-page-num--active' : ''}`} onClick={() => setPage(p)}>{p}</button>
+                    ))}
+                    {right < pageCount && <>{right < pageCount - 1 && <span style={{ color: '#94a3b8', padding: '0 2px' }}>…</span>}<button className="admin-page-num" onClick={() => setPage(pageCount)}>{pageCount}</button></>}
+                    <button className="admin-page-btn" onClick={() => setPage(p => Math.min(pageCount, p + 1))} disabled={page === pageCount}>
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
+
 const NAV_ITEMS = [
     {
         key: 'dashboard', label: 'Dashboard',
@@ -254,6 +295,8 @@ function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice, onC
     const [selectedClient, setSelectedClient] = useState(null);
 
     const filtered = filter === 'All' ? clients : clients.filter(c => c.status === filter);
+    const { page, setPage, pageCount, paged } = usePagination(filtered);
+    useEffect(() => setPage(1), [filter, setPage]);
 
     return (
         <div className="ads-section">
@@ -299,7 +342,7 @@ function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice, onC
                                 <tr><td colSpan={isStaff ? 5 : 7} className="ads-table-msg">Loading clients…</td></tr>
                             ) : filtered.length === 0 ? (
                                 <tr><td colSpan={isStaff ? 5 : 7} className="ads-table-msg">No clients found.</td></tr>
-                            ) : filtered.map(client => (
+                            ) : paged.map(client => (
                                 <tr key={client.id}>
                                     <td>
                                         <div className="admin-client-name">
@@ -345,9 +388,7 @@ function ClientsSection({ clients, loading, onCreateClient, onCreateInvoice, onC
                         </tbody>
                     </table>
                 </div>
-                <div className="admin-pagination">
-                    <span>Showing {filtered.length} of {clients.length} clients</span>
-                </div>
+                <Paginator page={page} pageCount={pageCount} total={filtered.length} setPage={setPage} />
             </div>
 
             <ClientDetailsModal
@@ -407,6 +448,8 @@ function InvoicesSection({ onShowToast }) {
     };
 
     const filtered = filter === 'All' ? invoices : invoices.filter(i => i.status === filter);
+    const { page, setPage, pageCount, paged } = usePagination(filtered);
+    useEffect(() => setPage(1), [filter, setPage]);
     const totalAll     = invoices.reduce((s, i) => s + parseFloat(i.amount || 0), 0);
     const totalPaid    = invoices.filter(i => i.status === 'Paid').reduce((s, i) => s + parseFloat(i.amount || 0), 0);
     const totalPending = invoices.filter(i => i.status === 'Pending').reduce((s, i) => s + parseFloat(i.amount || 0), 0);
@@ -461,7 +504,7 @@ function InvoicesSection({ onShowToast }) {
                                 <tr><td colSpan="7" className="ads-table-msg">Loading invoices…</td></tr>
                             ) : filtered.length === 0 ? (
                                 <tr><td colSpan="7" className="ads-table-msg">No invoices found.</td></tr>
-                            ) : filtered.map(inv => (
+                            ) : paged.map(inv => (
                                 <tr key={inv.id}>
                                     <td className="ads-inv-id">#{inv.invoice_number}</td>
                                     <td>
@@ -529,9 +572,7 @@ function InvoicesSection({ onShowToast }) {
                         </tbody>
                     </table>
                 </div>
-                <div className="admin-pagination">
-                    <span>Showing {filtered.length} of {invoices.length} invoices</span>
-                </div>
+                <Paginator page={page} pageCount={pageCount} total={filtered.length} setPage={setPage} />
             </div>
 
             {pendingDeleteInv && (
@@ -560,6 +601,7 @@ function InvoicesSection({ onShowToast }) {
 
 // ─── Resumes Section ──────────────────────────────────────────────────────────
 function ResumesSection({ clients, onResumeUploaded, onShowToast, isStaff = false }) {
+    const { page, setPage, pageCount, paged: pagedClients } = usePagination(clients);
     const [uploadingId, setUploadingId]   = useState(null);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadModal, setUploadModal]   = useState(null); // { clientId, clientName }
@@ -744,7 +786,7 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast, isStaff = fals
                         <tbody>
                             {clients.length === 0 ? (
                                 <tr><td colSpan={isStaff ? 5 : 6} className="ads-table-msg">No clients yet.</td></tr>
-                            ) : clients.map(client => {
+                            ) : pagedClients.map(client => {
                                 const hasResume = !!client.resume_path;
                                 return (
                                     <tr key={client.id}>
@@ -797,6 +839,7 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast, isStaff = fals
                         </tbody>
                     </table>
                 </div>
+                <Paginator page={page} pageCount={pageCount} total={clients.length} setPage={setPage} />
             </div>
         </div>
     );
@@ -986,6 +1029,8 @@ function IntakeSection({ onCreateAccount }) {
     const filtered = filter === 'All'
         ? submissions
         : submissions.filter(s => s.status === filter.toLowerCase());
+    const { page, setPage, pageCount, paged } = usePagination(filtered);
+    useEffect(() => setPage(1), [filter, setPage]);
 
     return (
         <div className="ads-section">
@@ -1029,7 +1074,7 @@ function IntakeSection({ onCreateAccount }) {
                                 <tr><td colSpan="6" className="ads-table-msg">Loading submissions…</td></tr>
                             ) : filtered.length === 0 ? (
                                 <tr><td colSpan="6" className="ads-table-msg">No submissions found.</td></tr>
-                            ) : filtered.map(s => (
+                            ) : paged.map(s => (
                                 <tr key={s.id}>
                                     <td>
                                         <div className="admin-client-name">
@@ -1072,9 +1117,7 @@ function IntakeSection({ onCreateAccount }) {
                         </tbody>
                     </table>
                 </div>
-                <div className="admin-pagination">
-                    <span>Showing {filtered.length} of {submissions.length} submissions</span>
-                </div>
+                <Paginator page={page} pageCount={pageCount} total={filtered.length} setPage={setPage} />
             </div>
 
             <IntakeDetailsModal
