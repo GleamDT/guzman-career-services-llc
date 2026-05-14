@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { authFetch } from '../lib/authFetch';
 import './CreateClientModal.css';
 
 function CreateStaffModal({ isOpen, onClose, onStaffCreated }) {
-    const [formData, setFormData] = useState({ fullName: '', email: '' });
+    const [formData, setFormData] = useState({ fullName: '', email: '', password: '', confirm: '' });
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -17,6 +18,14 @@ function CreateStaffModal({ isOpen, onClose, onStaffCreated }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (formData.password.length < 8) {
+            setError('Password must be at least 8 characters.');
+            return;
+        }
+        if (formData.password !== formData.confirm) {
+            setError('Passwords do not match.');
+            return;
+        }
         setLoading(true);
         setError('');
 
@@ -24,7 +33,11 @@ function CreateStaffModal({ isOpen, onClose, onStaffCreated }) {
             const res = await authFetch('/api/staff', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fullName: formData.fullName, email: formData.email }),
+                body: JSON.stringify({
+                    fullName: formData.fullName,
+                    email: formData.email,
+                    password: formData.password,
+                }),
             });
 
             const data = await res.json();
@@ -40,7 +53,7 @@ function CreateStaffModal({ isOpen, onClose, onStaffCreated }) {
     };
 
     const handleClose = () => {
-        setFormData({ fullName: '', email: '' });
+        setFormData({ fullName: '', email: '', password: '', confirm: '' });
         setError('');
         onClose();
     };
@@ -89,14 +102,60 @@ function CreateStaffModal({ isOpen, onClose, onStaffCreated }) {
                                 required
                             />
                         </div>
+
+                        <div className="ccm-field ccm-field--full">
+                            <label htmlFor="csm-password">Password</label>
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    id="csm-password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    placeholder="At least 8 characters"
+                                    autoComplete="new-password"
+                                    required
+                                    style={{ paddingRight: '2.5rem' }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(v => !v)}
+                                    aria-label="Toggle password visibility"
+                                    style={{
+                                        position: 'absolute', right: '0.6rem', top: '50%',
+                                        transform: 'translateY(-50%)', background: 'none',
+                                        border: 'none', cursor: 'pointer', color: '#64748b',
+                                        display: 'flex', alignItems: 'center',
+                                    }}
+                                >
+                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                                        {showPassword ? 'visibility_off' : 'visibility'}
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="ccm-field ccm-field--full">
+                            <label htmlFor="csm-confirm">Confirm Password</label>
+                            <input
+                                id="csm-confirm"
+                                type={showPassword ? 'text' : 'password'}
+                                name="confirm"
+                                value={formData.confirm}
+                                onChange={handleChange}
+                                placeholder="Repeat the password"
+                                autoComplete="new-password"
+                                required
+                            />
+                        </div>
                     </div>
 
                     {/* Info note */}
                     <div className="ccm-email-note">
                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                            <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                         </svg>
-                        <span>A login setup link will be sent to this email. Staff can view clients and upload resumes but cannot create invoices.</span>
+                        <span>Staff can view clients and upload resumes but cannot create invoices. Share these credentials with the staff member securely.</span>
                     </div>
 
                     {error && <p className="ccm-error">{error}</p>}

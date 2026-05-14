@@ -163,6 +163,90 @@ async function sendPortalNotification(toEmail, toName) {
     }
 }
 
+async function sendStaffWelcomeEmail(toEmail, toName, password) {
+    if (!process.env.RESEND_API_KEY) return;
+    try {
+        await resend.emails.send({
+            from: `Guzman Career Services <${emailFrom()}>`,
+            to: toEmail,
+            subject: 'Your Staff Account Has Been Created',
+            html: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
+          <tr>
+            <td style="background:#1d4ed8;padding:30px 40px 26px;">
+              <img src="${siteUrl()}/logo.png" alt="Guzman Career Services" width="160" style="display:block;height:auto;border:0;" />
+              <p style="margin:10px 0 0;font-size:13px;color:#bfdbfe;letter-spacing:0.3px;">
+                Professional Career Coaching &amp; Talent Placement
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 40px 28px;">
+              <h1 style="margin:0 0 10px;font-size:24px;color:#0f172a;font-weight:700;">Welcome to the Team! 🎉</h1>
+              <p style="margin:0 0 18px;font-size:15px;color:#475569;line-height:1.7;">
+                Hello <strong>${toName}</strong>,
+              </p>
+              <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.7;">
+                Your staff account at <strong>Guzman Career Services</strong> has been created.
+                Here are your login credentials:
+              </p>
+              <table cellpadding="0" cellspacing="0" width="100%" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin:0 0 28px;">
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <p style="margin:0 0 10px;font-size:14px;color:#64748b;">
+                      <strong style="color:#0f172a;">Email:</strong>&nbsp;&nbsp;${toEmail}
+                    </p>
+                    <p style="margin:0;font-size:14px;color:#64748b;">
+                      <strong style="color:#0f172a;">Password:</strong>&nbsp;&nbsp;${password}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              <table cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
+                <tr>
+                  <td style="background:#1d4ed8;border-radius:8px;">
+                    <a href="${siteUrl()}"
+                       style="display:inline-block;padding:14px 36px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.3px;">
+                      Log In Now →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0;font-size:13px;color:#94a3b8;">
+                For security, please change your password after your first login.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:24px 40px;text-align:center;">
+              <p style="margin:0 0 6px;font-size:12px;color:#94a3b8;">support@guzmancareerservices.com</p>
+              <p style="margin:12px 0 0;font-size:11px;color:#cbd5e1;line-height:1.6;">
+                You received this because an account was created for you at Guzman Career Services.<br />
+                If this was unexpected, please contact us at the email above.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
+        });
+    } catch (err) {
+        console.error('[sendStaffWelcomeEmail] Email failed:', err.message);
+    }
+}
+
 async function sendInviteEmail(toEmail, toName, inviteLink) {
     if (!process.env.RESEND_API_KEY) return;
     try {
@@ -668,25 +752,79 @@ app.patch('/api/clients/:id/unhibernate', requireAdmin, async (req, res) => {
 
 // ─── STAFF ───────────────────────────────────────────────────────────────────
 
-// POST /api/staff — create staff account and send invite
+// POST /api/staff — create staff account with password set by the admin
 app.post('/api/staff', requireAdmin, async (req, res) => {
-    const { fullName, email } = req.body;
+    const { fullName, email, password } = req.body;
     if (!fullName || !email) return res.status(400).json({ error: 'Full name and email are required.' });
+    if (!password || password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
     try {
-        const inviteToken = crypto.randomBytes(32).toString('hex');
-        const inviteExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        // Give a clear error if the email is already in use
+        const existing = await pool.query('SELECT id, role FROM users WHERE email = $1', [email.toLowerCase().trim()]);
+        if (existing.rows[0]) {
+            const role = existing.rows[0].role;
+            if (role === 'staff') return res.status(400).json({ error: 'A staff account with this email already exists.' });
+            return res.status(400).json({ error: `This email is already registered as a ${role}. Please use a different email address.` });
+        }
+        const passwordHash = await bcrypt.hash(password, 12);
         const userResult = await pool.query(
-            `INSERT INTO users (email, role, full_name, invite_token, invite_token_expires_at)
-             VALUES ($1, 'staff', $2, $3, $4) RETURNING id`,
-            [email.toLowerCase().trim(), fullName, inviteToken, inviteExpiry]
+            `INSERT INTO users (email, role, full_name, password_hash, password_set)
+             VALUES ($1, 'staff', $2, $3, true) RETURNING id`,
+            [email.toLowerCase().trim(), fullName, passwordHash]
         );
         const userId = userResult.rows[0].id;
-        const inviteLink = `${siteUrl()}/set-password?token=${inviteToken}`;
-        sendInviteEmail(email, fullName, inviteLink);
+        // Send welcome email with login credentials
+        sendStaffWelcomeEmail(email, fullName, password);
         res.json({ success: true, user: { id: userId, email, full_name: fullName } });
     } catch (error) {
         console.error('[POST /api/staff]', error.message);
-        res.status(400).json({ error: error.message });
+        res.status(400).json({ error: 'Failed to create staff account. Please try again.' });
+    }
+});
+
+// GET /api/staff — list all staff accounts
+app.get('/api/staff', requireAdmin, async (_req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT id, email, full_name, password_set, created_at FROM users WHERE role = 'staff' ORDER BY created_at DESC`
+        );
+        res.json({ staff: result.rows });
+    } catch (error) {
+        console.error('[GET /api/staff]', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// PATCH /api/staff/:id/reset-password — admin resets a staff member's password
+app.patch('/api/staff/:id/reset-password', requireAdmin, async (req, res) => {
+    const { password } = req.body;
+    if (!password || password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+    try {
+        const staffRes = await pool.query(`SELECT id, email, full_name FROM users WHERE id = $1 AND role = 'staff'`, [req.params.id]);
+        if (!staffRes.rows[0]) return res.status(404).json({ error: 'Staff member not found.' });
+        const { email, full_name } = staffRes.rows[0];
+        const passwordHash = await bcrypt.hash(password, 12);
+        await pool.query(
+            `UPDATE users SET password_hash = $1, password_set = true WHERE id = $2`,
+            [passwordHash, req.params.id]
+        );
+        // Re-send welcome email with new credentials
+        sendStaffWelcomeEmail(email, full_name, password);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('[PATCH /api/staff/:id/reset-password]', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// DELETE /api/staff/:id — remove a staff account
+app.delete('/api/staff/:id', requireAdmin, async (req, res) => {
+    try {
+        const result = await pool.query(`DELETE FROM users WHERE id = $1 AND role = 'staff' RETURNING id`, [req.params.id]);
+        if (!result.rows[0]) return res.status(404).json({ error: 'Staff member not found.' });
+        res.json({ success: true });
+    } catch (error) {
+        console.error('[DELETE /api/staff/:id]', error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 

@@ -87,6 +87,10 @@ const NAV_ITEMS = [
         key: 'resumes', label: 'Resumes',
         icon: <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>,
     },
+    {
+        key: 'staff', label: 'Staff',
+        icon: <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>,
+    },
 ];
 
 // ─── Dashboard Section ────────────────────────────────────────────────────────
@@ -1174,6 +1178,268 @@ function IntakeSection({ onCreateAccount }) {
     );
 }
 
+// ─── Staff Section ────────────────────────────────────────────────────────────
+function StaffSection({ onCreateStaff, onShowToast }) {
+    const [staffList, setStaffList] = useState([]);
+    const [loading, setLoading]     = useState(true);
+    const [pendingDelete, setPendingDelete] = useState(null);
+    const [deleting, setDeleting]           = useState(false);
+    const [resetTarget, setResetTarget]     = useState(null);
+    const [newPassword, setNewPassword]     = useState('');
+    const [showPw, setShowPw]               = useState(false);
+    const [resetLoading, setResetLoading]   = useState(false);
+    const [resetError, setResetError]       = useState('');
+
+    useEffect(() => {
+        authFetch('/api/staff')
+            .then(r => r.json())
+            .then(d => setStaffList(d.staff || []))
+            .catch(() => {})
+            .finally(() => setLoading(false));
+    }, []);
+
+    const handleDelete = async () => {
+        if (!pendingDelete) return;
+        setDeleting(true);
+        try {
+            const res = await authFetch(`/api/staff/${pendingDelete.id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error();
+            setStaffList(prev => prev.filter(s => s.id !== pendingDelete.id));
+            onShowToast(`${pendingDelete.full_name} has been removed.`);
+            setPendingDelete(null);
+        } catch {
+            onShowToast('Failed to remove staff member.');
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    const handleResetSubmit = async (e) => {
+        e.preventDefault();
+        if (!resetTarget) return;
+        if (newPassword.length < 8) { setResetError('Password must be at least 8 characters.'); return; }
+        setResetLoading(true);
+        setResetError('');
+        try {
+            const res = await authFetch(`/api/staff/${resetTarget.id}/reset-password`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: newPassword }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            onShowToast(`✓ Password reset and email sent to ${resetTarget.email}`);
+            setResetTarget(null);
+            setNewPassword('');
+        } catch (err) {
+            setResetError(err.message || 'Failed to reset password.');
+        } finally {
+            setResetLoading(false);
+        }
+    };
+
+    const activeCount  = staffList.filter(s => s.password_set).length;
+    const pendingCount = staffList.filter(s => !s.password_set).length;
+
+    return (
+        <div className="ads-section">
+            {/* Page header */}
+            <div className="admin-page-header">
+                <div>
+                    <h1>Staff Management</h1>
+                    <p>Team members with access to the admin portal.</p>
+                </div>
+                <button className="admin-create-btn" style={{ background: '#7c3aed' }} onClick={onCreateStaff}>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                    </svg>
+                    Add Staff Member
+                </button>
+            </div>
+
+            {/* Summary cards */}
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                {[
+                    { label: 'Total Staff', value: staffList.length, color: '#7c3aed', bg: '#f5f3ff' },
+                    { label: 'Active',      value: activeCount,      color: '#059669', bg: '#ecfdf5' },
+                    { label: 'Needs Setup', value: pendingCount,     color: '#d97706', bg: '#fffbeb' },
+                ].map(card => (
+                    <div key={card.label} style={{
+                        flex: '1', minWidth: 140,
+                        background: 'white', border: '1px solid #e2e8f0',
+                        borderRadius: '0.75rem', padding: '1.25rem 1.5rem',
+                        display: 'flex', flexDirection: 'column', gap: '0.25rem',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                    }}>
+                        <span style={{ fontSize: '0.8125rem', color: '#64748b', fontWeight: 500 }}>{card.label}</span>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 700, color: card.color }}>{card.value}</span>
+                    </div>
+                ))}
+            </div>
+
+            {/* Table card */}
+            <div className="admin-table-card">
+                <div className="admin-table-header">
+                    <h2>All Staff ({staffList.length})</h2>
+                </div>
+                <div className="admin-table-wrap">
+                    <table className="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Staff Member</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Date Added</th>
+                                <th className="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr><td colSpan={5} className="ads-table-msg">Loading staff…</td></tr>
+                            ) : staffList.length === 0 ? (
+                                <tr><td colSpan={5} className="ads-table-msg">No staff accounts yet. Click "Add Staff Member" to get started.</td></tr>
+                            ) : staffList.map(s => (
+                                <tr key={s.id}>
+                                    <td>
+                                        <div className="admin-client-name">
+                                            <div className="ads-avatar" style={{ background: '#7c3aed' }}>
+                                                {getInitials(s.full_name)}
+                                            </div>
+                                            <div>
+                                                <div style={{ fontWeight: 600, color: '#0f172a', fontSize: '0.875rem' }}>{s.full_name}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="admin-cell-muted">{s.email}</td>
+                                    <td>
+                                        <span className={`admin-status admin-status--${s.password_set ? 'active' : 'pending'}`}>
+                                            {s.password_set ? 'Active' : 'Needs Setup'}
+                                        </span>
+                                    </td>
+                                    <td className="admin-cell-muted">{fmtDate(s.created_at)}</td>
+                                    <td>
+                                        <div className="admin-actions">
+                                            <button
+                                                className="ads-action-btn ads-action-btn--dl"
+                                                onClick={() => { setResetTarget(s); setNewPassword(''); setShowPw(false); setResetError(''); }}
+                                                title="Reset password"
+                                            >
+                                                Reset Password
+                                            </button>
+                                            <button
+                                                className="ads-action-btn ads-action-btn--del"
+                                                onClick={() => setPendingDelete(s)}
+                                                title="Remove staff member"
+                                            >
+                                                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                                                </svg>
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Confirm Delete Modal */}
+            {pendingDelete && (
+                <div className="ccm-overlay" onClick={() => setPendingDelete(null)}>
+                    <div className="ccm-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>
+                        <div className="ccm-header">
+                            <div>
+                                <h2>Remove Staff Member</h2>
+                                <p>Are you sure you want to remove <strong>{pendingDelete.full_name}</strong>? This cannot be undone.</p>
+                            </div>
+                            <button className="ccm-close" onClick={() => setPendingDelete(null)}>
+                                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="ccm-form">
+                            <div className="ccm-actions">
+                                <button type="button" className="ccm-btn ccm-btn--cancel" onClick={() => setPendingDelete(null)}>Cancel</button>
+                                <button
+                                    type="button"
+                                    className="ccm-btn ccm-btn--submit"
+                                    style={{ background: '#dc2626' }}
+                                    onClick={handleDelete}
+                                    disabled={deleting}
+                                >
+                                    {deleting ? 'Removing…' : 'Yes, Remove'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Reset Password Modal */}
+            {resetTarget && (
+                <div className="ccm-overlay" onClick={() => setResetTarget(null)}>
+                    <div className="ccm-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+                        <div className="ccm-header">
+                            <div>
+                                <h2>Reset Password</h2>
+                                <p>Set a new password for <strong>{resetTarget.full_name}</strong>. A credentials email will be sent to them.</p>
+                            </div>
+                            <button className="ccm-close" onClick={() => setResetTarget(null)}>
+                                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                                </svg>
+                            </button>
+                        </div>
+                        <form className="ccm-form" onSubmit={handleResetSubmit}>
+                            <div className="ccm-grid">
+                                <div className="ccm-field ccm-field--full">
+                                    <label>New Password</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <input
+                                            type={showPw ? 'text' : 'password'}
+                                            value={newPassword}
+                                            onChange={e => { setNewPassword(e.target.value); setResetError(''); }}
+                                            placeholder="At least 8 characters"
+                                            autoComplete="new-password"
+                                            required
+                                            style={{ paddingRight: '2.5rem' }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPw(v => !v)}
+                                            aria-label="Toggle visibility"
+                                            style={{
+                                                position: 'absolute', right: '0.6rem', top: '50%',
+                                                transform: 'translateY(-50%)', background: 'none',
+                                                border: 'none', cursor: 'pointer', color: '#64748b',
+                                                display: 'flex', alignItems: 'center',
+                                            }}
+                                        >
+                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                                                {showPw ? 'visibility_off' : 'visibility'}
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {resetError && <p className="ccm-error">{resetError}</p>}
+                            <div className="ccm-actions">
+                                <button type="button" className="ccm-btn ccm-btn--cancel" onClick={() => setResetTarget(null)}>Cancel</button>
+                                <button type="submit" className="ccm-btn ccm-btn--submit" disabled={resetLoading}>
+                                    {resetLoading ? 'Saving…' : 'Save & Send Email'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ─── Main AdminDashboard ──────────────────────────────────────────────────────
 function AdminDashboard({ userRole = 'admin' }) {
     const isStaff = userRole === 'staff';
@@ -1363,6 +1629,12 @@ function AdminDashboard({ userRole = 'admin' }) {
                             onResumeUploaded={handleResumeUploaded}
                             onShowToast={showToast}
                             isStaff={isStaff}
+                        />
+                    )}
+                    {activeSection === 'staff' && !isStaff && (
+                        <StaffSection
+                            onCreateStaff={() => setShowCreateStaff(true)}
+                            onShowToast={showToast}
                         />
                     )}
                 </section>
