@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateClientModal from './CreateClientModal';
 import CreateStaffModal from './CreateStaffModal';
@@ -734,11 +734,9 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast, isStaff = fals
 
     const handleDownload = async (clientId, filename) => {
         try {
-            const res  = await authFetch(`/api/clients/${clientId}/resume/download`);
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
-            const fileRes = await fetch(data.url);
-            const blob = await fileRes.blob();
+            const res = await authFetch(`/api/clients/${clientId}/resume/download`);
+            if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Download failed'); }
+            const blob = await res.blob();
             const blobUrl = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = blobUrl;

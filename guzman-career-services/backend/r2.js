@@ -8,21 +8,43 @@ cloudinary.config({
 });
 
 async function uploadFile(key, buffer, _contentType) {
-    await new Promise((resolve, reject) => {
+    const result = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
             {
                 public_id: key,
                 resource_type: 'raw',
-                access_mode: 'authenticated',
+                type: 'private',
                 overwrite: true,
             },
             (error, result) => (error ? reject(error) : resolve(result))
         );
         stream.end(buffer);
     });
+    console.log('[uploadFile] public_id:', result.public_id, '| type:', result.type);
+    return result;
 }
 
 async function getSignedDownloadUrl(key, expiresIn = 300) {
+    let resource;
+    try {
+        resource = await cloudinary.api.resource(key, { resource_type: 'raw' });
+    } catch (err) {
+        const detail = err?.error?.message || err?.message || JSON.stringify(err);
+        throw new Error(`File not found in storage: ${detail}`);
+    }
+
+    if (resource.type === 'upload') {
+        // Signed delivery URL — must include the actual version or the signature won't match.
+        return cloudinary.url(key, {
+            resource_type: 'raw',
+            type: 'upload',
+            sign_url: true,
+            secure: true,
+            version: resource.version,
+        });
+    }
+
+    // type:'private' — use private_download_url which handles versioning internally.
     return cloudinary.utils.private_download_url(key, null, {
         resource_type: 'raw',
         expires_at: Math.floor(Date.now() / 1000) + expiresIn,

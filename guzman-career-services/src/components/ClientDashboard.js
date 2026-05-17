@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -170,8 +170,8 @@ function ResumeTab({ client }) {
         const latest = resumes[0];
         setPreviewResumeId(latest.id);
         authFetch(`/api/clients/${client.id}/resume/download?resumeId=${latest.id}`)
-            .then(r => r.json())
-            .then(d => { if (d.url) setPreviewUrl(d.url); })
+            .then(r => { if (!r.ok) throw new Error('failed'); return r.blob(); })
+            .then(blob => setPreviewUrl(URL.createObjectURL(blob)))
             .catch(() => {});
     }, [resumes, client.id, previewResumeId]);
 
@@ -192,10 +192,10 @@ function ResumeTab({ client }) {
         setPreviewUrl(null);
         setNumPages(null);
         try {
-            const res  = await authFetch(`/api/clients/${client.id}/resume/download?resumeId=${resumeId}`);
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
-            setPreviewUrl(data.url);
+            const res = await authFetch(`/api/clients/${client.id}/resume/download?resumeId=${resumeId}`);
+            if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Could not load preview'); }
+            const blob = await res.blob();
+            setPreviewUrl(URL.createObjectURL(blob));
         } catch (err) {
             alert('Could not load preview: ' + err.message);
         }
@@ -204,11 +204,9 @@ function ResumeTab({ client }) {
     const handleDownload = async (resumeId, filename) => {
         setDownloadingId(resumeId);
         try {
-            const res  = await authFetch(`/api/clients/${client.id}/resume/download?resumeId=${resumeId}`);
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
-            const fileRes = await fetch(data.url);
-            const blob = await fileRes.blob();
+            const res = await authFetch(`/api/clients/${client.id}/resume/download?resumeId=${resumeId}`);
+            if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Download failed'); }
+            const blob = await res.blob();
             const blobUrl = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = blobUrl;

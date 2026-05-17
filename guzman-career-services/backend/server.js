@@ -2,6 +2,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const express    = require('express');
 const cors       = require('cors');
 const multer     = require('multer');
+const https      = require('https');
 const { Resend } = require('resend');
 const stripe     = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const jwt        = require('jsonwebtoken');
@@ -9,6 +10,21 @@ const bcrypt     = require('bcryptjs');
 const crypto     = require('crypto');
 const { pool }   = require('./db');
 const { uploadFile, getSignedDownloadUrl, deleteFile } = require('./r2');
+
+// Reliable HTTPS buffer fetch — avoids Node built-in fetch reliability issues with Cloudinary CDN
+function httpsGetBuffer(url) {
+    return new Promise((resolve, reject) => {
+        https.get(url, (res) => {
+            if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                return httpsGetBuffer(res.headers.location).then(resolve).catch(reject);
+            }
+            const chunks = [];
+            res.on('data', c => chunks.push(c));
+            res.on('end', () => resolve({ statusCode: res.statusCode, headers: res.headers, buffer: Buffer.concat(chunks) }));
+            res.on('error', reject);
+        }).on('error', reject);
+    });
+}
 
 const app = express();
 const allowedOrigins = ['http://localhost:3000', process.env.SITE_URL].filter(Boolean);
@@ -662,6 +678,9 @@ app.post('/api/clients', requireAdmin, async (req, res) => {
         res.json({ success: true, client: clientData });
     } catch (error) {
         console.error('[POST /api/clients]', error.message);
+        if (error.code === '23505' && error.constraint === 'users_email_key') {
+            return res.status(400).json({ error: 'An account with this email already exists.' });
+        }
         res.status(400).json({ error: error.message });
     }
 });
@@ -1205,28 +1224,57 @@ app.get('/api/clients/:clientId/resumes', requireAuth, async (req, res) => {
     }
 });
 
-// GET /api/clients/:clientId/resume/download — get signed URL for a resume
+// GET /api/clients/:clientId/resume/download — stream file directly to client
+// Proxies from Cloudinary server-side to avoid browser CORS issues.
 app.get('/api/clients/:clientId/resume/download', requireAuth, async (req, res) => {
-    const isAdmin = req.user.role === 'admin';
+    const isAdmin = ['admin', 'staff'].includes(req.user.role);
     const isOwner = req.user.sub === req.params.clientId;
     if (!isAdmin && !isOwner) return res.status(403).json({ error: 'Forbidden' });
     try {
-        let storagePath;
+        let resumePath, resumeFilename;
         if (req.query.resumeId) {
             const result = await pool.query(
-                'SELECT resume_path FROM client_resumes WHERE id = $1 AND client_id = $2',
+                'SELECT resume_path, resume_filename FROM client_resumes WHERE id = $1 AND client_id = $2',
                 [req.query.resumeId, req.params.clientId]
             );
             if (!result.rows[0]) return res.status(404).json({ error: 'Resume not found.' });
-            storagePath = result.rows[0].resume_path;
+            resumePath    = result.rows[0].resume_path;
+            resumeFilename = result.rows[0].resume_filename;
         } else {
-            storagePath = `${req.params.clientId}/resume.pdf`;
+            // Fallback: most recent resume from clients table
+            const result = await pool.query(
+                'SELECT resume_path, resume_filename FROM clients WHERE id = $1',
+                [req.params.clientId]
+            );
+            if (!result.rows[0] || !result.rows[0].resume_path) {
+                return res.status(404).json({ error: 'No resume on file.' });
+            }
+            resumePath    = result.rows[0].resume_path;
+            resumeFilename = result.rows[0].resume_filename;
         }
-        const url = await getSignedDownloadUrl(storagePath, 300);
-        res.json({ url });
+
+        const signedUrl = await getSignedDownloadUrl(resumePath, 60);
+        const { statusCode, headers: cloudHeaders, buffer } = await httpsGetBuffer(signedUrl);
+        if (statusCode !== 200) throw new Error(`Storage error: ${statusCode}`);
+
+        // Infer content-type from filename if Cloudinary returns a generic type
+        let contentType = cloudHeaders['content-type'] || '';
+        if (!contentType || contentType.startsWith('text/html') || contentType === 'application/octet-stream') {
+            const ext = (resumeFilename || resumePath || '').split('.').pop().toLowerCase();
+            if (ext === 'pdf')  contentType = 'application/pdf';
+            else if (ext === 'docx') contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+            else if (ext === 'doc')  contentType = 'application/msword';
+            else contentType = 'application/octet-stream';
+        }
+
+        const safeFilename = (resumeFilename || 'resume').replace(/[^\w.\-]/g, '_');
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"; filename*=UTF-8''${encodeURIComponent(resumeFilename || 'resume')}`);
+        res.setHeader('Content-Length', buffer.length);
+        res.end(buffer);
     } catch (error) {
         console.error('[GET /api/clients/:clientId/resume/download]', error.message);
-        res.status(404).json({ error: 'Resume not found.' });
+        if (!res.headersSent) res.status(500).json({ error: 'Could not download file.' });
     }
 });
 
