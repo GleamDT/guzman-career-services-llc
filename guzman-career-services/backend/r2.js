@@ -25,30 +25,36 @@ async function uploadFile(key, buffer, _contentType) {
 }
 
 async function getSignedDownloadUrl(key, expiresIn = 300) {
-    let resource;
+    // Try private first (new uploads), then upload (old Supabase-migrated files)
+    let resource, storageType;
     try {
-        resource = await cloudinary.api.resource(key, { resource_type: 'raw' });
-    } catch (err) {
-        const detail = err?.error?.message || err?.message || JSON.stringify(err);
-        throw new Error(`File not found in storage: ${detail}`);
+        resource = await cloudinary.api.resource(key, { resource_type: 'raw', type: 'private' });
+        storageType = 'private';
+    } catch {
+        try {
+            resource = await cloudinary.api.resource(key, { resource_type: 'raw', type: 'upload' });
+            storageType = 'upload';
+        } catch (err) {
+            const detail = err?.error?.message || err?.message || JSON.stringify(err);
+            throw new Error(`File not found in storage: ${detail}`);
+        }
     }
 
-    if (resource.type === 'upload') {
-        // Signed delivery URL — must include the actual version or the signature won't match.
-        return cloudinary.url(key, {
+    if (storageType === 'private') {
+        return cloudinary.utils.private_download_url(key, null, {
             resource_type: 'raw',
-            type: 'upload',
-            sign_url: true,
-            secure: true,
-            version: resource.version,
+            expires_at: Math.floor(Date.now() / 1000) + expiresIn,
+            attachment: true,
         });
     }
 
-    // type:'private' — use private_download_url which handles versioning internally.
-    return cloudinary.utils.private_download_url(key, null, {
+    // type:'upload' with access_mode:'authenticated' — must include actual version for signature.
+    return cloudinary.url(key, {
         resource_type: 'raw',
-        expires_at: Math.floor(Date.now() / 1000) + expiresIn,
-        attachment: true,
+        type: 'upload',
+        sign_url: true,
+        secure: true,
+        version: resource.version,
     });
 }
 
