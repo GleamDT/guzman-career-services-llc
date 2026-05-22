@@ -107,62 +107,65 @@ export async function downloadInvoicePDF(invoice, client) {
     }
 
     // ── Divider ──────────────────────────────────────────────────────────────
+    // Shift the divider down when a due date is present so the DUE DATE value
+    // (rendered at ~y=95) isn't covered by the table header background rect.
+    const divY = invoice.due_date ? 100 : 86;
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.4);
-    doc.line(14, 86, 196, 86);
+    doc.line(14, divY, 196, divY);
 
     // ── Table header ─────────────────────────────────────────────────────────
     doc.setFillColor(...light);
-    doc.rect(14, 90, 182, 10, 'F');
+    doc.rect(14, divY + 4, 182, 10, 'F');
     doc.setTextColor(...gray);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text('DESCRIPTION', 18, 97);
-    doc.text('AMOUNT', 188, 97, { align: 'right' });
+    doc.text('DESCRIPTION', 18, divY + 11);
+    doc.text('AMOUNT', 188, divY + 11, { align: 'right' });
 
     // ── Line item ─────────────────────────────────────────────────────────────
     doc.setTextColor(...dark);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text(invoice.description || 'Service', 18, 111);
+    doc.text(invoice.description || 'Service', 18, divY + 25);
 
     if (invoice.subtitle) {
         doc.setFontSize(8.5);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(...gray);
-        doc.text(invoice.subtitle, 18, 119);
+        doc.text(invoice.subtitle, 18, divY + 33);
     }
 
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...dark);
-    doc.text(`$${parseFloat(invoice.amount || 0).toFixed(2)}`, 188, 111, { align: 'right' });
+    doc.text(`$${parseFloat(invoice.amount || 0).toFixed(2)}`, 188, divY + 25, { align: 'right' });
 
     // ── Total ────────────────────────────────────────────────────────────────
     doc.setDrawColor(226, 232, 240);
-    doc.line(14, 126, 196, 126);
+    doc.line(14, divY + 40, 196, divY + 40);
 
     doc.setFillColor(...blue);
-    doc.rect(130, 129, 66, 15, 'F');
+    doc.rect(130, divY + 43, 66, 15, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text('TOTAL DUE', 135, 139);
-    doc.text(`$${parseFloat(invoice.amount || 0).toFixed(2)}`, 192, 139, { align: 'right' });
+    doc.text('TOTAL DUE', 135, divY + 53);
+    doc.text(`$${parseFloat(invoice.amount || 0).toFixed(2)}`, 192, divY + 53, { align: 'right' });
 
     // Payment note
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     if (isPaid) {
         doc.setTextColor(5, 150, 105);
-        doc.text('Payment received — Thank you!', 14, 139);
+        doc.text('Payment received — Thank you!', 14, divY + 53);
         if (invoice.paid_at) {
             doc.setTextColor(...gray);
-            doc.text(`Paid on ${new Date(invoice.paid_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, 14, 147);
+            doc.text(`Paid on ${new Date(invoice.paid_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, 14, divY + 61);
         }
     } else {
         doc.setTextColor(...gray);
-        doc.text('Payment is due upon receipt.', 14, 139);
+        doc.text('Payment is due upon receipt.', 14, divY + 53);
     }
 
     // ── Footer ───────────────────────────────────────────────────────────────

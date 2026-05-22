@@ -142,7 +142,7 @@ async function sendPortalNotification(toEmail, toName) {
               <table cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
                 <tr>
                   <td style="background:#1d4ed8;border-radius:8px;">
-                    <a href="${siteUrl()}/login"
+                    <a href="${siteUrl()}"
                        style="display:inline-block;padding:14px 36px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.3px;">
                       View My Portal →
                     </a>
@@ -151,7 +151,7 @@ async function sendPortalNotification(toEmail, toName) {
               </table>
 
               <p style="margin:0;font-size:13px;color:#94a3b8;">
-                Log in anytime at <a href="${siteUrl()}/login" style="color:#2563eb;text-decoration:none;">${siteUrl()}/login</a>
+                Log in anytime at <a href="${siteUrl()}" style="color:#2563eb;text-decoration:none;">${siteUrl()}</a>
               </p>
             </td>
           </tr>
