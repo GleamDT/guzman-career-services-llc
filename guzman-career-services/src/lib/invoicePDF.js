@@ -102,7 +102,7 @@ export async function downloadInvoicePDF(invoice, client) {
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(...dark);
         doc.setFontSize(9);
-        const dueDate = new Date(invoice.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const dueDate = new Date(invoice.due_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
         doc.text(dueDate, 130, 95);
     }
 

@@ -88,7 +88,7 @@ function InvoicesTab({ invoices, client, loading }) {
                                         <div>{new Date(inv.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                                         {inv.due_date && (
                                             <div style={{ fontSize: '0.78rem', color: '#d97706', marginTop: '2px' }}>
-                                                Due: {new Date(inv.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                Due: {new Date(inv.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
                                             </div>
                                         )}
                                     </td>
