@@ -24,22 +24,23 @@ function Contact() {
         setIsSubmitting(true);
         setResult('');
 
-        const data = new FormData(e.target);
-        data.append('access_key', 'efb5316a-e733-40a2-bde9-aeb3a9a6a56f');
-
-        const response = await fetch('https://api.web3forms.com/submit', {
-            method: 'POST',
-            body: data
-        });
-
-        const json = await response.json();
-        setIsSubmitting(false);
-
-        if (json.success) {
-            setResult('success');
-            setFormData({ name: '', email: '', phone: '', service: '', message: '' });
-        } else {
+        try {
+            const response = await fetch('/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            });
+            const json = await response.json();
+            if (json.success) {
+                setResult('success');
+                setFormData({ name: '', email: '', phone: '', service: '', message: '' });
+            } else {
+                setResult('error');
+            }
+        } catch {
             setResult('error');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 

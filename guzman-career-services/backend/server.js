@@ -1065,7 +1065,53 @@ app.post('/api/intake', async (req, res) => {
             true, 'pending', linkedinProfile || '', additionalNotes || '',
             intakeFormType || 'general',
         ]);
-        res.json({ success: true, submissionId: result.rows[0].id });
+        const submissionId = result.rows[0].id;
+
+        // Notify admin of new intake submission
+        if (process.env.RESEND_API_KEY) {
+            resend.emails.send({
+                from: `Guzman Career Services <${emailFrom()}>`,
+                to: 'clientservices@guzmancareerservices.com',
+                subject: `New Intake Form Submission — ${fullName}`,
+                html: `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
+          <tr>
+            <td style="background:#1d4ed8;padding:30px 40px 26px;">
+              <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;letter-spacing:0.3px;">Guzman Career Services</p>
+              <p style="margin:6px 0 0;font-size:13px;color:#bfdbfe;">New Intake Form Submission</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:36px 40px 28px;">
+              <h2 style="margin:0 0 20px;font-size:20px;color:#0f172a;">A new client intake form has been submitted.</h2>
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                <tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#64748b;width:40%;">Name</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#0f172a;font-weight:600;">${fullName}</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#64748b;">Email</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#0f172a;">${email}</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#64748b;">Phone</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#0f172a;">${phone || '—'}</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#64748b;">Address</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#0f172a;">${fullAddress || '—'}</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#64748b;">Job Title(s)</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#0f172a;">${jobTitles || '—'}</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#64748b;">Referred By</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#0f172a;">${referredBy || '—'}</td></tr>
+                <tr><td style="padding:8px 0;font-size:14px;color:#64748b;">Submission ID</td><td style="padding:8px 0;font-size:14px;color:#0f172a;">${submissionId}</td></tr>
+              </table>
+              <p style="margin:28px 0 0;font-size:13px;color:#94a3b8;">Log in to the admin dashboard to review the full submission.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
+            }).catch(err => console.error('[intake admin email]', err.message));
+        }
+
+        res.json({ success: true, submissionId });
     } catch (error) {
         console.error('[POST /api/intake]', error.message);
         res.status(400).json({ error: error.message });
@@ -1275,6 +1321,63 @@ app.get('/api/clients/:clientId/resume/download', requireAuth, async (req, res) 
     } catch (error) {
         console.error('[GET /api/clients/:clientId/resume/download]', error.message);
         if (!res.headersSent) res.status(500).json({ error: 'Could not download file.' });
+    }
+});
+
+// POST /api/contact — contact form submission, notifies admin
+app.post('/api/contact', async (req, res) => {
+    const { name, email, phone, service, message } = req.body;
+    if (!name || !email || !message) {
+        return res.status(400).json({ error: 'Name, email, and message are required.' });
+    }
+    try {
+        if (process.env.RESEND_API_KEY) {
+            await resend.emails.send({
+                from: `Guzman Career Services <${emailFrom()}>`,
+                to: 'clientservices@guzmancareerservices.com',
+                subject: `New Contact Form Message — ${name}`,
+                html: `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
+          <tr>
+            <td style="background:#1d4ed8;padding:30px 40px 26px;">
+              <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;">Guzman Career Services</p>
+              <p style="margin:6px 0 0;font-size:13px;color:#bfdbfe;">New Contact Form Message</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:36px 40px 28px;">
+              <h2 style="margin:0 0 20px;font-size:20px;color:#0f172a;">Someone reached out via the contact form.</h2>
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                <tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#64748b;width:40%;">Name</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#0f172a;font-weight:600;">${name}</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#64748b;">Email</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#0f172a;">${email}</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#64748b;">Phone</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#0f172a;">${phone || '—'}</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#64748b;">Service</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#0f172a;">${service || '—'}</td></tr>
+              </table>
+              <div style="margin:20px 0 0;padding:16px;background:#f8fafc;border-radius:8px;border-left:4px solid #1d4ed8;">
+                <p style="margin:0;font-size:13px;color:#64748b;margin-bottom:6px;">Message</p>
+                <p style="margin:0;font-size:15px;color:#0f172a;line-height:1.7;">${message.replace(/\n/g, '<br />')}</p>
+              </div>
+              <p style="margin:24px 0 0;font-size:13px;color:#94a3b8;">Reply directly to <a href="mailto:${email}" style="color:#2563eb;">${email}</a> to respond.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
+            });
+        }
+        res.json({ success: true });
+    } catch (error) {
+        console.error('[POST /api/contact]', error.message);
+        res.status(500).json({ error: 'Failed to send message. Please try again.' });
     }
 });
 
