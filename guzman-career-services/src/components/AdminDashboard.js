@@ -1533,6 +1533,7 @@ function ActivitySection() {
     const [logs, setLogs]                 = useState([]);
     const [loading, setLoading]           = useState(true);
     const [actionFilter, setActionFilter] = useState('all');
+    const [nameFilter, setNameFilter]     = useState('');
     const [search, setSearch]             = useState('');
     const [from, setFrom]                 = useState('');
     const [to, setTo]                     = useState('');
@@ -1544,6 +1545,7 @@ function ActivitySection() {
         try {
             const params = new URLSearchParams({ limit: 500 });
             if (actionFilter !== 'all') params.set('action', actionFilter);
+            if (nameFilter.trim()) params.set('name', nameFilter.trim());
             if (search.trim()) params.set('search', search.trim());
             if (from) params.set('from', from);
             if (to)   params.set('to', to);
@@ -1551,10 +1553,10 @@ function ActivitySection() {
             const data = await res.json();
             setLogs(data.logs || []);
         } catch { setLogs([]); } finally { setLoading(false); }
-    }, [actionFilter, search, from, to]);
+    }, [actionFilter, nameFilter, search, from, to]);
 
     useEffect(() => { fetchLogs(); }, [fetchLogs]);
-    useEffect(() => { setPage(1); }, [actionFilter, search, from, to, setPage]);
+    useEffect(() => { setPage(1); }, [actionFilter, nameFilter, search, from, to, setPage]);
 
     const handleExport = async () => {
         setExporting(true);
@@ -1562,7 +1564,7 @@ function ActivitySection() {
         finally { setExporting(false); }
     };
 
-    const hasFilters = actionFilter !== 'all' || search || from || to;
+    const hasFilters = actionFilter !== 'all' || nameFilter || search || from || to;
 
     return (
         <div className="ads-section">
@@ -1594,11 +1596,21 @@ function ActivitySection() {
                     </select>
                 </div>
                 <div className="act-filter-group">
+                    <label className="act-filter-label">Filter by Name</label>
+                    <input
+                        type="text"
+                        className="act-filter-input"
+                        placeholder="e.g. John Doe"
+                        value={nameFilter}
+                        onChange={e => setNameFilter(e.target.value)}
+                    />
+                </div>
+                <div className="act-filter-group">
                     <label className="act-filter-label">Search</label>
                     <input
                         type="text"
                         className="act-filter-input"
-                        placeholder="Name, email, or details…"
+                        placeholder="Email or details…"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                     />
@@ -1612,7 +1624,7 @@ function ActivitySection() {
                     <input type="date" className="act-filter-date" value={to} onChange={e => setTo(e.target.value)} />
                 </div>
                 {hasFilters && (
-                    <button className="act-filter-clear" onClick={() => { setActionFilter('all'); setSearch(''); setFrom(''); setTo(''); }}>
+                    <button className="act-filter-clear" onClick={() => { setActionFilter('all'); setNameFilter(''); setSearch(''); setFrom(''); setTo(''); }}>
                         Clear Filters
                     </button>
                 )}

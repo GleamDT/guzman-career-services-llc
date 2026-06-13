@@ -1380,11 +1380,12 @@ app.get('/api/clients/:clientId/resume/download', requireAuth, async (req, res) 
 
 // GET /api/activity-log — full activity history (admin only)
 app.get('/api/activity-log', requireAdmin, async (req, res) => {
-    const { action, search, from, to, limit = 200 } = req.query;
+    const { action, name, search, from, to, limit = 200 } = req.query;
     const conditions = [];
     const values = [];
     let idx = 1;
     if (action && action !== 'all') { conditions.push(`action = $${idx++}`); values.push(action); }
+    if (name)   { conditions.push(`actor_name ILIKE $${idx++}`); values.push(`%${name}%`); }
     if (search) { conditions.push(`(actor_name ILIKE $${idx} OR actor_email ILIKE $${idx} OR details ILIKE $${idx})`); values.push(`%${search}%`); idx++; }
     if (from) { conditions.push(`created_at >= $${idx++}`); values.push(from); }
     if (to)   { conditions.push(`created_at <= $${idx++}`); values.push(to + ' 23:59:59'); }
