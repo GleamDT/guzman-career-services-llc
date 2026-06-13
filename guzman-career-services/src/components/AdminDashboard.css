@@ -1073,4 +1073,93 @@
     font-family: inherit;
 }
 .ads-modal-input:focus { border-color: #2563eb; }
+
+/* ===== Activity Section ===== */
+.act-filter-bar {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 1rem;
+}
+.act-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.act-filter-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.act-filter-select,
+.act-filter-input,
+.act-filter-date {
+    padding: 0.45rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: #0f172a;
+    background: white;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.15s;
+}
+.act-filter-select:focus,
+.act-filter-input:focus,
+.act-filter-date:focus { border-color: #2563eb; }
+.act-filter-input { width: 220px; }
+.act-filter-clear {
+    padding: 0.45rem 0.9rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    color: #64748b;
+    background: white;
+    cursor: pointer;
+    align-self: flex-end;
+    font-family: inherit;
+    transition: border-color 0.15s, color 0.15s;
+}
+.act-filter-clear:hover { border-color: #cbd5e1; color: #0f172a; }
+
+.act-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.act-badge--intake_submitted    { background: #f5f3ff; color: #7c3aed; }
+.act-badge--client_created      { background: #ecfdf5; color: #059669; }
+.act-badge--client_login        { background: #ecfeff; color: #0891b2; }
+.act-badge--invoice_created     { background: #eff6ff; color: #2563eb; }
+.act-badge--invoice_paid        { background: #ecfdf5; color: #059669; }
+.act-badge--invoice_paid_online { background: #ecfdf5; color: #059669; }
+.act-badge--resume_uploaded     { background: #fffbeb; color: #d97706; }
+.act-badge--staff_added         { background: #f5f3ff; color: #7c3aed; }
+.act-badge--staff_removed       { background: #fef2f2; color: #dc2626; }
+.act-badge--default             { background: #f1f5f9; color: #64748b; }
+
+.act-datetime {
+    color: #64748b;
+    white-space: nowrap;
+    font-size: 0.82rem;
+}
+.act-actor-name {
+    font-weight: 600;
+    color: #0f172a;
+    font-size: 0.875rem;
+}
+.act-actor-email {
+    font-size: 0.78rem;
+    color: #94a3b8;
+}
+.act-details {
+    font-size: 0.875rem;
+    color: #64748b;
+}
 .ads-modal-actions { display: flex; justify-content: flex-end; gap: 0.6rem; padding-top: 0.25rem; }

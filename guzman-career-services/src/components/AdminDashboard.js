@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import jsPDF from 'jspdf';
 import CreateClientModal from './CreateClientModal';
 import CreateStaffModal from './CreateStaffModal';
 import CreateInvoiceModal from './CreateInvoiceModal';
@@ -90,6 +91,10 @@ const NAV_ITEMS = [
     {
         key: 'staff', label: 'Staff',
         icon: <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>,
+    },
+    {
+        key: 'activity', label: 'Activity',
+        icon: <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>,
     },
 ];
 
@@ -1438,6 +1443,228 @@ function StaffSection({ onCreateStaff, onShowToast }) {
     );
 }
 
+// ─── Activity Section ─────────────────────────────────────────────────────────
+const ACTION_META = {
+    intake_submitted:    { label: 'Intake Submitted'    },
+    client_created:      { label: 'Client Created'      },
+    client_login:        { label: 'Client Login'        },
+    invoice_created:     { label: 'Invoice Created'     },
+    invoice_paid:        { label: 'Invoice Paid'        },
+    invoice_paid_online: { label: 'Paid Online'         },
+    resume_uploaded:     { label: 'Resume Uploaded'     },
+    staff_added:         { label: 'Staff Added'         },
+    staff_removed:       { label: 'Staff Removed'       },
+};
+
+function fmtDateTime(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        + ' at '
+        + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+function exportActivityPDF(logs, filters) {
+    const doc   = new jsPDF();
+    const blue  = [29, 78, 216];
+    const dark  = [15, 23, 42];
+    const gray  = [100, 116, 139];
+    const light = [248, 250, 252];
+
+    doc.setFillColor(...blue);
+    doc.rect(0, 0, 210, 32, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('GUZMAN CAREER SERVICES', 14, 14);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(191, 219, 254);
+    doc.text('Activity Report', 14, 24);
+
+    doc.setTextColor(...gray);
+    doc.setFontSize(8);
+    doc.text(`Generated: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, 196, 14, { align: 'right' });
+    if (filters.from || filters.to) {
+        doc.text(`Period: ${filters.from || 'start'} to ${filters.to || 'today'}`, 196, 22, { align: 'right' });
+    }
+
+    let y = 44;
+    doc.setFillColor(...light);
+    doc.rect(14, y, 182, 9, 'F');
+    doc.setTextColor(...gray);
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DATE & TIME', 16, y + 6);
+    doc.text('ACTION',      72, y + 6);
+    doc.text('WHO',        112, y + 6);
+    doc.text('DETAILS',    152, y + 6);
+    y += 12;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+
+    logs.forEach((log, i) => {
+        if (y > 272) { doc.addPage(); y = 20; }
+        if (i % 2 === 0) {
+            doc.setFillColor(249, 250, 251);
+            doc.rect(14, y - 4, 182, 9, 'F');
+        }
+        doc.setTextColor(...dark);
+        const dt = fmtDateTime(log.created_at).replace(' at ', '\n');
+        doc.text(dt, 16, y, { maxWidth: 50 });
+        doc.text((ACTION_META[log.action] || { label: log.action }).label, 72, y, { maxWidth: 36 });
+        doc.text(log.actor_name || '—', 112, y, { maxWidth: 36 });
+        doc.text(log.details || '—', 152, y, { maxWidth: 44 });
+        y += 9;
+    });
+
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.3);
+    doc.line(14, 278, 196, 278);
+    doc.setTextColor(...gray);
+    doc.setFontSize(7.5);
+    doc.text('Guzman Career Services — Activity Log', 105, 283, { align: 'center' });
+
+    doc.save(`activity-report-${new Date().toISOString().split('T')[0]}.pdf`);
+}
+
+function ActivitySection() {
+    const [logs, setLogs]                 = useState([]);
+    const [loading, setLoading]           = useState(true);
+    const [actionFilter, setActionFilter] = useState('all');
+    const [search, setSearch]             = useState('');
+    const [from, setFrom]                 = useState('');
+    const [to, setTo]                     = useState('');
+    const [exporting, setExporting]       = useState(false);
+    const { page, setPage, pageCount, paged } = usePagination(logs);
+
+    const fetchLogs = useCallback(async () => {
+        setLoading(true);
+        try {
+            const params = new URLSearchParams({ limit: 500 });
+            if (actionFilter !== 'all') params.set('action', actionFilter);
+            if (search.trim()) params.set('search', search.trim());
+            if (from) params.set('from', from);
+            if (to)   params.set('to', to);
+            const res  = await authFetch(`/api/activity-log?${params}`);
+            const data = await res.json();
+            setLogs(data.logs || []);
+        } catch { setLogs([]); } finally { setLoading(false); }
+    }, [actionFilter, search, from, to]);
+
+    useEffect(() => { fetchLogs(); }, [fetchLogs]);
+    useEffect(() => { setPage(1); }, [actionFilter, search, from, to, setPage]);
+
+    const handleExport = async () => {
+        setExporting(true);
+        try { exportActivityPDF(logs, { from, to }); }
+        finally { setExporting(false); }
+    };
+
+    const hasFilters = actionFilter !== 'all' || search || from || to;
+
+    return (
+        <div className="ads-section">
+            <div className="admin-page-header">
+                <div>
+                    <h1>Activity Log</h1>
+                    <p>Full audit trail of all platform events — each entry is stamped with the exact date and time.</p>
+                </div>
+                <button
+                    className="admin-create-btn"
+                    onClick={handleExport}
+                    disabled={exporting || logs.length === 0}
+                >
+                    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                    </svg>
+                    {exporting ? 'Exporting…' : 'Export PDF'}
+                </button>
+            </div>
+
+            <div className="act-filter-bar">
+                <div className="act-filter-group">
+                    <label className="act-filter-label">Action Type</label>
+                    <select className="act-filter-select" value={actionFilter} onChange={e => setActionFilter(e.target.value)}>
+                        <option value="all">All Actions</option>
+                        {Object.entries(ACTION_META).map(([k, v]) => (
+                            <option key={k} value={k}>{v.label}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="act-filter-group">
+                    <label className="act-filter-label">Search</label>
+                    <input
+                        type="text"
+                        className="act-filter-input"
+                        placeholder="Name, email, or details…"
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                    />
+                </div>
+                <div className="act-filter-group">
+                    <label className="act-filter-label">From</label>
+                    <input type="date" className="act-filter-date" value={from} onChange={e => setFrom(e.target.value)} />
+                </div>
+                <div className="act-filter-group">
+                    <label className="act-filter-label">To</label>
+                    <input type="date" className="act-filter-date" value={to} onChange={e => setTo(e.target.value)} />
+                </div>
+                {hasFilters && (
+                    <button className="act-filter-clear" onClick={() => { setActionFilter('all'); setSearch(''); setFrom(''); setTo(''); }}>
+                        Clear Filters
+                    </button>
+                )}
+            </div>
+
+            <div className="admin-table-card">
+                <div className="admin-table-header">
+                    <h2>Events ({logs.length})</h2>
+                </div>
+                <div className="admin-table-wrap">
+                    <table className="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Date &amp; Time</th>
+                                <th>Action</th>
+                                <th>Who</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr><td colSpan="4" className="ads-table-msg">Loading activity…</td></tr>
+                            ) : logs.length === 0 ? (
+                                <tr><td colSpan="4" className="ads-table-msg">No activity recorded yet.</td></tr>
+                            ) : paged.map(log => {
+                                const meta = ACTION_META[log.action];
+                                const badgeClass = `act-badge act-badge--${meta ? log.action : 'default'}`;
+                                return (
+                                    <tr key={log.id}>
+                                        <td className="act-datetime">{fmtDateTime(log.created_at)}</td>
+                                        <td>
+                                            <span className={badgeClass}>
+                                                {meta ? meta.label : log.action}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div className="act-actor-name">{log.actor_name || '—'}</div>
+                                            {log.actor_email && <div className="act-actor-email">{log.actor_email}</div>}
+                                        </td>
+                                        <td className="act-details">{log.details}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+                <Paginator page={page} pageCount={pageCount} total={logs.length} setPage={setPage} />
+            </div>
+        </div>
+    );
+}
+
 // ─── Main AdminDashboard ──────────────────────────────────────────────────────
 function AdminDashboard({ userRole = 'admin' }) {
     const isStaff = userRole === 'staff';
@@ -1634,6 +1861,9 @@ function AdminDashboard({ userRole = 'admin' }) {
                             onCreateStaff={() => setShowCreateStaff(true)}
                             onShowToast={showToast}
                         />
+                    )}
+                    {activeSection === 'activity' && !isStaff && (
+                        <ActivitySection />
                     )}
                 </section>
             </div>

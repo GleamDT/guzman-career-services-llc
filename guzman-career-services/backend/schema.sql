@@ -92,6 +92,16 @@ CREATE TABLE IF NOT EXISTS client_resumes (
     uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Activity Log
+CREATE TABLE IF NOT EXISTS activity_log (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    action TEXT NOT NULL,
+    actor_name TEXT NOT NULL DEFAULT '',
+    actor_email TEXT NOT NULL DEFAULT '',
+    details TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Indexes for common lookups
 CREATE INDEX IF NOT EXISTS idx_clients_status ON clients(status);
 CREATE INDEX IF NOT EXISTS idx_invoices_client_id ON invoices(client_id);

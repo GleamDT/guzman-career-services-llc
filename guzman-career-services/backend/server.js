@@ -51,10 +51,17 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
             if (session.payment_status === 'paid') {
                 const invoiceId = session.metadata?.invoice_id;
                 if (invoiceId) {
-                    await pool.query(
-                        `UPDATE invoices SET status = 'Paid', paid_at = NOW() WHERE id = $1 AND status = 'Pending'`,
+                    const stripeInv = await pool.query(
+                        `UPDATE invoices SET status = 'Paid', paid_at = NOW() WHERE id = $1 AND status = 'Pending' RETURNING *`,
                         [invoiceId]
                     );
+                    if (stripeInv.rows[0]) {
+                        const cRow = await pool.query('SELECT full_name, email FROM clients WHERE id = $1', [stripeInv.rows[0].client_id]);
+                        if (cRow.rows[0]) {
+                            logActivity('invoice_paid_online', cRow.rows[0].full_name, cRow.rows[0].email,
+                                `Invoice ${stripeInv.rows[0].invoice_number} paid online — $${parseFloat(stripeInv.rows[0].amount).toFixed(2)}`);
+                        }
+                    }
                     console.log(`[Stripe Webhook] Invoice ${invoiceId} marked as paid`);
                 }
             }
@@ -91,6 +98,30 @@ function getFileExt(mimetype) {
 }
 
 const siteUrl = () => process.env.SITE_URL || 'http://localhost:3000';
+
+// ─── ACTIVITY LOG ─────────────────────────────────────────────────────────────
+
+pool.query(`
+    CREATE TABLE IF NOT EXISTS activity_log (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        action TEXT NOT NULL,
+        actor_name TEXT NOT NULL DEFAULT '',
+        actor_email TEXT NOT NULL DEFAULT '',
+        details TEXT NOT NULL DEFAULT '',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+`).catch(err => console.error('[activity_log init]', err.message));
+
+async function logActivity(action, actorName, actorEmail, details) {
+    try {
+        await pool.query(
+            `INSERT INTO activity_log (action, actor_name, actor_email, details) VALUES ($1, $2, $3, $4)`,
+            [action, actorName || '', actorEmail || '', details || '']
+        );
+    } catch (err) {
+        console.error('[logActivity]', err.message);
+    }
+}
 
 // ─── EMAIL ────────────────────────────────────────────────────────────────────
 
@@ -556,6 +587,9 @@ app.post('/api/auth/login', async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
+        if (user.role === 'client') {
+            logActivity('client_login', user.full_name, user.email, `${user.full_name} logged into the client portal`);
+        }
         res.json({ token, role: user.role, email: user.email });
     } catch (error) {
         console.error('[POST /api/auth/login]', error.message);
@@ -675,6 +709,7 @@ app.post('/api/clients', requireAdmin, async (req, res) => {
         }
         const inviteLink = `${siteUrl()}/set-password?token=${inviteToken}`;
         sendInviteEmail(email, fullName, inviteLink);
+        logActivity('client_created', fullName, email, `Client account created for ${fullName}`);
         res.json({ success: true, client: clientData });
     } catch (error) {
         console.error('[POST /api/clients]', error.message);
@@ -793,6 +828,7 @@ app.post('/api/staff', requireAdmin, async (req, res) => {
         const userId = userResult.rows[0].id;
         // Send welcome email with login credentials
         sendStaffWelcomeEmail(email, fullName, password);
+        logActivity('staff_added', fullName, email, `Staff member ${fullName} added`);
         res.json({ success: true, user: { id: userId, email, full_name: fullName } });
     } catch (error) {
         console.error('[POST /api/staff]', error.message);
@@ -838,8 +874,10 @@ app.patch('/api/staff/:id/reset-password', requireAdmin, async (req, res) => {
 // DELETE /api/staff/:id — remove a staff account
 app.delete('/api/staff/:id', requireAdmin, async (req, res) => {
     try {
-        const result = await pool.query(`DELETE FROM users WHERE id = $1 AND role = 'staff' RETURNING id`, [req.params.id]);
+        const result = await pool.query(`DELETE FROM users WHERE id = $1 AND role = 'staff' RETURNING id, full_name, email`, [req.params.id]);
         if (!result.rows[0]) return res.status(404).json({ error: 'Staff member not found.' });
+        const { full_name, email } = result.rows[0];
+        logActivity('staff_removed', full_name, email, `Staff member ${full_name} removed`);
         res.json({ success: true });
     } catch (error) {
         console.error('[DELETE /api/staff/:id]', error.message);
@@ -869,7 +907,11 @@ app.post('/api/invoices', requireAdmin, async (req, res) => {
         const result = await pool.query(sql, values);
         const invoice = result.rows[0];
         const clientRow = await pool.query('SELECT email, full_name FROM clients WHERE id = $1', [clientId]);
-        if (clientRow.rows[0]) sendPortalNotification(clientRow.rows[0].email, clientRow.rows[0].full_name);
+        if (clientRow.rows[0]) {
+            sendPortalNotification(clientRow.rows[0].email, clientRow.rows[0].full_name);
+            logActivity('invoice_created', clientRow.rows[0].full_name, clientRow.rows[0].email,
+                `Invoice ${invoiceNumber} created for ${clientRow.rows[0].full_name} — $${parseFloat(amount).toFixed(2)}`);
+        }
         res.json({ success: true, invoice });
     } catch (error) {
         console.error('[POST /api/invoices]', error.message);
@@ -918,7 +960,15 @@ app.patch('/api/invoices/:id/mark-paid', requireAdmin, async (req, res) => {
             `UPDATE invoices SET status = 'Paid', paid_at = NOW() WHERE id = $1 RETURNING *`,
             [req.params.id]
         );
-        res.json({ success: true, invoice: result.rows[0] });
+        const inv = result.rows[0];
+        if (inv) {
+            const cRow = await pool.query('SELECT full_name, email FROM clients WHERE id = $1', [inv.client_id]);
+            if (cRow.rows[0]) {
+                logActivity('invoice_paid', cRow.rows[0].full_name, cRow.rows[0].email,
+                    `Invoice ${inv.invoice_number} marked as paid — $${parseFloat(inv.amount).toFixed(2)}`);
+            }
+        }
+        res.json({ success: true, invoice: inv });
     } catch (error) {
         console.error('[PATCH /api/invoices/:id/mark-paid]', error.message);
         res.status(500).json({ error: error.message });
@@ -1066,6 +1116,8 @@ app.post('/api/intake', async (req, res) => {
             intakeFormType || 'general',
         ]);
         const submissionId = result.rows[0].id;
+
+        logActivity('intake_submitted', fullName, email, `Intake form submitted by ${fullName}`);
 
         // Notify admin of new intake submission
         if (process.env.RESEND_API_KEY) {
@@ -1246,6 +1298,8 @@ app.post('/api/clients/:clientId/resume', requireAdminOrStaff, upload.single('re
         );
         const clientData = result.rows[0];
         sendPortalNotification(clientData.email, clientData.full_name);
+        logActivity('resume_uploaded', clientData.full_name, clientData.email,
+            `Resume uploaded for ${clientData.full_name} — ${file.originalname}`);
         res.json({ success: true, client: clientData });
     } catch (error) {
         console.error('[POST /api/clients/:clientId/resume]', error.message);
@@ -1321,6 +1375,30 @@ app.get('/api/clients/:clientId/resume/download', requireAuth, async (req, res) 
     } catch (error) {
         console.error('[GET /api/clients/:clientId/resume/download]', error.message);
         if (!res.headersSent) res.status(500).json({ error: 'Could not download file.' });
+    }
+});
+
+// GET /api/activity-log — full activity history (admin only)
+app.get('/api/activity-log', requireAdmin, async (req, res) => {
+    const { action, search, from, to, limit = 200 } = req.query;
+    const conditions = [];
+    const values = [];
+    let idx = 1;
+    if (action && action !== 'all') { conditions.push(`action = $${idx++}`); values.push(action); }
+    if (search) { conditions.push(`(actor_name ILIKE $${idx} OR actor_email ILIKE $${idx} OR details ILIKE $${idx})`); values.push(`%${search}%`); idx++; }
+    if (from) { conditions.push(`created_at >= $${idx++}`); values.push(from); }
+    if (to)   { conditions.push(`created_at <= $${idx++}`); values.push(to + ' 23:59:59'); }
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    values.push(Math.min(parseInt(limit) || 200, 500));
+    try {
+        const result = await pool.query(
+            `SELECT * FROM activity_log ${where} ORDER BY created_at DESC LIMIT $${idx}`,
+            values
+        );
+        res.json({ logs: result.rows });
+    } catch (error) {
+        console.error('[GET /api/activity-log]', error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 
