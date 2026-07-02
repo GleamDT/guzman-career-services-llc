@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS clients (
     resume_path TEXT,
     resume_filename TEXT,
     resume_uploaded_at TIMESTAMPTZ,
+    resume_uploaded_by TEXT NOT NULL DEFAULT '',
     hibernated BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -71,6 +72,9 @@ CREATE TABLE IF NOT EXISTS intake_submissions (
     legal_name TEXT NOT NULL,
     signature_date DATE NOT NULL,
     tc_agreed BOOLEAN NOT NULL DEFAULT true,
+    ip_address TEXT NOT NULL DEFAULT '',
+    user_agent TEXT NOT NULL DEFAULT '',
+    device_type TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL DEFAULT 'pending',
     linkedin_profile TEXT NOT NULL DEFAULT '',
     additional_notes TEXT NOT NULL DEFAULT '',
@@ -89,6 +93,7 @@ CREATE TABLE IF NOT EXISTS client_resumes (
     resume_path TEXT NOT NULL,
     resume_filename TEXT NOT NULL,
     jd_link TEXT,
+    uploaded_by TEXT NOT NULL DEFAULT '',
     uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

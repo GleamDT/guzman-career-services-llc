@@ -5,6 +5,7 @@ import CreateClientModal from './CreateClientModal';
 import CreateStaffModal from './CreateStaffModal';
 import CreateInvoiceModal from './CreateInvoiceModal';
 import { downloadInvoicePDF } from '../lib/invoicePDF';
+import { downloadIntakePDF } from '../lib/intakePDF';
 import { authFetch, getAuthToken } from '../lib/authFetch';
 import { clearToken } from '../lib/auth';
 import './AdminDashboard.css';
@@ -831,12 +832,13 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast, isStaff = fals
                                 <th>Resume Status</th>
                                 <th>Latest File</th>
                                 <th>Last Uploaded</th>
+                                {!isStaff && <th>Uploaded By</th>}
                                 <th className="text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {clients.length === 0 ? (
-                                <tr><td colSpan={isStaff ? 5 : 6} className="ads-table-msg">No clients yet.</td></tr>
+                                <tr><td colSpan={isStaff ? 5 : 7} className="ads-table-msg">No clients yet.</td></tr>
                             ) : pagedClients.map(client => {
                                 const hasResume = !!client.resume_path;
                                 return (
@@ -861,6 +863,11 @@ function ResumesSection({ clients, onResumeUploaded, onShowToast, isStaff = fals
                                         <td className="admin-cell-muted">
                                             {fmtDate(client.resume_uploaded_at)}
                                         </td>
+                                        {!isStaff && (
+                                            <td className="admin-cell-muted">
+                                                {client.resume_uploaded_by || '—'}
+                                            </td>
+                                        )}
                                         <td>
                                             <div className="admin-actions">
                                                 {hasResume && (
@@ -902,6 +909,14 @@ function IntakeDetailsModal({ submission, onClose, onCreateAccount, onDeleted })
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleteFile, setDeleteFile] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [exportingPdf, setExportingPdf] = useState(false);
+
+    const handleExportPdf = async () => {
+        setExportingPdf(true);
+        try { await downloadIntakePDF(submission); }
+        catch (err) { alert('Could not generate PDF: ' + err.message); }
+        finally { setExportingPdf(false); }
+    };
 
     const handleDelete = async () => {
         if (!submission) return;
@@ -991,6 +1006,9 @@ function IntakeDetailsModal({ submission, onClose, onCreateAccount, onDeleted })
                     {row('Legal Name (Signature)', submission.legal_name)}
                     {row('Signature Date', fmtDate(submission.signature_date))}
                     {row('T&C Agreed', submission.tc_agreed ? 'Yes' : 'No')}
+                    {row('Signed At (Server-Verified)', fmtDateTime(submission.created_at))}
+                    {row('IP Address', submission.ip_address)}
+                    {row('Device / Browser', submission.device_type)}
 
                     {submission.additional_notes && (
                         <>
@@ -1026,11 +1044,20 @@ function IntakeDetailsModal({ submission, onClose, onCreateAccount, onDeleted })
                     >
                         🗑 Delete Intake
                     </button>
-                    {submission.status === 'pending' && (
-                        <button className="idm-btn-primary" onClick={() => { onClose(); onCreateAccount(submission); }}>
-                            Create Client Account
+                    <div style={{ display: 'flex', gap: 10 }}>
+                        <button
+                            className="idm-btn-secondary"
+                            onClick={handleExportPdf}
+                            disabled={exportingPdf}
+                        >
+                            {exportingPdf ? 'Generating…' : '↓ Download PDF'}
                         </button>
-                    )}
+                        {submission.status === 'pending' && (
+                            <button className="idm-btn-primary" onClick={() => { onClose(); onCreateAccount(submission); }}>
+                                Create Client Account
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {showDeleteConfirm && (

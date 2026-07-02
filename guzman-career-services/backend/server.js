@@ -27,6 +27,7 @@ function httpsGetBuffer(url) {
 }
 
 const app = express();
+app.set('trust proxy', true);
 const allowedOrigins = ['http://localhost:3000', process.env.SITE_URL].filter(Boolean);
 app.use(cors({ origin: allowedOrigins }));
 
@@ -121,6 +122,51 @@ async function logActivity(action, actorName, actorEmail, details) {
     } catch (err) {
         console.error('[logActivity]', err.message);
     }
+}
+
+// ─── SCHEMA MIGRATIONS (idempotent) ───────────────────────────────────────────
+
+pool.query(`
+    ALTER TABLE intake_submissions
+        ADD COLUMN IF NOT EXISTS ip_address TEXT NOT NULL DEFAULT '',
+        ADD COLUMN IF NOT EXISTS user_agent TEXT NOT NULL DEFAULT '',
+        ADD COLUMN IF NOT EXISTS device_type TEXT NOT NULL DEFAULT ''
+`).catch(err => console.error('[intake_submissions migration]', err.message));
+
+pool.query(`
+    ALTER TABLE clients
+        ADD COLUMN IF NOT EXISTS resume_uploaded_by TEXT NOT NULL DEFAULT ''
+`).catch(err => console.error('[clients migration]', err.message));
+
+pool.query(`
+    ALTER TABLE client_resumes
+        ADD COLUMN IF NOT EXISTS uploaded_by TEXT NOT NULL DEFAULT ''
+`).catch(err => console.error('[client_resumes migration]', err.message));
+
+// Parses a User-Agent header into a human-readable "Device • OS • Browser" summary
+// for the terms-acceptance audit trail (browsers never expose a MAC address to the server or JS).
+function parseDeviceInfo(userAgent) {
+    if (!userAgent) return 'Unknown device';
+    const ua = userAgent;
+    const isTablet = /iPad|Tablet/i.test(ua);
+    const isMobile = !isTablet && /Mobi|Android|iPhone/i.test(ua);
+    const deviceKind = isTablet ? 'Tablet' : isMobile ? 'Mobile' : 'Desktop';
+
+    let os = 'Unknown OS';
+    if (/Windows NT/i.test(ua)) os = 'Windows';
+    else if (/Android/i.test(ua)) os = 'Android';
+    else if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS';
+    else if (/Mac OS X/i.test(ua)) os = 'macOS';
+    else if (/Linux/i.test(ua)) os = 'Linux';
+
+    let browser = 'Unknown browser';
+    if (/Edg\//i.test(ua)) browser = 'Edge';
+    else if (/OPR\/|Opera/i.test(ua)) browser = 'Opera';
+    else if (/Chrome\//i.test(ua)) browser = 'Chrome';
+    else if (/Firefox\//i.test(ua)) browser = 'Firefox';
+    else if (/Safari\//i.test(ua)) browser = 'Safari';
+
+    return `${deviceKind} • ${os} • ${browser}`;
 }
 
 // ─── EMAIL ────────────────────────────────────────────────────────────────────
@@ -1023,10 +1069,18 @@ app.post('/api/payments/verify', requireAuth, async (req, res) => {
         if (session.payment_status !== 'paid') return res.status(400).json({ error: 'Payment not completed.' });
         const invoiceId = session.metadata?.invoice_id;
         if (!invoiceId) return res.status(400).json({ error: 'Invoice reference missing from session.' });
-        await pool.query(
-            `UPDATE invoices SET status = 'Paid', paid_at = NOW() WHERE id = $1 AND status = 'Pending'`,
+        const result = await pool.query(
+            `UPDATE invoices SET status = 'Paid', paid_at = NOW() WHERE id = $1 AND status = 'Pending' RETURNING *`,
             [invoiceId]
         );
+        const inv = result.rows[0];
+        if (inv) {
+            const cRow = await pool.query('SELECT full_name, email FROM clients WHERE id = $1', [inv.client_id]);
+            if (cRow.rows[0]) {
+                logActivity('invoice_paid_online', cRow.rows[0].full_name, cRow.rows[0].email,
+                    `Invoice ${inv.invoice_number} paid online — $${parseFloat(inv.amount).toFixed(2)}`);
+            }
+        }
         res.json({ success: true });
     } catch (err) {
         console.error('[POST /api/payments/verify]', err.message);
@@ -1097,14 +1151,17 @@ app.post('/api/intake', async (req, res) => {
         return res.status(400).json({ error: 'Please fill in all required fields.' });
     }
     try {
+        const ipAddress = req.ip || '';
+        const userAgent = req.headers['user-agent'] || '';
+        const deviceType = parseDeviceInfo(userAgent);
         const result = await pool.query(`
             INSERT INTO intake_submissions (
                 full_name, email, referred_by, phone, full_address, sex,
                 veteran_status, disability_status, race_identity, work_authorization,
                 job_titles, shared_email, shared_password, legal_name,
                 signature_date, tc_agreed, status, linkedin_profile,
-                additional_notes, intake_form_type
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+                additional_notes, intake_form_type, ip_address, user_agent, device_type
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
             RETURNING id
         `, [
             fullName, email, referredBy || '', phone || '',
@@ -1113,7 +1170,7 @@ app.post('/api/intake', async (req, res) => {
             jobTitles || '', sharedEmail || '', sharedPassword || '',
             legalName, signatureDate || new Date().toISOString().split('T')[0],
             true, 'pending', linkedinProfile || '', additionalNotes || '',
-            intakeFormType || 'general',
+            intakeFormType || 'general', ipAddress, userAgent, deviceType,
         ]);
         const submissionId = result.rows[0].id;
 
@@ -1285,21 +1342,24 @@ app.post('/api/clients/:clientId/resume', requireAdminOrStaff, upload.single('re
     const ext = getFileExt(file.mimetype);
     const storagePath = `${clientId}/${timestamp}_resume${ext}`;
     try {
+        const uploaderRow = await pool.query('SELECT full_name FROM users WHERE id = $1', [req.user.sub]);
+        const uploaderName = uploaderRow.rows[0]?.full_name || req.user.email;
+
         await uploadFile(storagePath, file.buffer, file.mimetype);
         await pool.query(
-            `INSERT INTO client_resumes (client_id, resume_path, resume_filename, jd_link)
-             VALUES ($1, $2, $3, $4)`,
-            [clientId, storagePath, file.originalname, jdLink]
+            `INSERT INTO client_resumes (client_id, resume_path, resume_filename, jd_link, uploaded_by)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [clientId, storagePath, file.originalname, jdLink, uploaderName]
         );
         const result = await pool.query(
-            `UPDATE clients SET resume_path = $1, resume_filename = $2, resume_uploaded_at = NOW()
-             WHERE id = $3 RETURNING *`,
-            [storagePath, file.originalname, clientId]
+            `UPDATE clients SET resume_path = $1, resume_filename = $2, resume_uploaded_at = NOW(), resume_uploaded_by = $3
+             WHERE id = $4 RETURNING *`,
+            [storagePath, file.originalname, uploaderName, clientId]
         );
         const clientData = result.rows[0];
         sendPortalNotification(clientData.email, clientData.full_name);
-        logActivity('resume_uploaded', clientData.full_name, clientData.email,
-            `Resume uploaded for ${clientData.full_name} — ${file.originalname}`);
+        logActivity('resume_uploaded', uploaderName, req.user.email,
+            `Uploaded resume for ${clientData.full_name} — ${file.originalname}`);
         res.json({ success: true, client: clientData });
     } catch (error) {
         console.error('[POST /api/clients/:clientId/resume]', error.message);
