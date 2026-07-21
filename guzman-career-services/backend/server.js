@@ -1035,7 +1035,7 @@ app.post('/api/invoices/:id/checkout', requireAuth, async (req, res) => {
         if (row.status === 'Paid') return res.status(400).json({ error: 'Invoice is already paid.' });
         const baseUrl = siteUrl();
         const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card', 'cashapp', 'amazon_pay', 'klarna'],
+            payment_method_types: ['card', 'cashapp', 'amazon_pay'],
             mode: 'payment',
             customer_email: row.c_email,
             line_items: [{
