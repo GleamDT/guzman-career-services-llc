@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Blocks direct `git push` to main — changes should go to staging, get tested,
+# then reach main through a reviewed PR.
+#
+# Installed automatically by `npm install` at the repo root (see the root
+# package.json "prepare" script), which runs:
+#   git config core.hooksPath .githooks
+#
+# Bypass for a genuine one-off (e.g. an emergency hotfix):
+#   ALLOW_MAIN_PUSH=1 git push origin main
+
+protected_branch="main"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+    if [[ "$remote_ref" == "refs/heads/$protected_branch" ]]; then
+        if [[ "$ALLOW_MAIN_PUSH" == "1" ]]; then
+            echo "ALLOW_MAIN_PUSH=1 set — allowing direct push to '$protected_branch'."
+            continue
+        fi
+        echo ""
+        echo "Direct push to '$protected_branch' blocked."
+        echo "Push to 'staging' instead, test it there, then open a PR into '$protected_branch'."
+        echo ""
+        echo "Genuinely intentional? Re-run as:"
+        echo "  ALLOW_MAIN_PUSH=1 git push ${2:-origin} $protected_branch"
+        echo ""
+        exit 1
+    fi
+done
+
+exit 0

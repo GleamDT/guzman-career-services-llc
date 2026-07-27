@@ -2,6 +2,7 @@
   "name": "guzman-career-services-llc",
   "version": "1.0.0",
   "scripts": {
+    "prepare": "git rev-parse --git-dir > /dev/null 2>&1 && git config core.hooksPath .githooks || true",
     "build": "cd guzman-career-services && npm install && npm run build && cd backend && npm install",
     "start": "node guzman-career-services/backend/server.js"
   }
