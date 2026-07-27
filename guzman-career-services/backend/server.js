@@ -99,6 +99,7 @@ function getFileExt(mimetype) {
 }
 
 const siteUrl = () => process.env.SITE_URL || 'http://localhost:3000';
+const adminNotifyEmail = () => process.env.ADMIN_NOTIFY_EMAIL || 'clientservices@guzmancareerservices.com';
 
 // ─── ACTIVITY LOG ─────────────────────────────────────────────────────────────
 
@@ -1180,7 +1181,7 @@ app.post('/api/intake', async (req, res) => {
         if (process.env.RESEND_API_KEY) {
             resend.emails.send({
                 from: `Guzman Career Services <${emailFrom()}>`,
-                to: 'clientservices@guzmancareerservices.com',
+                to: adminNotifyEmail(),
                 subject: `New Intake Form Submission — ${fullName}`,
                 html: `<!DOCTYPE html>
 <html>
@@ -1473,7 +1474,7 @@ app.post('/api/contact', async (req, res) => {
         if (process.env.RESEND_API_KEY) {
             await resend.emails.send({
                 from: `Guzman Career Services <${emailFrom()}>`,
-                to: 'clientservices@guzmancareerservices.com',
+                to: adminNotifyEmail(),
                 subject: `New Contact Form Message — ${name}`,
                 html: `<!DOCTYPE html>
 <html>
