@@ -1,0 +1,56 @@
+name: Production
+
+# Railway auto-deploys the production service on push to main, gated by its
+# own "Wait for CI" setting (Settings → Source, on the production service) —
+# Railway only deploys once this workflow reports success on the commit.
+# No deploy step lives here; this workflow is purely the check Railway waits on.
+#
+# Migrations run at app boot (see root package.json "start"), using Railway's
+# existing DATABASE_URL — no separate migration step or DB secret needed here.
+#
+# Direct pushes to main are already blocked by branch protection + a local
+# pre-push hook — this workflow fires on the merge commit from a staging → main PR.
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Backend install
+        working-directory: guzman-career-services/backend
+        run: npm ci
+
+      - name: Backend syntax check
+        working-directory: guzman-career-services/backend
+        run: node --check server.js
+
+      - name: Backend tests
+        working-directory: guzman-career-services/backend
+        run: npm test
+
+      - name: Frontend install
+        working-directory: guzman-career-services
+        run: npm ci
+
+      - name: Frontend lint
+        working-directory: guzman-career-services
+        run: npm run lint
+
+      - name: Frontend tests
+        working-directory: guzman-career-services
+        run: npm test -- --watchAll=false --passWithNoTests
+        env:
+          CI: true
+
+      - name: Frontend build
+        working-directory: guzman-career-services
+        run: npm run build
