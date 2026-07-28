@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './Header.css';
 import Login from './Login';
+import { SITE_MODE } from '../lib/siteMode';
+import { API_BASE } from '../lib/apiBase';
 
 function Header() {
     const [scrolled, setScrolled] = useState(false);
@@ -41,12 +43,22 @@ function Header() {
                     <a href="#contact" className="nav-link nav-link-cta" onClick={closeMobileMenu}>
                         Contact Us
                     </a>
-                    <button
-                        className="nav-link nav-link-login"
-                        onClick={() => { closeMobileMenu(); setLoginOpen(true); }}
-                    >
-                        Login
-                    </button>
+                    {SITE_MODE === 'marketing' ? (
+                        <a
+                            className="nav-link nav-link-login"
+                            href={`${API_BASE}/`}
+                            onClick={closeMobileMenu}
+                        >
+                            Client Login
+                        </a>
+                    ) : (
+                        <button
+                            className="nav-link nav-link-login"
+                            onClick={() => { closeMobileMenu(); setLoginOpen(true); }}
+                        >
+                            Login
+                        </button>
+                    )}
                 </nav>
 
                 <button
@@ -61,7 +73,7 @@ function Header() {
             </div>
         </header>
 
-        <Login isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
+        {SITE_MODE !== 'marketing' && <Login isOpen={loginOpen} onClose={() => setLoginOpen(false)} />}
         </>
     );
 }

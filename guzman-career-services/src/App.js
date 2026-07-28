@@ -15,6 +15,10 @@ import ClientDashboard from './components/ClientDashboard';
 import SetPassword from './components/SetPassword';
 import TermsOfService from './components/TermsOfService';
 import PrivacyPolicy from './components/PrivacyPolicy';
+import PortalHome from './components/PortalHome';
+import SignupPage from './components/SignupPage';
+import OnboardingPage from './components/OnboardingPage';
+import { SITE_MODE } from './lib/siteMode';
 import './App.css';
 
 function getAuth() {
@@ -63,10 +67,23 @@ function App() {
   // This prevents a flash-redirect when a client clicks their invite link
   if (!authReady) return null;
 
-  return (
-    <Routes>
-      <Route path="/" element={<MainSite />} />
-      <Route path="/auth/callback" element={<Navigate to="/" replace />} />
+  if (SITE_MODE === 'marketing') {
+    return (
+      <Routes>
+        <Route path="/" element={<MainSite />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
+
+  const portalOnlyRoutes = (
+    <>
+      <Route path="/signup" element={<SignupPage />} />
+      <Route path="/onboarding" element={
+        <ProtectedRoute requiredRole="client"><OnboardingPage /></ProtectedRoute>
+      } />
       <Route path="/admin" element={
         <ProtectedRoute requiredRole="admin"><AdminDashboard userRole="admin" /></ProtectedRoute>
       } />
@@ -79,6 +96,25 @@ function App() {
       <Route path="/set-password" element={<SetPassword />} />
       <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+    </>
+  );
+
+  if (SITE_MODE === 'portal') {
+    return (
+      <Routes>
+        <Route path="/" element={<PortalHome />} />
+        <Route path="/auth/callback" element={<Navigate to="/" replace />} />
+        {portalOnlyRoutes}
+      </Routes>
+    );
+  }
+
+  // unified — today's exact existing behavior, plus the new signup/onboarding routes
+  return (
+    <Routes>
+      <Route path="/" element={<MainSite />} />
+      <Route path="/auth/callback" element={<Navigate to="/" replace />} />
+      {portalOnlyRoutes}
     </Routes>
   );
 }

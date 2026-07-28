@@ -360,6 +360,41 @@ function ClientDashboard() {
     const [showTermsModal, setShowTermsModal] = useState(false);
     const navigate = useNavigate();
 
+    const loadData = useCallback(async () => {
+        try {
+            const user = getAuthUser();
+            if (!user) return;
+
+            // Fetch client profile + invoices in parallel
+            const [profileRes, invoicesRes] = await Promise.all([
+                authFetch('/api/clients/me'),
+                authFetch('/api/clients/me/invoices'),
+            ]);
+
+            const profileData = await profileRes.json();
+            const invoicesData = await invoicesRes.json();
+
+            if (profileData.client) {
+                if (profileData.client.status === 'Pending') {
+                    navigate('/onboarding', { replace: true });
+                    return;
+                }
+                setClient(profileData.client);
+                if (profileData.client.tc_accepted_version !== TERMS_VERSION) {
+                    setShowTermsModal(true);
+                }
+                if (!profileData.client.has_logged_in) {
+                    authFetch(`/api/clients/${profileData.client.id}/mark-logged-in`, { method: 'PATCH' }).catch(() => {});
+                }
+            }
+            if (invoicesData.invoices) setInvoices(invoicesData.invoices);
+        } catch (err) {
+            console.error('Dashboard load error:', err);
+        } finally {
+            setLoading(false);
+        }
+    }, [navigate]);
+
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const payment = params.get('payment');
@@ -381,38 +416,7 @@ function ClientDashboard() {
         }
 
         loadData();
-    }, []);
-
-    const loadData = async () => {
-        try {
-            const user = getAuthUser();
-            if (!user) return;
-
-            // Fetch client profile + invoices in parallel
-            const [profileRes, invoicesRes] = await Promise.all([
-                authFetch('/api/clients/me'),
-                authFetch('/api/clients/me/invoices'),
-            ]);
-
-            const profileData = await profileRes.json();
-            const invoicesData = await invoicesRes.json();
-
-            if (profileData.client) {
-                setClient(profileData.client);
-                if (profileData.client.tc_accepted_version !== TERMS_VERSION) {
-                    setShowTermsModal(true);
-                }
-                if (!profileData.client.has_logged_in) {
-                    authFetch(`/api/clients/${profileData.client.id}/mark-logged-in`, { method: 'PATCH' }).catch(() => {});
-                }
-            }
-            if (invoicesData.invoices) setInvoices(invoicesData.invoices);
-        } catch (err) {
-            console.error('Dashboard load error:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [loadData]);
 
     const handleAcceptTerms = async (termsVersion) => {
         try {

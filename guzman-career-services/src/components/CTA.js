@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './CTA.css';
-import GetStartedModal from './GetStartedModal';
+import { API_BASE } from '../lib/apiBase';
 
 function CTA() {
-    const [modalOpen, setModalOpen] = useState(false);
-
     return (
         <section id="cta" className="cta-section">
             <div className="cta-background">
@@ -18,9 +16,9 @@ function CTA() {
                         and take the first step toward landing your dream job with confidence.
                     </p>
                     <div className="cta-buttons">
-                        <button onClick={() => setModalOpen(true)} className="btn btn-accent btn-lg">
+                        <a href={`${API_BASE}/signup`} className="btn btn-accent btn-lg">
                             Get Started Now
-                        </button>
+                        </a>
                         <a href="#contact" className="btn btn-outline btn-lg cta-btn-outline">
                             Contact Us
                         </a>
@@ -41,7 +39,6 @@ function CTA() {
                     </div>
                 </div>
             </div>
-            <GetStartedModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
         </section>
     );
 }

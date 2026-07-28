@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { authFetch, getAuthToken } from '../lib/authFetch';
+import { getAuthUser } from '../lib/auth';
 import { TERMS_OF_SERVICE, PRIVACY_POLICY } from '../lib/legalContent';
 import './IntakeForm.css';
 
@@ -12,7 +15,6 @@ const STEPS = [
 
 const initialData = {
     fullName: '',
-    email: '',
     referredBy: '',
     phone: '',
     fullAddress: '',
@@ -30,7 +32,8 @@ const initialData = {
     finalConfirm: false,
 };
 
-function IntakeForm({ onClose }) {
+function OnboardingForm() {
+    const navigate = useNavigate();
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState(initialData);
     const [resumeFile, setResumeFile] = useState(null);
@@ -47,7 +50,6 @@ function IntakeForm({ onClose }) {
         setError('');
         if (step === 1) {
             if (!formData.fullName.trim()) return 'Full name is required.';
-            if (!formData.email.trim() || !/\S+@\S+\.\S+/.test(formData.email)) return 'A valid email address is required.';
             if (!formData.phone.trim()) return 'Phone number is required.';
             if (!formData.fullAddress.trim()) return 'Full address is required.';
             if (!formData.sex) return 'Please select your sex.';
@@ -93,40 +95,21 @@ function IntakeForm({ onClose }) {
         setError('');
 
         try {
-            // Step 1: Create account + store intake data
-            const res = await fetch('/api/intake', {
-                method: 'POST',
+            const res = await authFetch('/api/clients/me/onboarding', {
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    fullName: formData.fullName,
-                    email: formData.email,
-                    referredBy: formData.referredBy,
-                    phone: formData.phone,
-                    fullAddress: formData.fullAddress,
-                    sex: formData.sex,
-                    veteranStatus: formData.veteranStatus,
-                    disabilityStatus: formData.disabilityStatus,
-                    raceIdentity: formData.raceIdentity,
-                    workAuthorization: formData.workAuthorization,
-                    jobTitles: formData.jobTitles,
-                    sharedEmail: formData.sharedEmail,
-                    sharedPassword: formData.sharedPassword,
-                    legalName: formData.legalName,
-                    signatureDate: formData.signatureDate,
-                    tcAgreed: formData.tcAgreed,
-                }),
+                body: JSON.stringify(formData),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Submission failed.');
 
-            const submissionId = data.submissionId;
-
-            // Step 2: Upload resume
-            if (resumeFile && submissionId) {
+            const clientId = getAuthUser()?.sub;
+            if (resumeFile && clientId) {
                 const fd = new FormData();
                 fd.append('resume', resumeFile);
-                const resumeRes = await fetch(`/api/intake/${submissionId}/resume`, {
+                const resumeRes = await fetch(`/api/clients/${clientId}/resume`, {
                     method: 'POST',
+                    headers: { Authorization: `Bearer ${getAuthToken()}` },
                     body: fd,
                 });
                 if (!resumeRes.ok) {
@@ -148,21 +131,17 @@ function IntakeForm({ onClose }) {
             <div className="intake-overlay">
                 <div className="intake-container intake-success-card">
                     <div className="intake-success-icon">✓</div>
-                    <h2>Thank You for Registering!</h2>
+                    <h2>Onboarding Complete!</h2>
                     <p>
-                        Your intake form has been successfully received by
-                        Guzman Career Services LLC. We appreciate you taking
-                        the time to complete your application.
+                        Thanks for completing your onboarding with Guzman Career Services LLC.
+                        Your information has been saved to your account.
                     </p>
                     <p className="intake-success-note">
-                        Our dedicated team will carefully review your submission
-                        and reach out to you via the email address provided
-                        within <strong>1–2 business days</strong> to discuss
-                        your next steps. We look forward to supporting your
-                        career journey!
+                        Our dedicated team will review your submission and reach out within
+                        <strong> 1–2 business days</strong> to discuss your next steps.
                     </p>
-                    <button className="intake-btn-primary" onClick={onClose}>
-                        Close
+                    <button className="intake-btn-primary" onClick={() => navigate('/dashboard')}>
+                        Go to Dashboard
                     </button>
                 </div>
             </div>
@@ -170,12 +149,11 @@ function IntakeForm({ onClose }) {
     }
 
     return (
-        <div className="intake-overlay" onClick={onClose}>
-            <div className="intake-container" onClick={e => e.stopPropagation()}>
+        <div className="intake-overlay">
+            <div className="intake-container">
                 {/* Header */}
                 <div className="intake-header">
-                    <button className="intake-close" onClick={onClose} aria-label="Close">✕</button>
-                    <h2 className="intake-title">General Client Intake Form</h2>
+                    <h2 className="intake-title">Complete Your Onboarding</h2>
                     <p className="intake-subtitle">Step {step} of {STEPS.length} — {STEPS[step - 1].label}</p>
                 </div>
 
@@ -193,16 +171,11 @@ function IntakeForm({ onClose }) {
                 <div className="intake-body">
                     {error && <div className="intake-error">{error}</div>}
 
-                    {/* ── STEP 1: Personal Info ── */}
                     {step === 1 && (
                         <div className="intake-fields">
                             <div className="intake-field">
                                 <label>Full Name <span className="req">*</span></label>
                                 <input type="text" value={formData.fullName} onChange={e => set('fullName', e.target.value)} placeholder="Jane Doe" />
-                            </div>
-                            <div className="intake-field">
-                                <label>Email Address <span className="req">*</span></label>
-                                <input type="email" value={formData.email} onChange={e => set('email', e.target.value)} placeholder="jane@example.com" />
                             </div>
                             <div className="intake-field">
                                 <label>Who Referred You?</label>
@@ -229,7 +202,6 @@ function IntakeForm({ onClose }) {
                         </div>
                     )}
 
-                    {/* ── STEP 2: Background / Identity ── */}
                     {step === 2 && (
                         <div className="intake-fields">
                             <div className="intake-field intake-field-full">
@@ -294,7 +266,6 @@ function IntakeForm({ onClose }) {
                         </div>
                     )}
 
-                    {/* ── STEP 3: Professional + Shared Credentials ── */}
                     {step === 3 && (
                         <div className="intake-fields">
                             <div className="intake-field intake-field-full">
@@ -337,7 +308,6 @@ function IntakeForm({ onClose }) {
                         </div>
                     )}
 
-                    {/* ── STEP 4: Resume Upload ── */}
                     {step === 4 && (
                         <div className="intake-fields">
                             <div className="intake-field intake-field-full">
@@ -389,7 +359,6 @@ function IntakeForm({ onClose }) {
                         </div>
                     )}
 
-                    {/* ── STEP 5: Legal Agreement ── */}
                     {step === 5 && (
                         <div className="intake-fields">
                             <div className="intake-field intake-field-full">
@@ -412,15 +381,15 @@ function IntakeForm({ onClose }) {
                             <div className="intake-field intake-field-full">
                                 <label>Terms &amp; Conditions and Privacy Policy</label>
                                 <div className="intake-tc-buttons">
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         className="intake-tc-link-btn"
                                         onClick={() => { setTermsModalTab('terms'); setShowTermsModal(true); }}
                                     >
                                         📄 Read Terms &amp; Conditions
                                     </button>
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         className="intake-tc-link-btn"
                                         onClick={() => { setTermsModalTab('privacy'); setShowTermsModal(true); }}
                                     >
@@ -457,19 +426,18 @@ function IntakeForm({ onClose }) {
                         </div>
                     )}
 
-                    {/* T&C Modal */}
                     {showTermsModal && (
                         <div className="intake-tc-modal-overlay" onClick={() => setShowTermsModal(false)}>
                             <div className="intake-tc-modal" onClick={e => e.stopPropagation()}>
                                 <div className="intake-tc-modal-header">
                                     <div className="intake-tc-modal-tabs">
-                                        <button 
+                                        <button
                                             className={`intake-tc-tab ${termsModalTab === 'terms' ? 'active' : ''}`}
                                             onClick={() => setTermsModalTab('terms')}
                                         >
                                             Terms & Conditions
                                         </button>
-                                        <button 
+                                        <button
                                             className={`intake-tc-tab ${termsModalTab === 'privacy' ? 'active' : ''}`}
                                             onClick={() => setTermsModalTab('privacy')}
                                         >
@@ -484,7 +452,7 @@ function IntakeForm({ onClose }) {
                                             <h3>{TERMS_OF_SERVICE.title}</h3>
                                             <h4>{TERMS_OF_SERVICE.subtitle}</h4>
                                             <p className="intake-tc-effective">Effective Date: {TERMS_OF_SERVICE.effectiveDate}</p>
-                                            
+
                                             {TERMS_OF_SERVICE.sections.map((section) => (
                                                 <div key={section.number} className="intake-tc-section">
                                                     <h5>{section.number}. {section.title}</h5>
@@ -518,7 +486,7 @@ function IntakeForm({ onClose }) {
                                             <h3>{PRIVACY_POLICY.title}</h3>
                                             <h4>{PRIVACY_POLICY.subtitle}</h4>
                                             <p className="intake-tc-effective">Effective Date: {PRIVACY_POLICY.effectiveDate}</p>
-                                            
+
                                             {PRIVACY_POLICY.sections.map((section) => (
                                                 <div key={section.number} className="intake-tc-section">
                                                     <h5>{section.number}. {section.title}</h5>
@@ -560,8 +528,8 @@ function IntakeForm({ onClose }) {
                                         />
                                         <span>I have read and agree to the Terms &amp; Conditions and Privacy Policy</span>
                                     </label>
-                                    <button 
-                                        className="intake-btn-primary" 
+                                    <button
+                                        className="intake-btn-primary"
                                         onClick={() => setShowTermsModal(false)}
                                     >
                                         {formData.tcAgreed ? 'Continue' : 'Close'}
@@ -586,7 +554,7 @@ function IntakeForm({ onClose }) {
                         </button>
                     ) : (
                         <button className="intake-btn-primary" onClick={handleSubmit} disabled={loading}>
-                            {loading ? 'Submitting…' : 'Submit Application'}
+                            {loading ? 'Submitting…' : 'Complete Onboarding'}
                         </button>
                     )}
                 </div>
@@ -595,4 +563,4 @@ function IntakeForm({ onClose }) {
     );
 }
 
-export default IntakeForm;
+export default OnboardingForm;

@@ -28,7 +28,7 @@ function httpsGetBuffer(url) {
 
 const app = express();
 app.set('trust proxy', true);
-const allowedOrigins = ['http://localhost:3000', process.env.SITE_URL].filter(Boolean);
+const allowedOrigins = ['http://localhost:3000', process.env.SITE_URL, process.env.MARKETING_SITE_URL].filter(Boolean);
 app.use(cors({ origin: allowedOrigins }));
 
 // Stripe webhook must be registered before express.json() — requires raw body
@@ -652,6 +652,42 @@ app.post('/api/auth/set-password', async (req, res) => {
     }
 });
 
+// POST /api/auth/signup — self-service client signup (email, password, track only;
+// onboarding details are filled in afterward via PATCH /api/clients/me/onboarding)
+app.post('/api/auth/signup', async (req, res) => {
+    const { email, password, intakeFormType } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
+    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+    try {
+        const passwordHash = await bcrypt.hash(password, 12);
+        const userResult = await pool.query(
+            `INSERT INTO users (email, password_hash, role, full_name, password_set)
+             VALUES ($1, $2, 'client', '', true) RETURNING id`,
+            [email.toLowerCase().trim(), passwordHash]
+        );
+        const userId = userResult.rows[0].id;
+        const clientResult = await pool.query(
+            `INSERT INTO clients (id, full_name, email, intake_form_type, status)
+             VALUES ($1, '', $2, $3, 'Pending') RETURNING *`,
+            [userId, email.toLowerCase().trim(), intakeFormType === 'tech2mate' ? 'tech2mate' : 'general']
+        );
+        const client = clientResult.rows[0];
+        const token = jwt.sign(
+            { sub: userId, email: client.email, role: 'client' },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+        logActivity('client_created', client.email, client.email, `${client.email} signed up (${client.intake_form_type})`);
+        res.json({ token, role: 'client', email: client.email });
+    } catch (error) {
+        console.error('[POST /api/auth/signup]', error.message);
+        if (error.code === '23505' && error.constraint === 'users_email_key') {
+            return res.status(400).json({ error: 'An account with this email already exists.' });
+        }
+        res.status(500).json({ error: 'Signup failed.' });
+    }
+});
+
 // ─── CLIENTS ──────────────────────────────────────────────────────────────────
 
 // GET /api/clients/me — current client's profile (must be before /:id routes)
@@ -664,6 +700,47 @@ app.get('/api/clients/me', requireAuth, async (req, res) => {
     } catch (error) {
         console.error('[GET /api/clients/me]', error.message);
         res.status(500).json({ error: error.message });
+    }
+});
+
+// PATCH /api/clients/me/onboarding — complete onboarding (the old intake questions),
+// writing directly onto the caller's own client record
+app.patch('/api/clients/me/onboarding', requireAuth, async (req, res) => {
+    if (req.user.role !== 'client') return res.status(403).json({ error: 'Forbidden' });
+    const { fullName, referredBy, phone, fullAddress, sex, veteranStatus, disabilityStatus,
+        raceIdentity, workAuthorization, jobTitles, sharedEmail, sharedPassword,
+        legalName, signatureDate, tcAgreed,
+        linkedinProfile, additionalNotes } = req.body;
+    if (!fullName || !legalName || !tcAgreed) {
+        return res.status(400).json({ error: 'Please fill in all required fields.' });
+    }
+    try {
+        const ipAddress = req.ip || '';
+        const userAgent = req.headers['user-agent'] || '';
+        const deviceType = parseDeviceInfo(userAgent);
+        const result = await pool.query(`
+            UPDATE clients SET
+                full_name = $1, referred_by = $2, phone = $3, full_address = $4, sex = $5,
+                veteran_status = $6, disability_status = $7, race_identity = $8, work_authorization = $9,
+                job_titles = $10, shared_email = $11, shared_password = $12, legal_name = $13,
+                signature_date = $14, tc_agreed = $15, linkedin_profile = $16, additional_notes = $17,
+                ip_address = $18, user_agent = $19, device_type = $20, status = 'Active'
+            WHERE id = $21
+            RETURNING *
+        `, [
+            fullName, referredBy || '', phone || '', fullAddress || '', sex || '',
+            veteranStatus || '', disabilityStatus || '', raceIdentity || '', workAuthorization || '',
+            jobTitles || '', sharedEmail || '', sharedPassword || '', legalName,
+            signatureDate || new Date().toISOString().split('T')[0], true, linkedinProfile || '', additionalNotes || '',
+            ipAddress, userAgent, deviceType, req.user.sub,
+        ]);
+        const client = result.rows[0];
+        if (!client) return res.status(404).json({ error: 'Client not found.' });
+        logActivity('intake_submitted', client.full_name, client.email, `Onboarding completed by ${client.full_name}`);
+        res.json({ success: true, client });
+    } catch (error) {
+        console.error('[PATCH /api/clients/me/onboarding]', error.message);
+        res.status(400).json({ error: error.message });
     }
 });
 
@@ -1285,9 +1362,12 @@ app.delete('/api/invoices/:id', requireAdmin, async (req, res) => {
 
 // ─── RESUMES ─────────────────────────────────────────────────────────────────
 
-// POST /api/clients/:clientId/resume — upload a resume for a client
-app.post('/api/clients/:clientId/resume', requireAdminOrStaff, upload.single('resume'), async (req, res) => {
+// POST /api/clients/:clientId/resume — upload a resume for a client (admin/staff, or the client themselves)
+app.post('/api/clients/:clientId/resume', requireAuth, upload.single('resume'), async (req, res) => {
     const { clientId } = req.params;
+    const isAdminOrStaff = req.user.role === 'admin' || req.user.role === 'staff';
+    const isOwner = req.user.sub === clientId;
+    if (!isAdminOrStaff && !isOwner) return res.status(403).json({ error: 'Forbidden' });
     const file = req.file;
     if (!file) return res.status(400).json({ error: 'No file received.' });
     const jdLink = req.body.jd_link || null;
@@ -1310,7 +1390,7 @@ app.post('/api/clients/:clientId/resume', requireAdminOrStaff, upload.single('re
             [storagePath, file.originalname, uploaderName, clientId]
         );
         const clientData = result.rows[0];
-        sendPortalNotification(clientData.email, clientData.full_name);
+        if (isAdminOrStaff) sendPortalNotification(clientData.email, clientData.full_name);
         logActivity('resume_uploaded', uploaderName, req.user.email,
             `Uploaded resume for ${clientData.full_name} — ${file.originalname}`);
         res.json({ success: true, client: clientData });

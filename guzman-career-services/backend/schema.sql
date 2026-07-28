@@ -36,6 +36,25 @@ CREATE TABLE IF NOT EXISTS clients (
     resume_uploaded_at TIMESTAMPTZ,
     resume_uploaded_by TEXT NOT NULL DEFAULT '',
     hibernated BOOLEAN NOT NULL DEFAULT false,
+    -- Onboarding fields (filled in post-signup, post-login; see PATCH /api/clients/me/onboarding)
+    legal_name TEXT NOT NULL DEFAULT '',
+    signature_date DATE,
+    tc_agreed BOOLEAN NOT NULL DEFAULT false,
+    ip_address TEXT NOT NULL DEFAULT '',
+    user_agent TEXT NOT NULL DEFAULT '',
+    device_type TEXT NOT NULL DEFAULT '',
+    sex TEXT NOT NULL DEFAULT '',
+    veteran_status TEXT NOT NULL DEFAULT '',
+    disability_status TEXT NOT NULL DEFAULT '',
+    race_identity TEXT NOT NULL DEFAULT '',
+    work_authorization TEXT NOT NULL DEFAULT '',
+    job_titles TEXT NOT NULL DEFAULT '',
+    referred_by TEXT NOT NULL DEFAULT '',
+    full_address TEXT NOT NULL DEFAULT '',
+    linkedin_profile TEXT NOT NULL DEFAULT '',
+    additional_notes TEXT NOT NULL DEFAULT '',
+    shared_email TEXT NOT NULL DEFAULT '',
+    shared_password TEXT NOT NULL DEFAULT '',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../lib/apiBase';
 import './Contact.css';
 
 function Contact() {
@@ -25,7 +26,7 @@ function Contact() {
         setResult('');
 
         try {
-            const response = await fetch('/api/contact', {
+            const response = await fetch(`${API_BASE}/api/contact`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),

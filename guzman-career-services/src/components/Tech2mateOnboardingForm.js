@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { authFetch, getAuthToken } from '../lib/authFetch';
+import { getAuthUser } from '../lib/auth';
 import './IntakeForm.css';
 import { TECH2MATES_TERMS_OF_SERVICE, PRIVACY_POLICY } from '../lib/legalContent';
 
@@ -12,7 +15,6 @@ const STEPS = [
 
 const initialData = {
     fullName: '',
-    email: '',
     phone: '',
     fullAddress: '',
     sex: '',
@@ -31,7 +33,8 @@ const initialData = {
     additionalNotes: '',
 };
 
-function Tech2mateIntakeForm({ onClose }) {
+function Tech2mateOnboardingForm() {
+    const navigate = useNavigate();
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState(initialData);
     const [resumeFile, setResumeFile] = useState(null);
@@ -48,7 +51,6 @@ function Tech2mateIntakeForm({ onClose }) {
         setError('');
         if (step === 1) {
             if (!formData.fullName.trim()) return 'Full name is required.';
-            if (!formData.email.trim() || !/\S+@\S+\.\S+/.test(formData.email)) return 'A valid email address is required.';
             if (!formData.phone.trim()) return 'Phone number is required.';
             if (!formData.fullAddress.trim()) return 'Full address is required.';
             if (!formData.sex) return 'Please select your sex.';
@@ -94,40 +96,21 @@ function Tech2mateIntakeForm({ onClose }) {
         setError('');
 
         try {
-            const res = await fetch('/api/intake', {
-                method: 'POST',
+            const res = await authFetch('/api/clients/me/onboarding', {
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    fullName: formData.fullName,
-                    email: formData.email,
-                    phone: formData.phone,
-                    fullAddress: formData.fullAddress,
-                    sex: formData.sex,
-                    veteranStatus: formData.veteranStatus,
-                    disabilityStatus: formData.disabilityStatus,
-                    raceIdentity: formData.raceIdentity,
-                    workAuthorization: formData.workAuthorization,
-                    jobTitles: formData.jobTitles,
-                    linkedinProfile: formData.linkedinProfile,
-                    sharedEmail: formData.sharedEmail,
-                    sharedPassword: formData.sharedPassword,
-                    legalName: formData.legalName,
-                    signatureDate: formData.signatureDate,
-                    tcAgreed: formData.tcAgreed,
-                    additionalNotes: formData.additionalNotes,
-                    intakeFormType: 'tech2mate',
-                }),
+                body: JSON.stringify(formData),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Submission failed.');
 
-            const submissionId = data.submissionId;
-
-            if (resumeFile && submissionId) {
+            const clientId = getAuthUser()?.sub;
+            if (resumeFile && clientId) {
                 const fd = new FormData();
                 fd.append('resume', resumeFile);
-                const resumeRes = await fetch(`/api/intake/${submissionId}/resume`, {
+                const resumeRes = await fetch(`/api/clients/${clientId}/resume`, {
                     method: 'POST',
+                    headers: { Authorization: `Bearer ${getAuthToken()}` },
                     body: fd,
                 });
                 if (!resumeRes.ok) {
@@ -149,21 +132,17 @@ function Tech2mateIntakeForm({ onClose }) {
             <div className="intake-overlay">
                 <div className="intake-container intake-success-card">
                     <div className="intake-success-icon">✓</div>
-                    <h2>Thank You for Registering!</h2>
+                    <h2>Onboarding Complete!</h2>
                     <p>
-                        Your intake form has been successfully received by
-                        Guzman Career Services LLC. We appreciate you taking
-                        the time to complete your application.
+                        Thanks for completing your onboarding with Guzman Career Services LLC.
+                        Your information has been saved to your account.
                     </p>
                     <p className="intake-success-note">
-                        Our dedicated team will carefully review your submission
-                        and reach out to you via the email address provided
-                        within <strong>1–2 business days</strong> to discuss
-                        your next steps. We look forward to supporting your
-                        career journey!
+                        Our dedicated team will review your submission and reach out within
+                        <strong> 1–2 business days</strong> to discuss your next steps.
                     </p>
-                    <button className="intake-btn-primary" onClick={onClose}>
-                        Close
+                    <button className="intake-btn-primary" onClick={() => navigate('/dashboard')}>
+                        Go to Dashboard
                     </button>
                 </div>
             </div>
@@ -171,16 +150,14 @@ function Tech2mateIntakeForm({ onClose }) {
     }
 
     return (
-        <div className="intake-overlay" onClick={onClose}>
-            <div className="intake-container" onClick={e => e.stopPropagation()}>
+        <div className="intake-overlay">
+            <div className="intake-container">
                 {/* Header */}
                 <div className="intake-header">
-                    <button className="intake-close" onClick={onClose} aria-label="Close">✕</button>
-                    <h2 className="intake-title">Job Application Services — Tech2mate Client Intake Form</h2>
+                    <h2 className="intake-title">Job Application Services — Tech2Mate Onboarding</h2>
                     <p className="intake-subtitle">
                         Please complete this form accurately. The information provided will be used to submit
-                        job applications on your behalf. By submitting this form, you acknowledge and agree
-                        to our Terms &amp; Conditions.
+                        job applications on your behalf.
                     </p>
                     <p className="intake-subtitle" style={{ marginTop: '0.25rem', opacity: 0.75 }}>
                         Step {step} of {STEPS.length} — {STEPS[step - 1].label}
@@ -201,16 +178,11 @@ function Tech2mateIntakeForm({ onClose }) {
                 <div className="intake-body">
                     {error && <div className="intake-error">{error}</div>}
 
-                    {/* ── STEP 1: Personal Info ── */}
                     {step === 1 && (
                         <div className="intake-fields">
                             <div className="intake-field">
                                 <label>Full Name <span className="req">*</span></label>
                                 <input type="text" value={formData.fullName} onChange={e => set('fullName', e.target.value)} placeholder="Jane Doe" />
-                            </div>
-                            <div className="intake-field">
-                                <label>Email Address <span className="req">*</span></label>
-                                <input type="email" value={formData.email} onChange={e => set('email', e.target.value)} placeholder="jane@example.com" />
                             </div>
                             <div className="intake-field">
                                 <label>Phone Number <span className="req">*</span></label>
@@ -233,7 +205,6 @@ function Tech2mateIntakeForm({ onClose }) {
                         </div>
                     )}
 
-                    {/* ── STEP 2: Background / Identity ── */}
                     {step === 2 && (
                         <div className="intake-fields">
                             <div className="intake-field intake-field-full">
@@ -298,7 +269,6 @@ function Tech2mateIntakeForm({ onClose }) {
                         </div>
                     )}
 
-                    {/* ── STEP 3: Professional + Shared Credentials ── */}
                     {step === 3 && (
                         <div className="intake-fields">
                             <div className="intake-field intake-field-full">
@@ -346,14 +316,13 @@ function Tech2mateIntakeForm({ onClose }) {
                         </div>
                     )}
 
-                    {/* ── STEP 4: Resume Upload ── */}
                     {step === 4 && (
                         <div className="intake-fields">
                             <div className="intake-field intake-field-full">
                                 <label>Upload Resume <span className="req">*</span></label>
                                 <div
                                     className={`intake-dropzone ${resumeFile ? 'intake-dropzone-filled' : ''}`}
-                                    onClick={() => document.getElementById('t2m-resume-input').click()}
+                                    onClick={() => document.getElementById('t2m-onboard-resume-input').click()}
                                     onDragOver={e => e.preventDefault()}
                                     onDrop={e => {
                                         e.preventDefault();
@@ -364,7 +333,7 @@ function Tech2mateIntakeForm({ onClose }) {
                                     }}
                                 >
                                     <input
-                                        id="t2m-resume-input"
+                                        id="t2m-onboard-resume-input"
                                         type="file"
                                         accept="application/pdf,.pdf,application/msword,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
                                         style={{ display: 'none' }}
@@ -398,7 +367,6 @@ function Tech2mateIntakeForm({ onClose }) {
                         </div>
                     )}
 
-                    {/* ── STEP 5: Legal Agreement ── */}
                     {step === 5 && (
                         <div className="intake-fields">
                             <div className="intake-field intake-field-full">
@@ -481,7 +449,7 @@ function Tech2mateIntakeForm({ onClose }) {
                         </button>
                     ) : (
                         <button className="intake-btn-primary" onClick={handleSubmit} disabled={loading}>
-                            {loading ? 'Submitting…' : 'Submit Application'}
+                            {loading ? 'Submitting…' : 'Complete Onboarding'}
                         </button>
                     )}
                 </div>
@@ -606,4 +574,4 @@ function Tech2mateIntakeForm({ onClose }) {
     );
 }
 
-export default Tech2mateIntakeForm;
+export default Tech2mateOnboardingForm;

@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './Hero.css';
-import GetStartedModal from './GetStartedModal';
+import { API_BASE } from '../lib/apiBase';
 
 function Hero() {
-  const [modalOpen, setModalOpen] = useState(false);
-
   return (
     <section id="home" className="hero">
       <div className="hero-background">
@@ -21,9 +19,9 @@ function Hero() {
             to help you stand out and succeed in today's competitive job market.
           </p>
           <div className="hero-cta">
-            <button onClick={() => setModalOpen(true)} className="btn btn-accent btn-lg">
+            <a href={`${API_BASE}/signup`} className="btn btn-accent btn-lg">
               Get Started Today
-            </button>
+            </a>
             <a href="#services" className="btn btn-outline btn-lg">
               Explore Services
             </a>
@@ -49,7 +47,6 @@ function Hero() {
           <span></span>
         </a>
       </div>
-      <GetStartedModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </section>
   );
 }

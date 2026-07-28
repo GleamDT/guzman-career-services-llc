@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './Services.css';
-import IntakeForm from './IntakeForm';
+import { API_BASE } from '../lib/apiBase';
 
 function Services() {
-    const [showIntakeForm, setShowIntakeForm] = useState(false);
-
     const generalService = {
         id: 'general',
         icon: '💼',
@@ -58,20 +56,18 @@ function Services() {
                                 ))}
                             </ul>
 
-                            <button
+                            <a
                                 className="category-button"
                                 style={{ background: generalService.gradient }}
-                                onClick={() => setShowIntakeForm(true)}
+                                href={`${API_BASE}/signup?track=general`}
                             >
                                 {generalService.buttonText}
                                 <span className="button-arrow">→</span>
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
-
-            {showIntakeForm && <IntakeForm onClose={() => setShowIntakeForm(false)} />}
         </section>
     );
 }
