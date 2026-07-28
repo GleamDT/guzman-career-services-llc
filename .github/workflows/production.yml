@@ -1,13 +1,15 @@
 name: Production
 
-# Requires a GitHub "production" Environment (Settings → Environments) with:
-#   RAILWAY_TOKEN          — a Railway project token scoped to the production environment
-#   MIGRATION_DATABASE_URL — production Postgres's PUBLIC/proxy connection string
-#                            (GitHub Actions runners can't reach Railway's internal URL)
-# and a repository variable RAILWAY_SERVICE set to the exact Railway service name.
+# Railway auto-deploys the production service on push to main, gated by its
+# own "Wait for CI" setting (Settings → Source, on the production service) —
+# Railway only deploys once this workflow reports success on the commit.
+# No deploy step lives here; this workflow is purely the check Railway waits on.
 #
-# Direct pushes to main are already blocked by branch protection + a local pre-push
-# hook — this workflow fires on the merge commit created by a staging → main PR.
+# Migrations run at app boot (see root package.json "start"), using Railway's
+# existing DATABASE_URL — no separate migration step or DB secret needed here.
+#
+# Direct pushes to main are already blocked by branch protection + a local
+# pre-push hook — this workflow fires on the merge commit from a staging → main PR.
 
 on:
   push:
@@ -52,45 +54,3 @@ jobs:
       - name: Frontend build
         working-directory: guzman-career-services
         run: npm run build
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-
-      - name: Backend install (for node-pg-migrate)
-        working-directory: guzman-career-services/backend
-        run: npm ci
-
-      - name: Run migrations against production
-        working-directory: guzman-career-services/backend
-        run: npm run migrate up
-        env:
-          DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
-
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy to Railway (production)
-        run: railway up --service "${{ vars.RAILWAY_SERVICE }}" --environment production --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
-      - name: Post-deploy health check
-        run: |
-          for i in 1 2 3 4 5; do
-            if curl -fsS https://guzmancareerservices.com/health; then
-              echo "Healthy."
-              exit 0
-            fi
-            echo "Attempt $i: not healthy yet, retrying in 10s..."
-            sleep 10
-          done
-          echo "::error::Production /health never reported healthy after deploy."
-          exit 1

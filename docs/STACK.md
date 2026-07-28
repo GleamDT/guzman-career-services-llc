@@ -64,7 +64,7 @@ Env vars: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `REACT_APP_STRIPE_PUBLIS
 
 ## CI/CD
 
-Two GitHub Actions workflows (`.github/workflows/staging.yml`, `.github/workflows/production.yml`) — install, lint, test, and build both the backend and frontend, then trigger the actual Railway deploy themselves via the Railway API/CLI. Railway's own "Deploy on Push" is turned off on both services specifically so that a failing check genuinely blocks a deploy, rather than racing an already-triggered one. See the workflow files themselves for the exact step order; the production workflow also runs `node-pg-migrate up` and polls `/health` post-deploy before considering the deploy successful.
+Two GitHub Actions workflows (`.github/workflows/staging.yml`, `.github/workflows/production.yml`) — install, lint, test, and build both the backend and frontend. Neither workflow deploys anything itself: Railway's own **"Wait for CI"** setting (Settings → Source, on each service) makes Railway hold its normal auto-deploy-on-push until this workflow reports success on that commit, so a failing check genuinely blocks a deploy without Actions needing a Railway token or CLI access at all. Migrations run at app boot instead of as a CI step — the root `package.json` `"start"` script runs `node-pg-migrate up` before starting `server.js`, using the `DATABASE_URL` each environment already has. If you want post-deploy health verification, check Railway's own service "Deploy" settings for a Healthcheck Path option and point it at `/health` — Railway has better visibility into actual deploy completion timing than Actions does under this design.
 
 ## Known Gaps (as of Phase 0)
 
