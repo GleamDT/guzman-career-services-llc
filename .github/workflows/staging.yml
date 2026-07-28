@@ -1,0 +1,83 @@
+name: Staging
+
+# Requires a GitHub "staging" Environment (Settings → Environments) with:
+#   RAILWAY_TOKEN          — a Railway project token scoped to the staging environment
+#   MIGRATION_DATABASE_URL — staging Postgres's PUBLIC/proxy connection string
+#                            (GitHub Actions runners can't reach Railway's internal URL)
+# and a repository variable RAILWAY_SERVICE set to the exact Railway service name.
+
+on:
+  pull_request:
+    branches: [staging]
+  push:
+    branches: [staging]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Backend install
+        working-directory: guzman-career-services/backend
+        run: npm ci
+
+      - name: Backend syntax check
+        working-directory: guzman-career-services/backend
+        run: node --check server.js
+
+      - name: Backend tests
+        working-directory: guzman-career-services/backend
+        run: npm test
+
+      - name: Frontend install
+        working-directory: guzman-career-services
+        run: npm ci
+
+      - name: Frontend lint
+        working-directory: guzman-career-services
+        run: npm run lint
+
+      - name: Frontend tests
+        working-directory: guzman-career-services
+        run: npm test -- --watchAll=false --passWithNoTests
+        env:
+          CI: true
+
+      - name: Frontend build
+        working-directory: guzman-career-services
+        run: npm run build
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Backend install (for node-pg-migrate)
+        working-directory: guzman-career-services/backend
+        run: npm ci
+
+      - name: Run migrations against staging
+        working-directory: guzman-career-services/backend
+        run: npm run migrate up
+        env:
+          DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway (staging)
+        run: railway up --service "${{ vars.RAILWAY_SERVICE }}" --environment staging --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}

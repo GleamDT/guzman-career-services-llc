@@ -76,6 +76,18 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 
 app.use(express.json());
 
+// ─── HEALTH CHECK ─────────────────────────────────────────────────────────────
+
+app.get('/health', async (_req, res) => {
+    try {
+        await pool.query('SELECT 1');
+        res.status(200).json({ status: 'ok', db: 'ok' });
+    } catch (err) {
+        console.error('[GET /health]', err.message);
+        res.status(503).json({ status: 'error', db: 'unreachable' });
+    }
+});
+
 const ALLOWED_MIME_TYPES = [
     'application/pdf',
     'application/msword',
@@ -92,27 +104,12 @@ const upload = multer({
     },
 });
 
-function getFileExt(mimetype) {
-    if (mimetype === 'application/msword') return '.doc';
-    if (mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return '.docx';
-    return '.pdf';
-}
+const { getFileExt, parseDeviceInfo } = require('./lib/helpers');
 
 const siteUrl = () => process.env.SITE_URL || 'http://localhost:3000';
 const adminNotifyEmail = () => process.env.ADMIN_NOTIFY_EMAIL || 'clientservices@guzmancareerservices.com';
 
 // ─── ACTIVITY LOG ─────────────────────────────────────────────────────────────
-
-pool.query(`
-    CREATE TABLE IF NOT EXISTS activity_log (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        action TEXT NOT NULL,
-        actor_name TEXT NOT NULL DEFAULT '',
-        actor_email TEXT NOT NULL DEFAULT '',
-        details TEXT NOT NULL DEFAULT '',
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-`).catch(err => console.error('[activity_log init]', err.message));
 
 async function logActivity(action, actorName, actorEmail, details) {
     try {
@@ -123,51 +120,6 @@ async function logActivity(action, actorName, actorEmail, details) {
     } catch (err) {
         console.error('[logActivity]', err.message);
     }
-}
-
-// ─── SCHEMA MIGRATIONS (idempotent) ───────────────────────────────────────────
-
-pool.query(`
-    ALTER TABLE intake_submissions
-        ADD COLUMN IF NOT EXISTS ip_address TEXT NOT NULL DEFAULT '',
-        ADD COLUMN IF NOT EXISTS user_agent TEXT NOT NULL DEFAULT '',
-        ADD COLUMN IF NOT EXISTS device_type TEXT NOT NULL DEFAULT ''
-`).catch(err => console.error('[intake_submissions migration]', err.message));
-
-pool.query(`
-    ALTER TABLE clients
-        ADD COLUMN IF NOT EXISTS resume_uploaded_by TEXT NOT NULL DEFAULT ''
-`).catch(err => console.error('[clients migration]', err.message));
-
-pool.query(`
-    ALTER TABLE client_resumes
-        ADD COLUMN IF NOT EXISTS uploaded_by TEXT NOT NULL DEFAULT ''
-`).catch(err => console.error('[client_resumes migration]', err.message));
-
-// Parses a User-Agent header into a human-readable "Device • OS • Browser" summary
-// for the terms-acceptance audit trail (browsers never expose a MAC address to the server or JS).
-function parseDeviceInfo(userAgent) {
-    if (!userAgent) return 'Unknown device';
-    const ua = userAgent;
-    const isTablet = /iPad|Tablet/i.test(ua);
-    const isMobile = !isTablet && /Mobi|Android|iPhone/i.test(ua);
-    const deviceKind = isTablet ? 'Tablet' : isMobile ? 'Mobile' : 'Desktop';
-
-    let os = 'Unknown OS';
-    if (/Windows NT/i.test(ua)) os = 'Windows';
-    else if (/Android/i.test(ua)) os = 'Android';
-    else if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS';
-    else if (/Mac OS X/i.test(ua)) os = 'macOS';
-    else if (/Linux/i.test(ua)) os = 'Linux';
-
-    let browser = 'Unknown browser';
-    if (/Edg\//i.test(ua)) browser = 'Edge';
-    else if (/OPR\/|Opera/i.test(ua)) browser = 'Opera';
-    else if (/Chrome\//i.test(ua)) browser = 'Chrome';
-    else if (/Firefox\//i.test(ua)) browser = 'Firefox';
-    else if (/Safari\//i.test(ua)) browser = 'Safari';
-
-    return `${deviceKind} • ${os} • ${browser}`;
 }
 
 // ─── EMAIL ────────────────────────────────────────────────────────────────────

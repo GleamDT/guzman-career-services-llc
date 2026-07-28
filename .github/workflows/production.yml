@@ -1,0 +1,96 @@
+name: Production
+
+# Requires a GitHub "production" Environment (Settings → Environments) with:
+#   RAILWAY_TOKEN          — a Railway project token scoped to the production environment
+#   MIGRATION_DATABASE_URL — production Postgres's PUBLIC/proxy connection string
+#                            (GitHub Actions runners can't reach Railway's internal URL)
+# and a repository variable RAILWAY_SERVICE set to the exact Railway service name.
+#
+# Direct pushes to main are already blocked by branch protection + a local pre-push
+# hook — this workflow fires on the merge commit created by a staging → main PR.
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Backend install
+        working-directory: guzman-career-services/backend
+        run: npm ci
+
+      - name: Backend syntax check
+        working-directory: guzman-career-services/backend
+        run: node --check server.js
+
+      - name: Backend tests
+        working-directory: guzman-career-services/backend
+        run: npm test
+
+      - name: Frontend install
+        working-directory: guzman-career-services
+        run: npm ci
+
+      - name: Frontend lint
+        working-directory: guzman-career-services
+        run: npm run lint
+
+      - name: Frontend tests
+        working-directory: guzman-career-services
+        run: npm test -- --watchAll=false --passWithNoTests
+        env:
+          CI: true
+
+      - name: Frontend build
+        working-directory: guzman-career-services
+        run: npm run build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Backend install (for node-pg-migrate)
+        working-directory: guzman-career-services/backend
+        run: npm ci
+
+      - name: Run migrations against production
+        working-directory: guzman-career-services/backend
+        run: npm run migrate up
+        env:
+          DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway (production)
+        run: railway up --service "${{ vars.RAILWAY_SERVICE }}" --environment production --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Post-deploy health check
+        run: |
+          for i in 1 2 3 4 5; do
+            if curl -fsS https://guzmancareerservices.com/health; then
+              echo "Healthy."
+              exit 0
+            fi
+            echo "Attempt $i: not healthy yet, retrying in 10s..."
+            sleep 10
+          done
+          echo "::error::Production /health never reported healthy after deploy."
+          exit 1
