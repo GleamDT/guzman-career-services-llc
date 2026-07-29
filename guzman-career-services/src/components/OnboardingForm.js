@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { authFetch, getAuthToken } from '../lib/authFetch';
-import { getAuthUser } from '../lib/auth';
 import { TERMS_OF_SERVICE, PRIVACY_POLICY } from '../lib/legalContent';
+import { COUNTRIES } from '../lib/countries';
 import './IntakeForm.css';
 
 const STEPS = [
@@ -18,6 +17,7 @@ const initialData = {
     referredBy: '',
     phone: '',
     fullAddress: '',
+    country: '',
     sex: '',
     veteranStatus: '',
     disabilityStatus: '',
@@ -32,19 +32,59 @@ const initialData = {
     finalConfirm: false,
 };
 
-function OnboardingForm() {
-    const navigate = useNavigate();
-    const [step, setStep] = useState(1);
-    const [formData, setFormData] = useState(initialData);
+function dataFromClient(client) {
+    if (!client) return initialData;
+    return {
+        fullName: client.full_name || '',
+        referredBy: client.referred_by || '',
+        phone: client.phone || '',
+        fullAddress: client.full_address || '',
+        country: client.country || '',
+        sex: client.sex || '',
+        veteranStatus: client.veteran_status || '',
+        disabilityStatus: client.disability_status || '',
+        raceIdentity: client.race_identity || '',
+        workAuthorization: client.work_authorization || '',
+        jobTitles: client.job_titles || '',
+        sharedEmail: client.shared_email || '',
+        sharedPassword: client.shared_password || '',
+        legalName: client.legal_name || '',
+        signatureDate: (client.signature_date || '').slice(0, 10) || new Date().toISOString().split('T')[0],
+        tcAgreed: Boolean(client.tc_agreed),
+        finalConfirm: false,
+    };
+}
+
+function OnboardingForm({ client, onClose, onComplete }) {
+    const [step, setStep] = useState(client?.onboarding_step || 1);
+    const [formData, setFormData] = useState(() => dataFromClient(client));
     const [resumeFile, setResumeFile] = useState(null);
+    const [existingResumeFilename, setExistingResumeFilename] = useState(client?.intake_resume_filename || '');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
     const [success, setSuccess] = useState(false);
     const [showTermsModal, setShowTermsModal] = useState(false);
     const [termsModalTab, setTermsModalTab] = useState('terms');
 
     const set = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+
+    const ALLOWED_RESUME_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+
+    function acceptResumeFile(file) {
+        if (!file) return;
+        if (!ALLOWED_RESUME_TYPES.includes(file.type)) {
+            setError('Only PDF or Word documents are accepted.');
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            setError('File is too large — 10 MB maximum.');
+            return;
+        }
+        setError('');
+        setResumeFile(file);
+    }
 
     function validateStep() {
         setError('');
@@ -52,6 +92,7 @@ function OnboardingForm() {
             if (!formData.fullName.trim()) return 'Full name is required.';
             if (!formData.phone.trim()) return 'Phone number is required.';
             if (!formData.fullAddress.trim()) return 'Full address is required.';
+            if (!formData.country) return 'Please select your country.';
             if (!formData.sex) return 'Please select your sex.';
         }
         if (step === 2) {
@@ -66,7 +107,7 @@ function OnboardingForm() {
             if (!formData.sharedPassword || formData.sharedPassword.length < 6) return 'Password must be at least 6 characters.';
         }
         if (step === 4) {
-            if (!resumeFile) return 'Please upload your resume (PDF).';
+            if (!resumeFile && !existingResumeFilename) return 'Please upload your resume (PDF).';
         }
         if (step === 5) {
             if (!formData.legalName.trim()) return 'Please enter your full legal name as your electronic signature.';
@@ -76,10 +117,41 @@ function OnboardingForm() {
         return null;
     }
 
-    function handleNext() {
+    async function handleNext() {
         const err = validateStep();
         if (err) { setError(err); return; }
-        setStep(s => s + 1);
+
+        setSaving(true);
+        setError('');
+
+        try {
+            if (step === 4 && resumeFile) {
+                const fd = new FormData();
+                fd.append('resume', resumeFile);
+                const resumeRes = await fetch('/api/clients/me/intake-resume', {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${getAuthToken()}` },
+                    body: fd,
+                });
+                const rData = await resumeRes.json();
+                if (!resumeRes.ok) throw new Error(rData.error || 'Resume upload failed.');
+                setExistingResumeFilename(rData.client?.intake_resume_filename || resumeFile.name);
+            }
+
+            const res = await authFetch('/api/clients/me/onboarding-draft', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...formData, step: step + 1 }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Could not save your progress.');
+
+            setStep(s => s + 1);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setSaving(false);
+        }
     }
 
     function handleBack() {
@@ -103,21 +175,6 @@ function OnboardingForm() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Submission failed.');
 
-            const clientId = getAuthUser()?.sub;
-            if (resumeFile && clientId) {
-                const fd = new FormData();
-                fd.append('resume', resumeFile);
-                const resumeRes = await fetch(`/api/clients/${clientId}/resume`, {
-                    method: 'POST',
-                    headers: { Authorization: `Bearer ${getAuthToken()}` },
-                    body: fd,
-                });
-                if (!resumeRes.ok) {
-                    const rData = await resumeRes.json();
-                    throw new Error(rData.error || 'Resume upload failed.');
-                }
-            }
-
             setSuccess(true);
         } catch (err) {
             setError(err.message);
@@ -140,8 +197,8 @@ function OnboardingForm() {
                         Our dedicated team will review your submission and reach out within
                         <strong> 1–2 business days</strong> to discuss your next steps.
                     </p>
-                    <button className="intake-btn-primary" onClick={() => navigate('/dashboard')}>
-                        Go to Dashboard
+                    <button className="intake-btn-primary" onClick={onComplete}>
+                        Continue to Payment
                     </button>
                 </div>
             </div>
@@ -151,6 +208,9 @@ function OnboardingForm() {
     return (
         <div className="intake-overlay">
             <div className="intake-container">
+                {onClose && (
+                    <button className="intake-close" onClick={onClose} aria-label="Close and finish later">✕</button>
+                )}
                 {/* Header */}
                 <div className="intake-header">
                     <h2 className="intake-title">Complete Your Onboarding</h2>
@@ -188,6 +248,13 @@ function OnboardingForm() {
                             <div className="intake-field intake-field-full">
                                 <label>Full Address <span className="req">*</span></label>
                                 <textarea rows={3} value={formData.fullAddress} onChange={e => set('fullAddress', e.target.value)} placeholder="Street, City, State, ZIP" />
+                            </div>
+                            <div className="intake-field">
+                                <label>Country <span className="req">*</span></label>
+                                <select value={formData.country} onChange={e => set('country', e.target.value)}>
+                                    <option value="">Select…</option>
+                                    {COUNTRIES.map(c => <option key={c}>{c}</option>)}
+                                </select>
                             </div>
                             <div className="intake-field">
                                 <label>Sex <span className="req">*</span></label>
@@ -313,15 +380,12 @@ function OnboardingForm() {
                             <div className="intake-field intake-field-full">
                                 <label>Upload Resume <span className="req">*</span></label>
                                 <div
-                                    className={`intake-dropzone ${resumeFile ? 'intake-dropzone-filled' : ''}`}
+                                    className={`intake-dropzone ${resumeFile || existingResumeFilename ? 'intake-dropzone-filled' : ''}`}
                                     onClick={() => document.getElementById('resume-input').click()}
                                     onDragOver={e => e.preventDefault()}
                                     onDrop={e => {
                                         e.preventDefault();
-                                        const f = e.dataTransfer.files[0];
-                                        const allowed = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-                                        if (f && allowed.includes(f.type)) setResumeFile(f);
-                                        else setError('Only PDF or Word documents are accepted.');
+                                        acceptResumeFile(e.dataTransfer.files[0]);
                                     }}
                                 >
                                     <input
@@ -329,10 +393,7 @@ function OnboardingForm() {
                                         type="file"
                                         accept="application/pdf,.pdf,application/msword,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
                                         style={{ display: 'none' }}
-                                        onChange={e => {
-                                            const f = e.target.files[0];
-                                            if (f) setResumeFile(f);
-                                        }}
+                                        onChange={e => acceptResumeFile(e.target.files[0])}
                                     />
                                     {resumeFile ? (
                                         <>
@@ -345,6 +406,19 @@ function OnboardingForm() {
                                                 onClick={e => { e.stopPropagation(); setResumeFile(null); }}
                                             >
                                                 Remove
+                                            </button>
+                                        </>
+                                    ) : existingResumeFilename ? (
+                                        <>
+                                            <div className="intake-dz-icon">📄</div>
+                                            <p className="intake-dz-name">{existingResumeFilename}</p>
+                                            <p className="intake-dz-size">Already uploaded</p>
+                                            <button
+                                                type="button"
+                                                className="intake-dz-remove"
+                                                onClick={e => { e.stopPropagation(); document.getElementById('resume-input').click(); }}
+                                            >
+                                                Replace
                                             </button>
                                         </>
                                     ) : (
@@ -543,14 +617,14 @@ function OnboardingForm() {
                 {/* Navigation */}
                 <div className="intake-nav">
                     {step > 1 && (
-                        <button className="intake-btn-secondary" onClick={handleBack} disabled={loading}>
+                        <button className="intake-btn-secondary" onClick={handleBack} disabled={loading || saving}>
                             ← Back
                         </button>
                     )}
                     <div style={{ flex: 1 }} />
                     {step < STEPS.length ? (
-                        <button className="intake-btn-primary" onClick={handleNext}>
-                            Next →
+                        <button className="intake-btn-primary" onClick={handleNext} disabled={saving}>
+                            {saving ? 'Saving…' : 'Next →'}
                         </button>
                     ) : (
                         <button className="intake-btn-primary" onClick={handleSubmit} disabled={loading}>

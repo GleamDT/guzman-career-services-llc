@@ -106,6 +106,18 @@ const upload = multer({
 
 const { getFileExt, parseDeviceInfo } = require('./lib/helpers');
 
+function generateInvoiceNumber() {
+    const year = new Date().getFullYear();
+    const unique = Date.now().toString().slice(-7);
+    return `INV-${year}-${unique}`;
+}
+
+// Initial program payment, post-onboarding — general/tech2mate totals and their split installments.
+const INITIAL_PAYMENT_PLANS = {
+    general: { lump: 1250, split: [650, 600] },
+    tech2mate: { lump: 1200, split: [600, 600] },
+};
+
 const siteUrl = () => process.env.SITE_URL || 'http://localhost:3000';
 const adminNotifyEmail = () => process.env.ADMIN_NOTIFY_EMAIL || 'clientservices@guzmancareerservices.com';
 
@@ -529,6 +541,202 @@ async function sendResetEmail(toEmail, toName, resetLink) {
     }
 }
 
+function generateOTP() {
+    return String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
+}
+
+async function sendOTPEmail(toEmail, code) {
+    if (!process.env.RESEND_API_KEY) return;
+    try {
+        await resend.emails.send({
+            from: `Guzman Career Services <${emailFrom()}>`,
+            to: toEmail,
+            subject: `Your verification code: ${code}`,
+            html: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:#1d4ed8;padding:30px 40px 26px;">
+              <img src="${siteUrl()}/logo.png" alt="Guzman Career Services" width="160" style="display:block;height:auto;border:0;" />
+              <p style="margin:10px 0 0;font-size:13px;color:#bfdbfe;letter-spacing:0.3px;">
+                Professional Career Coaching &amp; Talent Placement
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 40px 28px;">
+              <h1 style="margin:0 0 10px;font-size:24px;color:#0f172a;font-weight:700;">Verify your email</h1>
+              <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.7;">
+                Enter this code to finish creating your Guzman Career Services account:
+              </p>
+
+              <table cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
+                <tr>
+                  <td style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:18px 32px;">
+                    <span style="font-size:32px;font-weight:800;letter-spacing:8px;color:#1d4ed8;">${code}</span>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0;font-size:13px;color:#94a3b8;">
+                This code expires in <strong>10 minutes</strong>. If you didn't create an account, you can safely ignore this email.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:24px 40px;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#94a3b8;">support@guzmancareerservices.com</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
+        });
+    } catch (err) {
+        console.error('[sendOTPEmail] Email failed:', err.message);
+    }
+}
+
+const REMINDER_COPY = {
+    '7day': {
+        subject: 'Your balance is due in 7 days',
+        heading: 'Balance reminder',
+        body: (amount, dueDate) => `Your remaining balance of <strong>$${amount}</strong> is due on <strong>${dueDate}</strong> — that's 7 days from today.`,
+    },
+    due: {
+        subject: 'Your balance is due today',
+        heading: 'Balance due today',
+        body: (amount, dueDate) => `Your remaining balance of <strong>$${amount}</strong> is due <strong>today (${dueDate})</strong>.`,
+    },
+    overdue: {
+        subject: 'Your balance is now overdue',
+        heading: 'Balance overdue',
+        body: (amount, dueDate) => `Your remaining balance of <strong>$${amount}</strong> was due on <strong>${dueDate}</strong> and is now overdue. Please make payment as soon as possible.`,
+    },
+};
+
+async function sendBalanceReminderEmail(toEmail, toName, invoice, kind) {
+    if (!process.env.RESEND_API_KEY) return;
+    const copy = REMINDER_COPY[kind];
+    const amount = parseFloat(invoice.amount).toFixed(2);
+    const dueDate = new Date(invoice.due_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+    try {
+        await resend.emails.send({
+            from: `Guzman Career Services <${emailFrom()}>`,
+            to: toEmail,
+            subject: copy.subject,
+            html: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:#1d4ed8;padding:30px 40px 26px;">
+              <img src="${siteUrl()}/logo.png" alt="Guzman Career Services" width="160" style="display:block;height:auto;border:0;" />
+              <p style="margin:10px 0 0;font-size:13px;color:#bfdbfe;letter-spacing:0.3px;">
+                Professional Career Coaching &amp; Talent Placement
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 40px 28px;">
+              <h1 style="margin:0 0 10px;font-size:24px;color:#0f172a;font-weight:700;">${copy.heading}</h1>
+              <p style="margin:0 0 18px;font-size:15px;color:#475569;line-height:1.7;">
+                Hi <strong>${toName}</strong>,
+              </p>
+              <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.7;">
+                ${copy.body(amount, dueDate)}
+              </p>
+
+              <table cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
+                <tr>
+                  <td style="background:#1d4ed8;border-radius:8px;">
+                    <a href="${siteUrl()}/dashboard"
+                       style="display:inline-block;padding:14px 36px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.3px;">
+                      Pay My Balance →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0;font-size:13px;color:#94a3b8;">
+                Invoice ${invoice.invoice_number}.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:24px 40px;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#94a3b8;">support@guzmancareerservices.com</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
+        });
+    } catch (err) {
+        console.error('[sendBalanceReminderEmail] Email failed:', err.message);
+    }
+}
+
+async function checkPaymentReminders() {
+    try {
+        const stages = [
+            { column: 'reminder_7day_sent_at', condition: `due_date = CURRENT_DATE + INTERVAL '7 days'`, kind: '7day' },
+            { column: 'reminder_due_sent_at', condition: `due_date = CURRENT_DATE`, kind: 'due' },
+            { column: 'reminder_overdue_sent_at', condition: `due_date < CURRENT_DATE`, kind: 'overdue' },
+        ];
+        for (const stage of stages) {
+            const result = await pool.query(`
+                UPDATE invoices SET ${stage.column} = NOW()
+                WHERE invoice_kind IS NOT NULL AND status = 'Pending' AND ${stage.column} IS NULL
+                  AND ${stage.condition}
+                RETURNING *
+            `);
+            for (const invoice of result.rows) {
+                const clientRow = await pool.query('SELECT full_name, email FROM clients WHERE id = $1', [invoice.client_id]);
+                const client = clientRow.rows[0];
+                if (client) await sendBalanceReminderEmail(client.email, client.full_name, invoice, stage.kind);
+            }
+        }
+    } catch (err) {
+        console.error('[checkPaymentReminders]', err.message);
+    }
+}
+
 // ─── AUTH MIDDLEWARE ──────────────────────────────────────────────────────────
 
 function verifyToken(token) {
@@ -581,6 +789,9 @@ app.post('/api/auth/login', async (req, res) => {
         }
         const valid = await bcrypt.compare(password, user.password_hash);
         if (!valid) return res.status(401).json({ error: 'Incorrect email or password.' });
+        if (!user.email_verified) {
+            return res.status(403).json({ error: 'Please verify your email first.', code: 'EMAIL_NOT_VERIFIED', email: user.email });
+        }
         const token = jwt.sign(
             { sub: user.id, email: user.email, role: user.role },
             process.env.JWT_SECRET,
@@ -660,10 +871,12 @@ app.post('/api/auth/signup', async (req, res) => {
     if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
     try {
         const passwordHash = await bcrypt.hash(password, 12);
+        const otpCode = generateOTP();
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
         const userResult = await pool.query(
-            `INSERT INTO users (email, password_hash, role, full_name, password_set)
-             VALUES ($1, $2, 'client', '', true) RETURNING id`,
-            [email.toLowerCase().trim(), passwordHash]
+            `INSERT INTO users (email, password_hash, role, full_name, password_set, email_verified, otp_code, otp_expires_at)
+             VALUES ($1, $2, 'client', '', true, false, $3, $4) RETURNING id`,
+            [email.toLowerCase().trim(), passwordHash, otpCode, otpExpiry]
         );
         const userId = userResult.rows[0].id;
         const clientResult = await pool.query(
@@ -672,19 +885,59 @@ app.post('/api/auth/signup', async (req, res) => {
             [userId, email.toLowerCase().trim(), intakeFormType === 'tech2mate' ? 'tech2mate' : 'general']
         );
         const client = clientResult.rows[0];
-        const token = jwt.sign(
-            { sub: userId, email: client.email, role: 'client' },
-            process.env.JWT_SECRET,
-            { expiresIn: '7d' }
-        );
+        sendOTPEmail(client.email, otpCode);
         logActivity('client_created', client.email, client.email, `${client.email} signed up (${client.intake_form_type})`);
-        res.json({ token, role: 'client', email: client.email });
+        res.json({ needsVerification: true, email: client.email });
     } catch (error) {
         console.error('[POST /api/auth/signup]', error.message);
         if (error.code === '23505' && error.constraint === 'users_email_key') {
             return res.status(400).json({ error: 'An account with this email already exists.' });
         }
         res.status(500).json({ error: 'Signup failed.' });
+    }
+});
+
+// POST /api/auth/verify-otp — verify the code emailed at signup. Does not log the
+// user in; they land on /login afterward and authenticate normally from there.
+app.post('/api/auth/verify-otp', async (req, res) => {
+    const { email, code } = req.body;
+    if (!email || !code) return res.status(400).json({ error: 'Email and code are required.' });
+    try {
+        const result = await pool.query(
+            `SELECT * FROM users WHERE email = $1 AND otp_code = $2 AND otp_expires_at > NOW()`,
+            [email.toLowerCase().trim(), code.trim()]
+        );
+        const user = result.rows[0];
+        if (!user) return res.status(400).json({ error: 'Invalid or expired code.' });
+        await pool.query(
+            `UPDATE users SET email_verified = true, otp_code = NULL, otp_expires_at = NULL WHERE id = $1`,
+            [user.id]
+        );
+        res.json({ verified: true, email: user.email });
+    } catch (error) {
+        console.error('[POST /api/auth/verify-otp]', error.message);
+        res.status(500).json({ error: 'Verification failed.' });
+    }
+});
+
+// POST /api/auth/resend-otp — issue a fresh code for an unverified account
+app.post('/api/auth/resend-otp', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required.' });
+    try {
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase().trim()]);
+        const user = result.rows[0];
+        if (user && !user.email_verified) {
+            const otpCode = generateOTP();
+            const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+            await pool.query('UPDATE users SET otp_code = $1, otp_expires_at = $2 WHERE id = $3', [otpCode, otpExpiry, user.id]);
+            sendOTPEmail(user.email, otpCode);
+        }
+        // Always respond success to prevent email enumeration
+        res.json({ success: true });
+    } catch (error) {
+        console.error('[POST /api/auth/resend-otp]', error.message);
+        res.status(500).json({ error: 'Failed to resend code.' });
     }
 });
 
@@ -707,7 +960,7 @@ app.get('/api/clients/me', requireAuth, async (req, res) => {
 // writing directly onto the caller's own client record
 app.patch('/api/clients/me/onboarding', requireAuth, async (req, res) => {
     if (req.user.role !== 'client') return res.status(403).json({ error: 'Forbidden' });
-    const { fullName, referredBy, phone, fullAddress, sex, veteranStatus, disabilityStatus,
+    const { fullName, referredBy, phone, fullAddress, country, sex, veteranStatus, disabilityStatus,
         raceIdentity, workAuthorization, jobTitles, sharedEmail, sharedPassword,
         legalName, signatureDate, tcAgreed,
         linkedinProfile, additionalNotes } = req.body;
@@ -724,15 +977,15 @@ app.patch('/api/clients/me/onboarding', requireAuth, async (req, res) => {
                 veteran_status = $6, disability_status = $7, race_identity = $8, work_authorization = $9,
                 job_titles = $10, shared_email = $11, shared_password = $12, legal_name = $13,
                 signature_date = $14, tc_agreed = $15, linkedin_profile = $16, additional_notes = $17,
-                ip_address = $18, user_agent = $19, device_type = $20, status = 'Active'
-            WHERE id = $21
+                ip_address = $18, user_agent = $19, device_type = $20, country = $21, status = 'Active'
+            WHERE id = $22
             RETURNING *
         `, [
             fullName, referredBy || '', phone || '', fullAddress || '', sex || '',
             veteranStatus || '', disabilityStatus || '', raceIdentity || '', workAuthorization || '',
             jobTitles || '', sharedEmail || '', sharedPassword || '', legalName,
             signatureDate || new Date().toISOString().split('T')[0], true, linkedinProfile || '', additionalNotes || '',
-            ipAddress, userAgent, deviceType, req.user.sub,
+            ipAddress, userAgent, deviceType, country || '', req.user.sub,
         ]);
         const client = result.rows[0];
         if (!client) return res.status(404).json({ error: 'Client not found.' });
@@ -740,6 +993,42 @@ app.patch('/api/clients/me/onboarding', requireAuth, async (req, res) => {
         res.json({ success: true, client });
     } catch (error) {
         console.error('[PATCH /api/clients/me/onboarding]', error.message);
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// PATCH /api/clients/me/onboarding-draft — autosave partial progress after each
+// wizard step, so logging out mid-onboarding resumes at the right step instead
+// of restarting. Unlike the endpoint above, nothing is required here and status
+// never flips to 'Active' — only the final step's submit does that.
+app.patch('/api/clients/me/onboarding-draft', requireAuth, async (req, res) => {
+    if (req.user.role !== 'client') return res.status(403).json({ error: 'Forbidden' });
+    const { step, fullName, referredBy, phone, fullAddress, country, sex, veteranStatus, disabilityStatus,
+        raceIdentity, workAuthorization, jobTitles, sharedEmail, sharedPassword,
+        legalName, signatureDate, tcAgreed,
+        linkedinProfile, additionalNotes } = req.body;
+    try {
+        const result = await pool.query(`
+            UPDATE clients SET
+                full_name = $1, referred_by = $2, phone = $3, full_address = $4, sex = $5,
+                veteran_status = $6, disability_status = $7, race_identity = $8, work_authorization = $9,
+                job_titles = $10, shared_email = $11, shared_password = $12, legal_name = $13,
+                signature_date = $14, tc_agreed = $15, linkedin_profile = $16, additional_notes = $17,
+                onboarding_step = $18, country = $19
+            WHERE id = $20
+            RETURNING *
+        `, [
+            fullName || '', referredBy || '', phone || '', fullAddress || '', sex || '',
+            veteranStatus || '', disabilityStatus || '', raceIdentity || '', workAuthorization || '',
+            jobTitles || '', sharedEmail || '', sharedPassword || '', legalName || '',
+            signatureDate || new Date().toISOString().split('T')[0], Boolean(tcAgreed), linkedinProfile || '', additionalNotes || '',
+            Number(step) || 1, country || '', req.user.sub,
+        ]);
+        const client = result.rows[0];
+        if (!client) return res.status(404).json({ error: 'Client not found.' });
+        res.json({ success: true, client });
+    } catch (error) {
+        console.error('[PATCH /api/clients/me/onboarding-draft]', error.message);
         res.status(400).json({ error: error.message });
     }
 });
@@ -754,6 +1043,62 @@ app.get('/api/clients/me/invoices', requireAuth, async (req, res) => {
         res.json({ invoices: result.rows });
     } catch (error) {
         console.error('[GET /api/clients/me/invoices]', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /api/clients/me/initial-payment — create the post-onboarding program-fee
+// invoice(s) for the caller (lump sum or a 2-installment split), idempotent
+app.post('/api/clients/me/initial-payment', requireAuth, async (req, res) => {
+    if (req.user.role !== 'client') return res.status(403).json({ error: 'Forbidden' });
+    const { plan } = req.body;
+    if (plan !== 'lump' && plan !== 'split') return res.status(400).json({ error: 'plan must be "lump" or "split".' });
+    try {
+        const existing = await pool.query(
+            `SELECT * FROM invoices WHERE client_id = $1 AND invoice_kind IS NOT NULL ORDER BY created_at ASC`,
+            [req.user.sub]
+        );
+        if (existing.rows.length > 0) {
+            return res.json({ invoices: existing.rows });
+        }
+
+        const clientRow = await pool.query('SELECT * FROM clients WHERE id = $1', [req.user.sub]);
+        const client = clientRow.rows[0];
+        if (!client) return res.status(404).json({ error: 'Client not found.' });
+        const track = client.intake_form_type === 'tech2mate' ? 'tech2mate' : 'general';
+        const trackLabel = track === 'tech2mate' ? 'Tech2Mate Student' : 'General Client';
+        const pricing = INITIAL_PAYMENT_PLANS[track];
+
+        const invoices = [];
+        if (plan === 'lump') {
+            const result = await pool.query(
+                `INSERT INTO invoices (client_id, invoice_number, description, amount, status, due_date, invoice_kind)
+                 VALUES ($1, $2, $3, $4, 'Pending', CURRENT_DATE, 'initial_lump') RETURNING *`,
+                [req.user.sub, generateInvoiceNumber(), `Initial Program Payment — ${trackLabel}`, pricing.lump]
+            );
+            invoices.push(result.rows[0]);
+        } else {
+            const [first, second] = pricing.split;
+            const result1 = await pool.query(
+                `INSERT INTO invoices (client_id, invoice_number, description, amount, status, due_date, invoice_kind)
+                 VALUES ($1, $2, $3, $4, 'Pending', CURRENT_DATE, 'initial_split_1') RETURNING *`,
+                [req.user.sub, generateInvoiceNumber(), `Initial Payment (1 of 2) — ${trackLabel}`, first]
+            );
+            const result2 = await pool.query(
+                `INSERT INTO invoices (client_id, invoice_number, description, amount, status, due_date, invoice_kind)
+                 VALUES ($1, $2, $3, $4, 'Pending', CURRENT_DATE + INTERVAL '14 days', 'initial_split_2') RETURNING *`,
+                [req.user.sub, generateInvoiceNumber(), `Remaining Balance (2 of 2) — ${trackLabel}`, second]
+            );
+            invoices.push(result1.rows[0], result2.rows[0]);
+        }
+
+        for (const inv of invoices) {
+            logActivity('invoice_created', client.full_name, client.email,
+                `Invoice ${inv.invoice_number} created for ${client.full_name} — $${parseFloat(inv.amount).toFixed(2)}`);
+        }
+        res.json({ invoices });
+    } catch (error) {
+        console.error('[POST /api/clients/me/initial-payment]', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -968,9 +1313,7 @@ app.post('/api/invoices', requireAdmin, async (req, res) => {
     const { clientId, description, subtitle, amount, due_date } = req.body;
     if (!clientId || !description || !amount) return res.status(400).json({ error: 'Client, description, and amount are required.' });
     try {
-        const year = new Date().getFullYear();
-        const unique = Date.now().toString().slice(-7);
-        const invoiceNumber = `INV-${year}-${unique}`;
+        const invoiceNumber = generateInvoiceNumber();
         const values = [clientId, invoiceNumber, description, subtitle || '', parseFloat(amount)];
         let sql = `INSERT INTO invoices (client_id, invoice_number, description, subtitle, amount, status)
                    VALUES ($1, $2, $3, $4, $5, 'Pending')`;
@@ -1362,12 +1705,11 @@ app.delete('/api/invoices/:id', requireAdmin, async (req, res) => {
 
 // ─── RESUMES ─────────────────────────────────────────────────────────────────
 
-// POST /api/clients/:clientId/resume — upload a resume for a client (admin/staff, or the client themselves)
-app.post('/api/clients/:clientId/resume', requireAuth, upload.single('resume'), async (req, res) => {
+// POST /api/clients/:clientId/resume — upload a resume for a client (admin/staff only).
+// This is the consultant-facing "My Resume" tab shown to the client — it must never
+// be populated by the client's own onboarding upload, which uses a separate endpoint.
+app.post('/api/clients/:clientId/resume', requireAdminOrStaff, upload.single('resume'), async (req, res) => {
     const { clientId } = req.params;
-    const isAdminOrStaff = req.user.role === 'admin' || req.user.role === 'staff';
-    const isOwner = req.user.sub === clientId;
-    if (!isAdminOrStaff && !isOwner) return res.status(403).json({ error: 'Forbidden' });
     const file = req.file;
     if (!file) return res.status(400).json({ error: 'No file received.' });
     const jdLink = req.body.jd_link || null;
@@ -1390,12 +1732,40 @@ app.post('/api/clients/:clientId/resume', requireAuth, upload.single('resume'), 
             [storagePath, file.originalname, uploaderName, clientId]
         );
         const clientData = result.rows[0];
-        if (isAdminOrStaff) sendPortalNotification(clientData.email, clientData.full_name);
+        sendPortalNotification(clientData.email, clientData.full_name);
         logActivity('resume_uploaded', uploaderName, req.user.email,
             `Uploaded resume for ${clientData.full_name} — ${file.originalname}`);
         res.json({ success: true, client: clientData });
     } catch (error) {
         console.error('[POST /api/clients/:clientId/resume]', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /api/clients/me/intake-resume — the client's own resume upload during onboarding.
+// Stored separately from the consultant-facing resume above (intake_resume_* columns,
+// no client_resumes row) so it never shows up in the client's own "My Resume" tab.
+app.post('/api/clients/me/intake-resume', requireAuth, upload.single('resume'), async (req, res) => {
+    if (req.user.role !== 'client') return res.status(403).json({ error: 'Forbidden' });
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'No file received.' });
+    const timestamp = Date.now();
+    const ext = getFileExt(file.mimetype);
+    const storagePath = `${req.user.sub}/intake/${timestamp}_resume${ext}`;
+    try {
+        await uploadFile(storagePath, file.buffer, file.mimetype);
+        const result = await pool.query(
+            `UPDATE clients SET intake_resume_path = $1, intake_resume_filename = $2, intake_resume_uploaded_at = NOW()
+             WHERE id = $3 RETURNING *`,
+            [storagePath, file.originalname, req.user.sub]
+        );
+        const client = result.rows[0];
+        if (!client) return res.status(404).json({ error: 'Client not found.' });
+        logActivity('intake_resume_uploaded', client.full_name || client.email, client.email,
+            `${client.full_name || client.email} uploaded a resume during onboarding — ${file.originalname}`);
+        res.json({ success: true, client });
+    } catch (error) {
+        console.error('[POST /api/clients/me/intake-resume]', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -1561,7 +1931,25 @@ app.get('*', (_req, res) => {
     res.sendFile(path.join(buildPath, 'index.html'));
 });
 
+// ─── GLOBAL ERROR HANDLER ─────────────────────────────────────────────────────
+// Without this, an error passed via next(err) from middleware that runs before
+// a route's own try/catch (multer's fileFilter/limits being the main case) falls
+// through to Express's default handler, which sends an HTML page — the frontend
+// then fails trying to JSON.parse it. Every route stays JSON, always.
+app.use((err, _req, res, _next) => {
+    if (err instanceof multer.MulterError || err?.message?.includes('PDF or Word')) {
+        return res.status(400).json({ error: err.message });
+    }
+    console.error('[Unhandled error]', err);
+    res.status(500).json({ error: 'Internal server error.' });
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✓ Guzman Career Services API running on http://localhost:${PORT}`);
 });
+
+// Balance reminder emails (7-day / due-date / overdue) for the post-onboarding
+// initial payment. Safe to run often — the *_sent_at columns make every run idempotent.
+checkPaymentReminders();
+setInterval(checkPaymentReminders, 6 * 60 * 60 * 1000);

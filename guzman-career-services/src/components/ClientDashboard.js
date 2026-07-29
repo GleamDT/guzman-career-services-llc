@@ -8,6 +8,9 @@ import { authFetch } from '../lib/authFetch';
 import { downloadInvoicePDF } from '../lib/invoicePDF';
 import { TERMS_VERSION } from '../lib/legalContent';
 import TermsAcceptanceModal from './TermsAcceptanceModal';
+import OnboardingForm from './OnboardingForm';
+import Tech2mateOnboardingForm from './Tech2mateOnboardingForm';
+import InitialPaymentPage from './InitialPaymentPage';
 import './ClientDashboard.css';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -358,6 +361,10 @@ function ClientDashboard() {
     const [loading, setLoading]         = useState(true);
     const [paymentBanner, setPaymentBanner] = useState(null); // 'success' | 'cancelled' | null
     const [showTermsModal, setShowTermsModal] = useState(false);
+    const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const autoOpenedOnboardingRef = useRef(false);
+    const autoOpenedPaymentRef = useRef(false);
     const navigate = useNavigate();
 
     const loadData = useCallback(async () => {
@@ -375,11 +382,14 @@ function ClientDashboard() {
             const invoicesData = await invoicesRes.json();
 
             if (profileData.client) {
-                if (profileData.client.status === 'Pending') {
-                    navigate('/onboarding', { replace: true });
-                    return;
-                }
                 setClient(profileData.client);
+                // Onboarding renders as a dismissible modal over the dashboard rather
+                // than its own page, so it can be closed and picked back up later —
+                // only auto-open it once, on the very first load after login.
+                if (profileData.client.status === 'Pending' && !autoOpenedOnboardingRef.current) {
+                    autoOpenedOnboardingRef.current = true;
+                    setShowOnboardingModal(true);
+                }
                 if (profileData.client.tc_accepted_version !== TERMS_VERSION) {
                     setShowTermsModal(true);
                 }
@@ -387,13 +397,26 @@ function ClientDashboard() {
                     authFetch(`/api/clients/${profileData.client.id}/mark-logged-in`, { method: 'PATCH' }).catch(() => {});
                 }
             }
-            if (invoicesData.invoices) setInvoices(invoicesData.invoices);
+            if (invoicesData.invoices) {
+                setInvoices(invoicesData.invoices);
+                // Same modal-over-dashboard treatment as onboarding: only auto-open
+                // once, and only once onboarding itself is done and no plan chosen yet.
+                if (
+                    profileData.client &&
+                    profileData.client.status !== 'Pending' &&
+                    !autoOpenedPaymentRef.current &&
+                    !invoicesData.invoices.some(inv => inv.invoice_kind)
+                ) {
+                    autoOpenedPaymentRef.current = true;
+                    setShowPaymentModal(true);
+                }
+            }
         } catch (err) {
             console.error('Dashboard load error:', err);
         } finally {
             setLoading(false);
         }
-    }, [navigate]);
+    }, []);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -444,9 +467,29 @@ function ClientDashboard() {
         navigate('/');
     };
 
+    const handleOnboardingComplete = () => {
+        setShowOnboardingModal(false);
+        autoOpenedPaymentRef.current = true;
+        setShowPaymentModal(true);
+        loadData();
+    };
+
     const tabs = ['Invoices', 'My Resume'];
     const displayName = client.full_name || 'Client';
     const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    const hasChosenPaymentPlan = invoices.some(inv => inv.invoice_kind);
+    // Silent right after paying an installment — the balance banner only reappears once
+    // it's within the same 1-week window as the reminder emails (due soon or overdue),
+    // not the instant the split payment is chosen.
+    const inReminderWindow = (inv) => {
+        if (!inv.due_date) return false;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const due = new Date(inv.due_date);
+        const daysUntilDue = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
+        return daysUntilDue <= 7;
+    };
+    const hasUnpaidInitialPayment = invoices.some(inv => inv.invoice_kind && inv.status === 'Pending' && inReminderWindow(inv));
 
     return (
         <div className="cd-layout">
@@ -455,6 +498,16 @@ function ClientDashboard() {
                     onAccept={handleAcceptTerms}
                     onDecline={handleDeclineTerms}
                 />
+            )}
+
+            {showOnboardingModal && (
+                client.intake_form_type === 'tech2mate'
+                    ? <Tech2mateOnboardingForm client={client} onClose={() => setShowOnboardingModal(false)} onComplete={handleOnboardingComplete} />
+                    : <OnboardingForm client={client} onClose={() => setShowOnboardingModal(false)} onComplete={handleOnboardingComplete} />
+            )}
+
+            {showPaymentModal && (
+                <InitialPaymentPage client={client} onClose={() => setShowPaymentModal(false)} />
             )}
 
             {client.hibernated && (
@@ -547,6 +600,50 @@ function ClientDashboard() {
                         </svg>
                         Payment cancelled. No charge was made.
                         <button className="cd-banner-close" onClick={() => setPaymentBanner(null)}>✕</button>
+                    </div>
+                )}
+                {client.status === 'Pending' && !showOnboardingModal && (
+                    <div className="cd-payment-banner cd-payment-banner--cancelled">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                        </svg>
+                        Complete your onboarding to activate your account.
+                        <button
+                            type="button"
+                            onClick={() => setShowOnboardingModal(true)}
+                            style={{ marginLeft: 'auto', fontWeight: 700, background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                            Continue Onboarding →
+                        </button>
+                    </div>
+                )}
+                {client.status !== 'Pending' && !hasChosenPaymentPlan && !showPaymentModal && (
+                    <div className="cd-payment-banner cd-payment-banner--cancelled">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                        </svg>
+                        Choose your payment plan to get started.
+                        <button
+                            type="button"
+                            onClick={() => setShowPaymentModal(true)}
+                            style={{ marginLeft: 'auto', fontWeight: 700, background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                            Choose Plan →
+                        </button>
+                    </div>
+                )}
+                {client.status !== 'Pending' && hasChosenPaymentPlan && hasUnpaidInitialPayment && (
+                    <div className="cd-payment-banner cd-payment-banner--cancelled">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                        </svg>
+                        You have a payment due.
+                        <button
+                            style={{ marginLeft: 'auto', fontWeight: 700, background: 'none', border: 'none', color: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}
+                            onClick={() => setActiveTab('Invoices')}
+                        >
+                            Pay Now →
+                        </button>
                     </div>
                 )}
 

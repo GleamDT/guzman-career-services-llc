@@ -15,7 +15,7 @@ function PortalHome() {
         const dest = auth.role === 'admin' ? '/admin' : auth.role === 'staff' ? '/staff' : '/dashboard';
         return <Navigate to={dest} replace />;
     }
-    return <Login isOpen={true} onClose={() => {}} />;
+    return <Login isOpen={true} onClose={() => {}} asPage />;
 }
 
 export default PortalHome;

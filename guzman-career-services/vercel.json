@@ -4,6 +4,8 @@
     { "source": "/staff", "destination": "https://portal.guzmancareerservices.com/staff", "statusCode": 301 },
     { "source": "/dashboard", "destination": "https://portal.guzmancareerservices.com/dashboard", "statusCode": 301 },
     { "source": "/onboarding", "destination": "https://portal.guzmancareerservices.com/onboarding", "statusCode": 301 },
+    { "source": "/signup", "destination": "https://portal.guzmancareerservices.com/signup", "statusCode": 301 },
+    { "source": "/verify-email", "destination": "https://portal.guzmancareerservices.com/verify-email", "statusCode": 301 },
     { "source": "/set-password", "destination": "https://portal.guzmancareerservices.com/set-password", "statusCode": 301 },
     { "source": "/auth/callback", "destination": "https://portal.guzmancareerservices.com/", "statusCode": 301 }
   ],

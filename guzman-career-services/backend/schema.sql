@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS users (
     reset_token TEXT UNIQUE,
     reset_token_expires_at TIMESTAMPTZ,
     password_set BOOLEAN NOT NULL DEFAULT false,
+    email_verified BOOLEAN NOT NULL DEFAULT true,
+    otp_code TEXT,
+    otp_expires_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -55,6 +58,13 @@ CREATE TABLE IF NOT EXISTS clients (
     additional_notes TEXT NOT NULL DEFAULT '',
     shared_email TEXT NOT NULL DEFAULT '',
     shared_password TEXT NOT NULL DEFAULT '',
+    onboarding_step SMALLINT NOT NULL DEFAULT 1,
+    country TEXT NOT NULL DEFAULT '',
+    -- Client's own onboarding resume upload — kept separate from resume_path above,
+    -- which is the consultant-facing resume shown on the client's "My Resume" tab.
+    intake_resume_path TEXT,
+    intake_resume_filename TEXT,
+    intake_resume_uploaded_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -69,6 +79,10 @@ CREATE TABLE IF NOT EXISTS invoices (
     status TEXT NOT NULL DEFAULT 'Pending',
     due_date DATE,
     paid_at TIMESTAMPTZ,
+    invoice_kind TEXT,
+    reminder_7day_sent_at TIMESTAMPTZ,
+    reminder_due_sent_at TIMESTAMPTZ,
+    reminder_overdue_sent_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

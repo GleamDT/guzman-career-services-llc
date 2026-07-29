@@ -16,8 +16,8 @@ import SetPassword from './components/SetPassword';
 import TermsOfService from './components/TermsOfService';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import PortalHome from './components/PortalHome';
-import SignupPage from './components/SignupPage';
-import OnboardingPage from './components/OnboardingPage';
+import Login from './components/Login';
+import VerifyOtpPage from './components/VerifyOtpPage';
 import { SITE_MODE } from './lib/siteMode';
 import './App.css';
 
@@ -80,10 +80,11 @@ function App() {
 
   const portalOnlyRoutes = (
     <>
-      <Route path="/signup" element={<SignupPage />} />
-      <Route path="/onboarding" element={
-        <ProtectedRoute requiredRole="client"><OnboardingPage /></ProtectedRoute>
-      } />
+      <Route path="/login" element={<Login isOpen={true} onClose={() => {}} asPage />} />
+      <Route path="/signup" element={<Login isOpen={true} onClose={() => {}} asPage />} />
+      <Route path="/verify-email" element={<VerifyOtpPage />} />
+      <Route path="/onboarding" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/payment" element={<Navigate to="/dashboard" replace />} />
       <Route path="/admin" element={
         <ProtectedRoute requiredRole="admin"><AdminDashboard userRole="admin" /></ProtectedRoute>
       } />
