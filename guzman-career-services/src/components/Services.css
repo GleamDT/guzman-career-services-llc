@@ -145,30 +145,38 @@
 .category-features {
     list-style: none;
     padding: 0;
-    margin: 0 0 var(--space-10) 0;
+    margin: 0 0 var(--space-8) 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--space-4);
 }
 
 .feature-item {
     display: flex;
+    flex-direction: column;
     align-items: flex-start;
     gap: var(--space-3);
-    padding: var(--space-3) 0;
-    font-size: var(--text-base);
+    padding: var(--space-5);
+    background: var(--color-gray-50);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
     color: var(--color-gray-700);
     transition: all var(--transition-base);
 }
 
 .feature-item:hover {
-    transform: translateX(5px);
+    transform: translateY(-4px);
     color: var(--color-gray-900);
+    border-color: var(--color-primary-light);
 }
 
 .feature-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
     color: white;
     border-radius: var(--radius-full);

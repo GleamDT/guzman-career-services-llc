@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import Logo from './Logo';
 import './Footer.css';
 
 function Footer() {
@@ -11,7 +12,7 @@ function Footer() {
                 <div className="footer-content">
                     <div className="footer-section">
                         <div className="footer-logo">
-                            <img src={process.env.PUBLIC_URL + '/logo.png'} alt="Guzman Career Services" className="footer-logo-img" />
+                            <Logo variant="white" className="footer-logo-img" />
                         </div>
                         <p className="footer-description">
                             Professional career services helping you land your dream job with confidence and success.

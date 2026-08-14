@@ -27,7 +27,7 @@
 .tam-header {
     padding: 1.5rem 2rem;
     text-align: center;
-    background: linear-gradient(135deg, rgba(67, 56, 202, 0.06) 0%, rgba(109, 40, 217, 0.06) 100%);
+    background: linear-gradient(135deg, rgba(2, 36, 82, 0.06) 0%, rgba(0, 132, 142, 0.06) 100%);
     border-bottom: 1px solid #e2e8f0;
 }
 
@@ -38,7 +38,7 @@
 
 .tam-header h2 {
     margin: 0 0 0.5rem 0;
-    font-family: var(--auth-serif, Georgia, serif);
+    font-family: var(--auth-heading-font, Georgia, serif);
     font-size: 1.5rem;
     font-weight: 600;
     letter-spacing: -0.01em;
@@ -81,7 +81,7 @@
 }
 
 .tam-tab--active {
-    color: var(--auth-indigo, #4338ca);
+    color: var(--auth-indigo, #022452);
     background: #fff;
 }
 
@@ -92,7 +92,7 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: var(--auth-indigo, #4338ca);
+    background: var(--auth-indigo, #022452);
 }
 
 .tam-tab-check {
@@ -142,7 +142,7 @@
     margin: 0.25rem 0 0.5rem 0;
     font-size: 0.95rem;
     font-weight: 600;
-    color: var(--auth-indigo, #4338ca);
+    color: var(--auth-indigo, #022452);
 }
 
 .tam-effective {
@@ -182,7 +182,7 @@
     padding: 0.75rem;
     background: #f8fafc;
     border-radius: 6px;
-    border-left: 3px solid var(--auth-indigo, #4338ca);
+    border-left: 3px solid var(--auth-indigo, #022452);
     white-space: pre-line;
 }
 
@@ -198,19 +198,19 @@
 }
 
 .tam-final {
-    background: linear-gradient(135deg, rgba(67, 56, 202, 0.06) 0%, rgba(109, 40, 217, 0.06) 100%);
+    background: linear-gradient(135deg, rgba(2, 36, 82, 0.06) 0%, rgba(0, 132, 142, 0.06) 100%);
     padding: 1rem;
     border-radius: 8px;
-    border: 1px solid rgba(67, 56, 202, 0.2);
+    border: 1px solid rgba(2, 36, 82, 0.2);
 }
 
 .tam-final h5 {
-    color: var(--auth-indigo, #4338ca);
+    color: var(--auth-indigo, #022452);
 }
 
 .tam-final-footer {
     font-weight: 600;
-    color: var(--auth-indigo, #4338ca);
+    color: var(--auth-indigo, #022452);
 }
 
 .tam-scroll-hint {
@@ -278,12 +278,12 @@
 }
 
 .tam-checkbox:not(.tam-checkbox--disabled):hover .tam-checkbox-mark {
-    border-color: var(--auth-indigo, #4338ca);
+    border-color: var(--auth-indigo, #022452);
 }
 
 .tam-checkbox input:checked + .tam-checkbox-mark {
-    background: var(--auth-indigo, #4338ca);
-    border-color: var(--auth-indigo, #4338ca);
+    background: var(--auth-indigo, #022452);
+    border-color: var(--auth-indigo, #022452);
 }
 
 .tam-checkbox input:checked + .tam-checkbox-mark::after {
@@ -328,13 +328,13 @@
 }
 
 .tam-btn--accept {
-    background: var(--auth-coral, #f2703c);
+    background: var(--auth-coral, #00848e);
     color: #fff;
-    box-shadow: 0 8px 20px rgba(242, 112, 60, 0.32);
+    box-shadow: 0 8px 20px rgba(0, 132, 142, 0.32);
 }
 
 .tam-btn--accept:hover:not(:disabled) {
-    background: var(--auth-coral-dark, #d9541f);
+    background: var(--auth-coral-dark, #00666d);
 }
 
 .tam-btn--accept:disabled {

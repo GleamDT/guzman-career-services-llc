@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
 import { setToken } from '../lib/auth';
+import Logo from './Logo';
 import './Login.css';
 
 function Login({ isOpen, onClose, asPage = false }) {
@@ -186,7 +187,7 @@ function Login({ isOpen, onClose, asPage = false }) {
                 {/* Left brand panel — desktop */}
                 <div className="login-left">
                     <div className="login-left-content">
-                        <img src="/logo.png" alt="Guzman Career Services" className="login-brand-logo" />
+                        <Logo variant="white" className="login-brand-logo" />
                         <div className="login-left-tagline">
                             <h2>Your Career Portal</h2>
                             <p>{tagline}</p>

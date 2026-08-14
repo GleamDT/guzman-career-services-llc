@@ -8,7 +8,7 @@
 .reason-card {
     background: var(--color-white);
     border-radius: var(--radius-xl);
-    padding: var(--space-10);
+    padding: var(--space-6);
     text-align: center;
     box-shadow: var(--shadow-md);
     border: 1px solid var(--color-gray-200);
@@ -42,9 +42,9 @@
 }
 
 .reason-icon-wrapper {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto var(--space-6);
+    width: 72px;
+    height: 72px;
+    margin: 0 auto var(--space-5);
     background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
     border-radius: var(--radius-full);
     display: flex;

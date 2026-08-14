@@ -51,7 +51,6 @@ function HowItWorks() {
                                 <h3 className="step-title">{step.title}</h3>
                                 <p className="step-description">{step.description}</p>
                             </div>
-                            {index < steps.length - 1 && <div className="step-connector"></div>}
                         </div>
                     ))}
                 </div>

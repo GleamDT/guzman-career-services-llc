@@ -15,7 +15,7 @@ function Services() {
             'Job application strategy & support'
         ],
         buttonText: 'Get Started Today',
-        gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+        gradient: 'linear-gradient(135deg, #022452 0%, #00848e 100%)'
     };
 
     // Tech2mates temporarily hidden — uncomment to re-enable

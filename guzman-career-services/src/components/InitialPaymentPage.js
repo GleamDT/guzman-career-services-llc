@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { authFetch } from '../lib/authFetch';
+import Logo from './Logo';
 import './Login.css';
 import './IntakeForm.css';
 import './InitialPaymentPage.css';
@@ -46,7 +47,7 @@ function InitialPaymentPage({ client, onClose }) {
                 {onClose && (
                     <button className="intake-close" onClick={onClose} aria-label="Close and finish later">✕</button>
                 )}
-                <img src="/logo.png" alt="Guzman Career Services" className="payplan-logo" />
+                <Logo className="payplan-logo" />
                 <div className="payplan-heading">
                     <h2>Your Initial Program Payment</h2>
                     <p>{pricing.label} — choose how you'd like to pay.</p>

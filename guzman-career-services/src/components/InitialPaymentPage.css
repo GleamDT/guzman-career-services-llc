@@ -65,9 +65,9 @@
 }
 
 .payplan-option:hover {
-    border-color: #4338ca;
+    border-color: #022452;
     transform: translateY(-2px);
-    box-shadow: 0 12px 28px rgba(67, 56, 202, 0.15);
+    box-shadow: 0 12px 28px rgba(2, 36, 82, 0.15);
 }
 
 .payplan-option:disabled {
@@ -81,7 +81,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #4338ca;
+    color: #022452;
     margin-bottom: 0.6rem;
 }
 

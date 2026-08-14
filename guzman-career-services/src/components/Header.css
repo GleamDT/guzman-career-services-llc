@@ -39,14 +39,14 @@
 }
 
 .logo-image {
-    height: 50px;
+    height: 68px;
     width: auto;
     object-fit: contain;
     transition: all var(--transition-base);
 }
 
 .header-scrolled .logo-image {
-    height: 40px;
+    height: 54px;
 }
 
 .nav {
@@ -93,7 +93,7 @@
 }
 
 .nav-link-cta {
-    background: linear-gradient(135deg, var(--color-accent) 0%, #fb923c 100%);
+    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);
     color: var(--color-white) !important;
     padding: var(--space-3) var(--space-6);
     border-radius: var(--radius-lg);

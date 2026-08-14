@@ -11,6 +11,7 @@ import TermsAcceptanceModal from './TermsAcceptanceModal';
 import OnboardingForm from './OnboardingForm';
 import Tech2mateOnboardingForm from './Tech2mateOnboardingForm';
 import InitialPaymentPage from './InitialPaymentPage';
+import Logo from './Logo';
 import './ClientDashboard.css';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -343,7 +344,7 @@ function ResumeTab({ client }) {
                         <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
                     </svg>
                     <p style={{ margin: 0, fontSize: '0.9rem' }}>No resume uploaded yet. Your consultant will add it here.</p>
-                    <a href="mailto:info@guzmancareerservices.com" style={{ display: 'inline-block', marginTop: '1rem', color: '#2563eb', fontWeight: 600, fontSize: '0.875rem' }}>
+                    <a href="mailto:info@guzmancareerservices.com" style={{ display: 'inline-block', marginTop: '1rem', color: '#022452', fontWeight: 600, fontSize: '0.875rem' }}>
                         Contact Consultant
                     </a>
                 </div>
@@ -534,7 +535,7 @@ function ClientDashboard() {
             {/* Sidebar */}
             <aside className={`cd-sidebar ${sidebarOpen ? 'cd-sidebar--open' : ''}`}>
                 <div className="cd-sidebar-logo">
-                    <img src="/logo.png" alt="Guzman Career Services" className="cd-sidebar-logo-img" />
+                    <Logo variant="white" className="cd-sidebar-logo-img" />
                 </div>
                 <nav className="cd-nav">
                     {tabs.map(tab => (

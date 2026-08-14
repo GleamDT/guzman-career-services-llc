@@ -1,130 +1,93 @@
 .steps-container {
-    max-width: 900px;
+    max-width: 1140px;
     margin: var(--space-16) auto 0;
-    position: relative;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-6);
 }
 
 .step-item {
     display: flex;
+    flex-direction: column;
     align-items: flex-start;
-    gap: var(--space-6);
-    margin-bottom: var(--space-12);
-    position: relative;
-    animation: fadeInUp 0.6s ease-out forwards;
-    opacity: 0;
-}
-
-.step-number {
-    flex-shrink: 0;
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
-    color: var(--color-white);
-    border-radius: var(--radius-xl);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--text-3xl);
-    font-weight: 800;
-    font-family: var(--font-heading);
-    box-shadow: var(--shadow-lg);
-    position: relative;
-    z-index: 2;
-    transition: all var(--transition-base);
-}
-
-.step-item:hover .step-number {
-    transform: scale(1.1) rotate(-5deg);
-    box-shadow: var(--shadow-2xl);
-}
-
-.step-content {
-    flex: 1;
+    gap: var(--space-4);
     background: var(--color-white);
-    padding: var(--space-8);
+    padding: var(--space-6);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-md);
     border: 1px solid var(--color-gray-200);
     transition: all var(--transition-base);
+    animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 0;
 }
 
-.step-item:hover .step-content {
-    transform: translateX(10px);
+.step-item:hover {
+    transform: translateY(-6px);
     box-shadow: var(--shadow-xl);
     border-color: var(--color-primary-light);
 }
 
+.step-number {
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+    color: var(--color-white);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-xl);
+    font-weight: 800;
+    font-family: var(--font-heading);
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-base);
+}
+
+.step-item:hover .step-number {
+    transform: scale(1.08) rotate(-4deg);
+}
+
+.step-content {
+    flex: 1;
+}
+
 .step-title {
-    font-size: var(--text-2xl);
+    font-size: var(--text-lg);
     font-weight: 700;
     color: var(--color-gray-900);
-    margin-bottom: var(--space-3);
+    margin-bottom: var(--space-2);
 }
 
 .step-description {
-    font-size: var(--text-base);
+    font-size: var(--text-sm);
     color: var(--color-gray-600);
-    line-height: 1.7;
+    line-height: 1.6;
     margin: 0;
-}
-
-.step-connector {
-    position: absolute;
-    left: 40px;
-    top: 80px;
-    width: 2px;
-    height: calc(100% + var(--space-12));
-    background: linear-gradient(180deg, var(--color-primary-light) 0%, var(--color-gray-300) 100%);
-    z-index: 1;
 }
 
 @media (max-width: 768px) {
     .steps-container {
         margin-top: var(--space-8);
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: var(--space-4);
     }
 
     .step-item {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        margin-bottom: var(--space-8);
+        padding: var(--space-5);
     }
 
     .step-number {
-        width: 56px;
-        height: 56px;
-        font-size: var(--text-xl);
-        margin-bottom: var(--space-4);
-        position: relative;
-        z-index: 2;
-    }
-
-    .step-content {
-        padding: var(--space-5);
-        position: relative;
-        z-index: 2;
+        width: 48px;
+        height: 48px;
+        font-size: var(--text-lg);
     }
 
     .step-title {
-        font-size: var(--text-lg);
+        font-size: var(--text-base);
     }
 
     .step-description {
         font-size: var(--text-sm);
-    }
-
-    .step-connector {
-        left: 50%;
-        transform: translateX(-50%);
-        top: 56px;
-        height: calc(100% + var(--space-8));
-    }
-
-    .step-item:hover .step-content {
-        transform: translateY(-5px);
-    }
-
-    .step-item:hover .step-number {
-        transform: scale(1.05);
     }
 }

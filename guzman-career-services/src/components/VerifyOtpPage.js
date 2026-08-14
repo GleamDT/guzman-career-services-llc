@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
+import Logo from './Logo';
 import './Login.css';
 
 function VerifyOtpPage() {
@@ -55,7 +56,7 @@ function VerifyOtpPage() {
             <div className="login-modal">
                 <div className="login-left">
                     <div className="login-left-content">
-                        <img src="/logo.png" alt="Guzman Career Services" className="login-brand-logo" />
+                        <Logo variant="white" className="login-brand-logo" />
                         <div className="login-left-tagline">
                             <h2>Your Career Portal</h2>
                             <p>Almost there — verify your email to activate your account.</p>
@@ -64,7 +65,7 @@ function VerifyOtpPage() {
                 </div>
 
                 <div className="login-left--mobile">
-                    <img src="/logo.png" alt="Guzman Career Services" className="login-brand-logo" />
+                    <Logo variant="white" className="login-brand-logo" />
                 </div>
 
                 <div className="login-right">

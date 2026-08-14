@@ -8,6 +8,7 @@ import { downloadInvoicePDF } from '../lib/invoicePDF';
 import { downloadIntakePDF } from '../lib/intakePDF';
 import { authFetch, getAuthToken } from '../lib/authFetch';
 import { clearToken } from '../lib/auth';
+import Logo from './Logo';
 import './AdminDashboard.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1802,7 +1803,7 @@ function AdminDashboard({ userRole = 'admin' }) {
             {/* Sidebar */}
             <aside className={`admin-sidebar ${sidebarOpen ? 'admin-sidebar--open' : ''}`}>
                 <div className="admin-sidebar-logo">
-                    <img src="/logo.png" alt="Guzman Career Services" className="admin-sidebar-logo-img" />
+                    <Logo variant="white" className="admin-sidebar-logo-img" />
                 </div>
                 <nav className="admin-nav">
                     {NAV_ITEMS

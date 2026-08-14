@@ -2,10 +2,11 @@
     position: relative;
     min-height: 100vh;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     justify-content: center;
     overflow: hidden;
     padding-top: 80px;
+    padding-bottom: var(--space-16);
 }
 
 .hero-background {
@@ -14,7 +15,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #1e3a8a 0%, #1e293b 50%, #0f172a 100%);
+    background: linear-gradient(135deg, #022452 0%, #011d40 50%, #011530 100%);
     z-index: -1;
 }
 
@@ -40,16 +41,66 @@
     background: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0.3) 100%);
 }
 
+/* ── Carousel wrapper (Swiper + arrows) ─────────────────────────────────── */
+.hero-carousel-wrap {
+    position: relative;
+    z-index: 1;
+}
+
+.hero-swiper {
+    width: 100%;
+}
+
+.hero-swiper .swiper-slide {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .hero-content {
     position: relative;
     z-index: 1;
     text-align: center;
     padding: var(--space-12) 0;
+    width: 100%;
 }
 
 .hero-text {
     max-width: 900px;
-    margin: 0 auto var(--space-16);
+    min-height: 420px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-kicker {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: var(--space-5);
+}
+
+.hero-kicker-number {
+    font-family: var(--font-heading);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #00848e;
+}
+
+.hero-kicker-line {
+    width: 2.5rem;
+    height: 2px;
+    background: rgba(0, 132, 142, 0.5);
+}
+
+.hero-kicker-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.75);
 }
 
 .hero-title {
@@ -61,7 +112,7 @@
 }
 
 .hero-highlight {
-    background: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%);
+    background: linear-gradient(135deg, #00a6b3 0%, #00848e 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -83,6 +134,97 @@
     gap: var(--space-4);
     justify-content: center;
     flex-wrap: wrap;
+}
+
+.hero-btn-outline {
+    background: transparent;
+    color: var(--color-white);
+    border-color: var(--color-white);
+}
+
+.hero-btn-outline:hover {
+    background: var(--color-white);
+    color: var(--color-primary);
+}
+
+/* ── Arrows ──────────────────────────────────────────────────────────────── */
+.hero-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--radius-full);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(6px);
+    color: var(--color-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.hero-arrow:hover {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.hero-arrow--prev { left: max(1rem, 3vw); }
+.hero-arrow--next { right: max(1rem, 3vw); }
+
+/* ── Pagination dots + autoplay progress ────────────────────────────────── */
+.hero-pagination-wrap {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    margin-top: var(--space-10);
+}
+
+.hero-pagination {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.hero-pagination .swiper-pagination-bullet {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: rgba(255, 255, 255, 0.35);
+    opacity: 1;
+    transition: all var(--transition-base);
+}
+
+.hero-pagination .swiper-pagination-bullet-active {
+    width: 22px;
+    background: #00848e;
+}
+
+.hero-autoplay-progress {
+    width: 120px;
+    height: 3px;
+    border-radius: var(--radius-full);
+    background: rgba(255, 255, 255, 0.15);
+    overflow: hidden;
+    --progress: 0;
+}
+
+.hero-autoplay-progress-bar {
+    height: 100%;
+    width: calc(var(--progress) * 100%);
+    background: #00848e;
+    border-radius: var(--radius-full);
+}
+
+.hero-stats-wrap {
+    position: relative;
+    z-index: 1;
+    margin-top: var(--space-12);
 }
 
 .hero-stats {
@@ -171,6 +313,18 @@
     .hero {
         min-height: 90vh;
     }
+
+    .hero-text {
+        min-height: 480px;
+    }
+
+    .hero-arrow {
+        width: 2.25rem;
+        height: 2.25rem;
+    }
+
+    .hero-arrow--prev { left: 0.5rem; }
+    .hero-arrow--next { right: 0.5rem; }
 
     .hero-cta {
         flex-direction: column;

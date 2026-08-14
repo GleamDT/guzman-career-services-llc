@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Header.css';
 import Login from './Login';
+import Logo from './Logo';
 import { SITE_MODE } from '../lib/siteMode';
 import { API_BASE } from '../lib/apiBase';
 
@@ -31,8 +32,7 @@ function Header() {
         <header className={`header ${scrolled ? 'header-scrolled' : ''}`}>
             <div className="container header-container">
                 <a href="#home" className="logo" onClick={closeMobileMenu}>
-                    <img src="/logo.png" alt="Guzman Career Services" className="logo-image" />
-                    <span className="logo-text">Guzman Career Services</span>
+                    <Logo variant={scrolled ? 'color' : 'white'} className="logo-image" />
                 </a>
 
                 <nav className={`nav ${mobileMenuOpen ? 'nav-open' : ''}`}>
