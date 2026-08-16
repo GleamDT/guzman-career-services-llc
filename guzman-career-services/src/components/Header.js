@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import './Header.css';
-import Login from './Login';
 import Logo from './Logo';
 import { SITE_MODE } from '../lib/siteMode';
 import { API_BASE } from '../lib/apiBase';
@@ -8,7 +8,6 @@ import { API_BASE } from '../lib/apiBase';
 function Header() {
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [loginOpen, setLoginOpen] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -28,7 +27,6 @@ function Header() {
     };
 
     return (
-        <>
         <header className={`header ${scrolled ? 'header-scrolled' : ''}`}>
             <div className="container header-container">
                 <a href="#home" className="logo" onClick={closeMobileMenu}>
@@ -46,18 +44,19 @@ function Header() {
                     {SITE_MODE === 'marketing' ? (
                         <a
                             className="nav-link nav-link-login"
-                            href={`${API_BASE}/`}
+                            href={`${API_BASE}/login`}
                             onClick={closeMobileMenu}
                         >
                             Client Login
                         </a>
                     ) : (
-                        <button
+                        <Link
                             className="nav-link nav-link-login"
-                            onClick={() => { closeMobileMenu(); setLoginOpen(true); }}
+                            to="/login"
+                            onClick={closeMobileMenu}
                         >
                             Login
-                        </button>
+                        </Link>
                     )}
                 </nav>
 
@@ -72,9 +71,6 @@ function Header() {
                 </button>
             </div>
         </header>
-
-        {SITE_MODE !== 'marketing' && <Login isOpen={loginOpen} onClose={() => setLoginOpen(false)} />}
-        </>
     );
 }
 
