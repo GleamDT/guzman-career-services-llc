@@ -10,38 +10,33 @@ import { API_BASE } from '../lib/apiBase';
 const SLIDES = [
   {
     number: '01',
-    badge: 'Career Assessment',
-    titleBefore: 'Know Exactly ',
-    titleHighlight: 'Where You Stand',
-    subtitle: "A deep-dive into your goals, experience, and target opportunities, so every step after this one is the right one.",
+    titleBefore: 'Tell Us ',
+    titleHighlight: "What You're Looking For",
+    subtitle: 'Target roles, locations, salary preferences, work arrangement and other criteria.',
   },
   {
     number: '02',
-    badge: 'Resume Optimization',
-    titleBefore: 'A Resume That ',
-    titleHighlight: 'Gets You Noticed',
-    subtitle: 'Professionally crafted resumes and profiles built to pass applicant tracking systems and catch a recruiter’s eye.',
+    titleBefore: 'We Build Your ',
+    titleHighlight: 'Application Strategy',
+    subtitle: 'Your specialist establishes the search criteria and application parameters.',
   },
   {
     number: '03',
-    badge: 'Job Applications',
-    titleBefore: 'Applications, ',
-    titleHighlight: 'Handled For You',
-    subtitle: 'Targeted job applications and strategic follow-ups, managed end to end, so you spend your time preparing, not searching.',
+    titleBefore: 'We Find ',
+    titleHighlight: 'Relevant Opportunities',
+    subtitle: 'Human specialists research and evaluate jobs against your criteria.',
   },
   {
     number: '04',
-    badge: 'Interview Preparation',
-    titleBefore: 'Walk Into ',
-    titleHighlight: 'Every Interview Ready',
-    subtitle: 'Mock interviews, answer strategies, and confidence coaching tailored to your target roles.',
+    titleBefore: 'We Apply & ',
+    titleHighlight: 'Track Everything',
+    subtitle: 'Applications are completed and recorded in your application tracker.',
   },
   {
     number: '05',
-    badge: 'Job Offer Support',
-    titleBefore: 'From ',
-    titleHighlight: 'Offer to Onboarding',
-    subtitle: 'Expert guidance on evaluating offers and negotiating compensation, all the way through to your first day.',
+    titleBefore: 'We Review ',
+    titleHighlight: "What's Working",
+    subtitle: 'Application performance informs adjustments to targeting and strategy.',
   },
 ];
 
@@ -77,7 +72,6 @@ function Hero() {
                   <div className="hero-kicker">
                     <span className="hero-kicker-number">{slide.number}</span>
                     <span className="hero-kicker-line"></span>
-                    <span className="hero-kicker-label">{slide.badge}</span>
                   </div>
                   <h1 className="hero-title">
                     {slide.titleBefore}
