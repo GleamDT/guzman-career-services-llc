@@ -1,0 +1,41 @@
+.problem-section {
+    padding: var(--space-20) 0;
+    background: var(--color-white);
+}
+
+.problem-content {
+    max-width: 720px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.problem-title {
+    font-size: var(--text-4xl);
+    font-weight: 800;
+    color: var(--color-gray-900);
+    line-height: 1.25;
+    margin-bottom: var(--space-8);
+}
+
+.problem-text {
+    font-size: var(--text-lg);
+    color: var(--color-gray-600);
+    line-height: 1.8;
+    margin-bottom: var(--space-4);
+}
+
+.problem-text--emphasis {
+    color: var(--color-gray-900);
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    .problem-title {
+        font-size: var(--text-2xl);
+    }
+
+    .problem-text {
+        font-size: var(--text-base);
+    }
+}

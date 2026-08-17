@@ -1,0 +1,42 @@
+.trust-bar {
+    background: var(--color-gray-50);
+    border-bottom: 1px solid var(--color-gray-200);
+    padding: var(--space-8) 0;
+}
+
+.trust-bar-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-6);
+    text-align: center;
+}
+
+.trust-bar-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.trust-bar-value {
+    font-family: var(--font-heading);
+    font-size: var(--text-2xl);
+    font-weight: 800;
+    color: var(--color-primary);
+}
+
+.trust-bar-label {
+    font-size: var(--text-sm);
+    color: var(--color-gray-600);
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .trust-bar-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-6) var(--space-4);
+    }
+
+    .trust-bar-value {
+        font-size: var(--text-xl);
+    }
+}

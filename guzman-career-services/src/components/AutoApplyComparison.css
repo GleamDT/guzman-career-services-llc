@@ -1,0 +1,89 @@
+.comparison-section {
+    background: var(--color-gray-50);
+}
+
+.comparison-table {
+    max-width: 720px;
+    margin: var(--space-12) auto 0;
+    background: var(--color-white);
+    border-radius: var(--radius-2xl);
+    border: 1px solid var(--color-gray-200);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+}
+
+.comparison-table-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.comparison-table-header .comparison-col {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-lg);
+    padding: var(--space-5) var(--space-6);
+}
+
+.comparison-table-header .comparison-col--auto {
+    background: var(--color-gray-100);
+    color: var(--color-gray-600);
+}
+
+.comparison-table-header .comparison-col--guzman {
+    background: var(--color-primary);
+    color: var(--color-white);
+}
+
+.comparison-table-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--color-gray-200);
+}
+
+.comparison-table-row .comparison-col {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: var(--space-4) var(--space-6);
+    font-size: var(--text-base);
+}
+
+.comparison-table-row .comparison-col--auto {
+    color: var(--color-gray-500, var(--color-gray-600));
+    border-right: 1px solid var(--color-gray-200);
+}
+
+.comparison-table-row .comparison-col--guzman {
+    color: var(--color-gray-900);
+    font-weight: 600;
+}
+
+.comparison-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-full);
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.comparison-icon--no {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.comparison-icon--yes {
+    background: rgba(0, 132, 142, 0.15);
+    color: #00848e;
+}
+
+@media (max-width: 640px) {
+    .comparison-table-header .comparison-col,
+    .comparison-table-row .comparison-col {
+        padding: var(--space-3) var(--space-4);
+        font-size: var(--text-sm);
+    }
+}

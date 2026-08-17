@@ -1,0 +1,35 @@
+.coming-soon-section {
+    padding: var(--space-16) 0;
+}
+
+.coming-soon-card {
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+    padding: var(--space-10);
+    border: 1px dashed var(--color-gray-300);
+    border-radius: var(--radius-2xl);
+    background: var(--color-gray-50);
+}
+
+.coming-soon-eyebrow {
+    display: inline-block;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-gray-400);
+    margin-bottom: var(--space-3);
+}
+
+.coming-soon-title {
+    font-size: var(--text-2xl);
+    font-weight: 800;
+    color: var(--color-gray-700);
+    margin-bottom: var(--space-3);
+}
+
+.coming-soon-note {
+    font-size: var(--text-sm);
+    color: var(--color-gray-500, var(--color-gray-600));
+}

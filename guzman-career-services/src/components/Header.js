@@ -37,8 +37,8 @@ function Header() {
                     <a href="#home" className="nav-link" onClick={closeMobileMenu}>Home</a>
                     <a href="#services" className="nav-link" onClick={closeMobileMenu}>Services</a>
                     <a href="#how-it-works" className="nav-link" onClick={closeMobileMenu}>How It Works</a>
-                    <a href="#about" className="nav-link" onClick={closeMobileMenu}>About</a>
-                    <a href="#contact" className="nav-link nav-link-cta" onClick={closeMobileMenu}>
+                    <a href="#who-its-for" className="nav-link" onClick={closeMobileMenu}>Who It's For</a>
+                    <a href="#consultation" className="nav-link nav-link-cta" onClick={closeMobileMenu}>
                         Contact Us
                     </a>
                     {SITE_MODE === 'marketing' ? (

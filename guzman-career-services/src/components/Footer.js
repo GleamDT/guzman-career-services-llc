@@ -20,24 +20,21 @@ function Footer() {
                     </div>
 
                     <div className="footer-section">
-                        <h4 className="footer-title">Services</h4>
+                        <h4 className="footer-title">Our Service</h4>
                         <ul className="footer-links">
-                            <li><a href="#services">Job Application Assistance</a></li>
-                            <li><a href="#services">Resume Optimization</a></li>
-
-                            <li><a href="#services">Cover Letter Writing</a></li>
-                            <li><a href="#services">Interview Coaching</a></li>
-                            <li><a href="#services">Career Consulting</a></li>
+                            <li><a href="#services">What We Handle</a></li>
+                            <li><a href="#how-it-works">How It Works</a></li>
+                            <li><a href="#who-its-for">Who It's For</a></li>
+                            <li><a href="#fit-check">Is This Right for You</a></li>
                         </ul>
                     </div>
 
                     <div className="footer-section">
                         <h4 className="footer-title">Company</h4>
                         <ul className="footer-links">
-                            <li><a href="#about">About Us</a></li>
-                            <li><a href="#how-it-works">How It Works</a></li>
+                            <li><a href="#problem">About Us</a></li>
                             <li><a href="#testimonials">Testimonials</a></li>
-                            <li><a href="#contact">Contact</a></li>
+                            <li><a href="#consultation">Contact</a></li>
                         </ul>
                     </div>
 
@@ -46,7 +43,7 @@ function Footer() {
                         <ul className="footer-contact">
                             <li>
                                 <span className="footer-contact-icon">📧</span>
-                                <a href="mailto:info@guzmancareerservices.com">info@guzmancareerservices.com</a>
+                                <a href="mailto:clientservices@guzmancareerservices.com">clientservices@guzmancareerservices.com</a>
                             </li>
                             <li>
                                 <span className="footer-contact-icon">🕒</span>

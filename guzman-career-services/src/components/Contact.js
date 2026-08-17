@@ -61,8 +61,8 @@ function Contact() {
                             <div className="contact-icon">📧</div>
                             <div className="contact-details">
                                 <div className="contact-label">Email</div>
-                                <a href="mailto:info@guzmancareerservices.com" className="contact-value">
-                                    info@guzmancareerservices.com
+                                <a href="mailto:clientservices@guzmancareerservices.com" className="contact-value">
+                                    clientservices@guzmancareerservices.com
                                 </a>
                             </div>
                         </div>

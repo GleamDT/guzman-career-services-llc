@@ -1,6 +1,6 @@
 .hero {
     position: relative;
-    min-height: 100vh;
+    min-height: 85vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -41,22 +41,6 @@
     background: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0.3) 100%);
 }
 
-/* ── Carousel wrapper (Swiper + arrows) ─────────────────────────────────── */
-.hero-carousel-wrap {
-    position: relative;
-    z-index: 1;
-}
-
-.hero-swiper {
-    width: 100%;
-}
-
-.hero-swiper .swiper-slide {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
 .hero-content {
     position: relative;
     z-index: 1;
@@ -66,34 +50,8 @@
 }
 
 .hero-text {
-    max-width: 900px;
-    min-height: 420px;
+    max-width: 800px;
     margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.hero-kicker {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    margin-bottom: var(--space-5);
-}
-
-.hero-kicker-number {
-    font-family: var(--font-heading);
-    font-size: 1.125rem;
-    font-weight: 700;
-    color: #00848e;
-}
-
-.hero-kicker-line {
-    width: 3.5rem;
-    height: 2px;
-    background: rgba(0, 132, 142, 0.5);
 }
 
 .hero-title {
@@ -113,13 +71,21 @@
 }
 
 .hero-subtitle {
-    font-size: clamp(1.125rem, 2vw, 1.375rem);
-    color: rgba(255, 255, 255, 0.9);
-    margin-bottom: var(--space-10);
+    font-size: clamp(1rem, 1.6vw, 1.15rem);
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: var(--space-4);
     line-height: 1.7;
-    max-width: 700px;
+    max-width: 640px;
     margin-left: auto;
     margin-right: auto;
+}
+
+.hero-subtitle--lead {
+    font-size: clamp(1.125rem, 2vw, 1.375rem);
+    color: rgba(255, 255, 255, 0.92);
+    font-weight: 500;
+    margin-bottom: var(--space-6);
+    max-width: 700px;
 }
 
 .hero-cta {
@@ -127,6 +93,7 @@
     gap: var(--space-4);
     justify-content: center;
     flex-wrap: wrap;
+    margin-top: var(--space-10);
 }
 
 .hero-btn-outline {
@@ -138,125 +105,6 @@
 .hero-btn-outline:hover {
     background: var(--color-white);
     color: var(--color-primary);
-}
-
-/* ── Arrows ──────────────────────────────────────────────────────────────── */
-.hero-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 2;
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: var(--radius-full);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(6px);
-    color: var(--color-white);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all var(--transition-base);
-}
-
-.hero-arrow:hover {
-    background: rgba(255, 255, 255, 0.18);
-    border-color: rgba(255, 255, 255, 0.5);
-}
-
-.hero-arrow--prev { left: max(1rem, 3vw); }
-.hero-arrow--next { right: max(1rem, 3vw); }
-
-/* ── Pagination dots + autoplay progress ────────────────────────────────── */
-.hero-pagination-wrap {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-4);
-    margin-top: var(--space-10);
-}
-
-.hero-pagination {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.hero-pagination .swiper-pagination-bullet {
-    width: 8px;
-    height: 8px;
-    border-radius: var(--radius-full);
-    background: rgba(255, 255, 255, 0.35);
-    opacity: 1;
-    transition: all var(--transition-base);
-}
-
-.hero-pagination .swiper-pagination-bullet-active {
-    width: 22px;
-    background: #00848e;
-}
-
-.hero-autoplay-progress {
-    width: 120px;
-    height: 3px;
-    border-radius: var(--radius-full);
-    background: rgba(255, 255, 255, 0.15);
-    overflow: hidden;
-    --progress: 0;
-}
-
-.hero-autoplay-progress-bar {
-    height: 100%;
-    width: calc(var(--progress) * 100%);
-    background: #00848e;
-    border-radius: var(--radius-full);
-}
-
-.hero-stats-wrap {
-    position: relative;
-    z-index: 1;
-    margin-top: var(--space-12);
-}
-
-.hero-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: var(--space-8);
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.stat-item {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: var(--radius-xl);
-    padding: var(--space-6);
-    text-align: center;
-    transition: all var(--transition-base);
-}
-
-.stat-item:hover {
-    background: rgba(255, 255, 255, 0.15);
-    transform: translateY(-5px);
-}
-
-.stat-number {
-    font-size: var(--text-4xl);
-    font-weight: 800;
-    color: var(--color-white);
-    font-family: var(--font-heading);
-    margin-bottom: var(--space-2);
-}
-
-.stat-label {
-    font-size: var(--text-sm);
-    color: rgba(255, 255, 255, 0.8);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 600;
 }
 
 .hero-scroll {
@@ -304,20 +152,8 @@
 
 @media (max-width: 768px) {
     .hero {
-        min-height: 90vh;
+        min-height: 80vh;
     }
-
-    .hero-text {
-        min-height: 480px;
-    }
-
-    .hero-arrow {
-        width: 2.25rem;
-        height: 2.25rem;
-    }
-
-    .hero-arrow--prev { left: 0.5rem; }
-    .hero-arrow--next { right: 0.5rem; }
 
     .hero-cta {
         flex-direction: column;
@@ -327,10 +163,5 @@
     .hero-cta .btn {
         width: 100%;
         max-width: 300px;
-    }
-
-    .hero-stats {
-        grid-template-columns: 1fr;
-        gap: var(--space-4);
     }
 }

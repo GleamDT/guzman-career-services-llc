@@ -4,24 +4,24 @@ import './WhyChooseUs.css';
 function WhyChooseUs() {
     const reasons = [
         {
-            icon: '👨‍💼',
-            title: 'Experienced Career Specialists',
-            description: 'Our team consists of certified career coaches with extensive industry experience and proven track records of success.'
+            icon: '🧑‍💼',
+            title: 'Human Application Specialists',
+            description: 'Real people manage the application process.'
         },
         {
-            icon: '📊',
-            title: 'Personalized Job Strategies',
-            description: 'Every client receives a customized approach tailored to their unique goals, experience, and target industry.'
+            icon: '🎯',
+            title: 'Targeted, Not Mass-Applied',
+            description: "Opportunities are evaluated against the client's criteria."
         },
         {
-            icon: '🔐',
-            title: 'Confidential & Ethical Service',
-            description: 'We maintain the highest standards of confidentiality and professional ethics in all our client relationships.'
+            icon: '📋',
+            title: 'Transparent Tracking',
+            description: 'Clients can see where applications have been submitted.'
         },
         {
-            icon: '✅',
-            title: 'Proven Success Rate',
-            description: 'With a 95% client satisfaction rate and hundreds of successful placements, our results speak for themselves.'
+            icon: '🔄',
+            title: 'Strategy That Can Adapt',
+            description: 'If market response indicates a problem, targeting can be reassessed.'
         }
     ];
 
@@ -30,9 +30,6 @@ function WhyChooseUs() {
             <div className="container">
                 <div className="section-header text-center">
                     <h2 className="section-title">Why Choose Us</h2>
-                    <p className="section-subtitle">
-                        Partner with a trusted career services provider committed to your success
-                    </p>
                 </div>
                 <div className="reasons-grid">
                     {reasons.map((reason, index) => (

@@ -69,17 +69,6 @@
     margin-bottom: var(--space-12);
 }
 
-.cta-btn-outline {
-    background: transparent;
-    color: var(--color-white);
-    border-color: var(--color-white);
-}
-
-.cta-btn-outline:hover {
-    background: var(--color-white);
-    color: var(--color-primary);
-}
-
 .cta-trust {
     display: flex;
     gap: var(--space-8);

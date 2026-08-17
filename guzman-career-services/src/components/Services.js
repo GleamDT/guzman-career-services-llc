@@ -1,71 +1,43 @@
 import React from 'react';
 import './Services.css';
-import { API_BASE } from '../lib/apiBase';
+
+const ITEMS = [
+    {
+        icon: '🔍',
+        title: 'We Find Opportunities',
+        description: 'Human specialists source roles that match your target positions, locations, and criteria.',
+    },
+    {
+        icon: '📨',
+        title: 'We Submit Applications',
+        description: 'Targeted, complete applications, submitted on your behalf, not mass-applied to everything available.',
+    },
+    {
+        icon: '📊',
+        title: 'We Track Your Search',
+        description: 'Every application is recorded, so you always have visibility into where things stand.',
+    },
+];
 
 function Services() {
-    const generalService = {
-        id: 'general',
-        icon: '💼',
-        title: 'General Client Services',
-        tagline: 'Comprehensive Career Support',
-        description: 'Our full-service career support is designed for professionals at every stage. From resume optimization to interview coaching, we provide personalized guidance to help you land your dream job and advance your career.',
-        features: [
-            'Professional resume & CV optimization',
-            'Career profile enhancement',
-            'Job application strategy & support'
-        ],
-        buttonText: 'Get Started Today',
-        gradient: 'linear-gradient(135deg, #022452 0%, #00848e 100%)'
-    };
-
-    // Tech2mates temporarily hidden — uncomment to re-enable
-    // const tech2matesService = { ... }
-
     return (
         <section id="services" className="section">
             <div className="container">
                 <div className="section-header text-center">
-                    <h2 className="section-title">Our Professional Services</h2>
+                    <h2 className="section-title">What Guzman Actually Handles</h2>
                     <p className="section-subtitle">
-                        Choose the service path that best fits your career goals
+                        A managed job-application service, not a tool you have to operate yourself
                     </p>
                 </div>
 
-                <div className="service-categories">
-                    <div
-                        key={generalService.id}
-                        className="service-category-card"
-                    >
-                        <div className="category-header" style={{ background: generalService.gradient }}>
-                            <div className="category-icon">{generalService.icon}</div>
-                            <div className="category-title-group">
-                                <span className="category-tagline">{generalService.tagline}</span>
-                                <h3 className="category-title">{generalService.title}</h3>
-                            </div>
+                <div className="service-items-grid">
+                    {ITEMS.map((item, i) => (
+                        <div className="service-item-card" key={i}>
+                            <div className="service-item-icon">{item.icon}</div>
+                            <h3 className="service-item-title">{item.title}</h3>
+                            <p className="service-item-description">{item.description}</p>
                         </div>
-
-                        <div className="category-content">
-                            <p className="category-description">{generalService.description}</p>
-
-                            <ul className="category-features">
-                                {generalService.features.map((feature, idx) => (
-                                    <li key={idx} className="feature-item">
-                                        <span className="feature-icon">✓</span>
-                                        <span>{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <a
-                                className="category-button"
-                                style={{ background: generalService.gradient }}
-                                href={`${API_BASE}/signup?track=general`}
-                            >
-                                {generalService.buttonText}
-                                <span className="button-arrow">→</span>
-                            </a>
-                        </div>
-                    </div>
+                    ))}
                 </div>
             </div>
         </section>

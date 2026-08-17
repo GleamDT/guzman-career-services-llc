@@ -5,28 +5,28 @@ function HowItWorks() {
     const steps = [
         {
             number: '01',
-            title: 'Career Assessment',
-            description: 'We begin with a comprehensive evaluation of your career goals, experience, and target opportunities to create a personalized strategy.'
+            title: "Tell Us What You're Looking For",
+            description: 'Target roles, locations, salary preferences, work arrangement and other criteria.'
         },
         {
             number: '02',
-            title: 'Profile & Resume Optimization',
-            description: 'Our experts craft and optimize your resume and CV to showcase your strengths and pass applicant tracking systems.'
+            title: 'We Build Your Application Strategy',
+            description: 'Your specialist establishes the search criteria and application parameters.'
         },
         {
             number: '03',
-            title: 'Job Applications & Follow-ups',
-            description: 'We assist with targeted job applications, ensuring each submission is professional, complete, and strategically followed up.'
+            title: 'We Find Relevant Opportunities',
+            description: 'Human specialists research and evaluate jobs against your criteria.'
         },
         {
             number: '04',
-            title: 'Interview Preparation',
-            description: 'Receive comprehensive coaching including mock interviews, answer strategies, and confidence-building techniques for success.'
+            title: 'We Apply & Track Everything',
+            description: 'Applications are completed and recorded in your application tracker.'
         },
         {
             number: '05',
-            title: 'Job Offer Support',
-            description: 'Get expert guidance on evaluating offers, negotiating compensation, and making informed decisions about your career move.'
+            title: "We Review What's Working",
+            description: 'Application performance informs adjustments to targeting and strategy.'
         }
     ];
 
@@ -36,7 +36,7 @@ function HowItWorks() {
                 <div className="section-header text-center">
                     <h2 className="section-title">How It Works</h2>
                     <p className="section-subtitle">
-                        Our proven 5-step process guides you from career assessment to job offer acceptance
+                        A managed 5-step process, from your first brief to ongoing strategy adjustments
                     </p>
                 </div>
                 <div className="steps-container">

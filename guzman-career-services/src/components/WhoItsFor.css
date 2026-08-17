@@ -1,0 +1,46 @@
+.who-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-6);
+    margin-top: var(--space-12);
+}
+
+.who-card {
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-xl);
+    padding: var(--space-8) var(--space-6);
+    text-align: center;
+    transition: all var(--transition-base);
+}
+
+.who-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--color-primary-light);
+}
+
+.who-icon {
+    font-size: 2.25rem;
+    margin-bottom: var(--space-4);
+}
+
+.who-title {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    color: var(--color-gray-900);
+    margin-bottom: var(--space-3);
+}
+
+.who-quote {
+    font-size: var(--text-sm);
+    color: var(--color-gray-600);
+    font-style: italic;
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .who-grid {
+        grid-template-columns: 1fr;
+    }
+}

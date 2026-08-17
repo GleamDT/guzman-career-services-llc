@@ -3,12 +3,16 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { getAuthUser } from './lib/auth';
 import Header from './components/Header';
 import Hero from './components/Hero';
+import TrustBar from './components/TrustBar';
+import Problem from './components/Problem';
 import Services from './components/Services';
 import HowItWorks from './components/HowItWorks';
-import About from './components/About';
+import AutoApplyComparison from './components/AutoApplyComparison';
 import WhyChooseUs from './components/WhyChooseUs';
+import WhoItsFor from './components/WhoItsFor';
+import FitCheck from './components/FitCheck';
+import ComingSoonSection from './components/ComingSoonSection';
 import CTA from './components/CTA';
-import Contact from './components/Contact';
 import Footer from './components/Footer';
 import AdminDashboard from './components/AdminDashboard';
 import ClientDashboard from './components/ClientDashboard';
@@ -39,12 +43,39 @@ function MainSite() {
       <Header />
       <main>
         <Hero />
+        <TrustBar />
+        <Problem />
         <Services />
         <HowItWorks />
-        <About />
+        <AutoApplyComparison />
         <WhyChooseUs />
+        <WhoItsFor />
+        <ComingSoonSection
+          id="testimonials"
+          eyebrow="Coming Soon"
+          title="Client Results & Testimonials"
+          note="Verified client outcomes will be published here."
+        />
+        <ComingSoonSection
+          id="application-desk"
+          eyebrow="Coming Soon"
+          title="Inside the Application Desk"
+          note="A look at how our specialists work, day to day."
+        />
+        <FitCheck />
+        <ComingSoonSection
+          id="faq"
+          eyebrow="Coming Soon"
+          title="Frequently Asked Questions"
+          note="Common questions about how the service works."
+        />
         <CTA />
-        <Contact />
+        <ComingSoonSection
+          id="newsletter"
+          eyebrow="Coming Soon"
+          title="The Application Desk"
+          note="Job-search insights, delivered occasionally. Sign-up coming soon."
+        />
       </main>
       <Footer />
     </div>

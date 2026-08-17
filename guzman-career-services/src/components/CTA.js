@@ -1,40 +1,36 @@
 import React from 'react';
 import './CTA.css';
-import { API_BASE } from '../lib/apiBase';
 
 function CTA() {
     return (
-        <section id="cta" className="cta-section">
+        <section id="consultation" className="cta-section">
             <div className="cta-background">
                 <div className="cta-overlay"></div>
             </div>
             <div className="container cta-content">
                 <div className="cta-text">
-                    <h2 className="cta-title">Start Your Career Journey Today</h2>
+                    <h2 className="cta-title">Not Sure If Managed Job Applications Are Right for You?</h2>
                     <p className="cta-subtitle">
-                        Don't let another opportunity pass you by. Partner with Guzman Career Services
-                        and take the first step toward landing your dream job with confidence.
+                        Start with a free consultation. We'll discuss your target positions, experience,
+                        current job search and application goals, and determine whether our service is a good fit.
                     </p>
                     <div className="cta-buttons">
-                        <a href={`${API_BASE}/signup`} className="btn btn-accent btn-lg">
-                            Get Started Now
-                        </a>
-                        <a href="#contact" className="btn btn-outline btn-lg cta-btn-outline">
-                            Contact Us
+                        <a href="mailto:clientservices@guzmancareerservices.com" className="btn btn-accent btn-lg">
+                            Book Your Free Consultation
                         </a>
                     </div>
                     <div className="cta-trust">
                         <div className="trust-item">
                             <span className="trust-icon">✓</span>
-                            <span className="trust-text">No Long-Term Contracts</span>
+                            <span className="trust-text">No Obligation</span>
                         </div>
                         <div className="trust-item">
                             <span className="trust-icon">✓</span>
-                            <span className="trust-text">100% Confidential</span>
+                            <span className="trust-text">No Guaranteed-Job Promises</span>
                         </div>
                         <div className="trust-item">
                             <span className="trust-icon">✓</span>
-                            <span className="trust-text">Satisfaction Guaranteed</span>
+                            <span className="trust-text">Just an Honest Conversation</span>
                         </div>
                     </div>
                 </div>
