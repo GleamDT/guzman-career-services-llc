@@ -13,6 +13,7 @@ import WhoItsFor from './components/WhoItsFor';
 import FitCheck from './components/FitCheck';
 import ComingSoonSection from './components/ComingSoonSection';
 import CTA from './components/CTA';
+import Contact from './components/Contact';
 import Footer from './components/Footer';
 import AdminDashboard from './components/AdminDashboard';
 import ClientDashboard from './components/ClientDashboard';
@@ -76,6 +77,7 @@ function MainSite() {
           title="The Application Desk"
           note="Job-search insights, delivered occasionally. Sign-up coming soon."
         />
+        <Contact />
       </main>
       <Footer />
     </div>
