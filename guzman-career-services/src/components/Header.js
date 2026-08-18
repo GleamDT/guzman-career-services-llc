@@ -38,8 +38,17 @@ function Header() {
                     <a href="#services" className="nav-link" onClick={closeMobileMenu}>Services</a>
                     <a href="#how-it-works" className="nav-link" onClick={closeMobileMenu}>How It Works</a>
                     <a href="#who-its-for" className="nav-link" onClick={closeMobileMenu}>Who It's For</a>
-                    <a href="#contact" className="nav-link nav-link-cta" onClick={closeMobileMenu}>
+                    <a href="#contact" className="nav-link" onClick={closeMobileMenu}>
                         Contact Us
+                    </a>
+                    <a
+                        href="https://calendly.com/clientservices-guzmancareerservices/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="nav-link nav-link-cta"
+                        onClick={closeMobileMenu}
+                    >
+                        Book Consultation
                     </a>
                     {SITE_MODE === 'marketing' ? (
                         <a

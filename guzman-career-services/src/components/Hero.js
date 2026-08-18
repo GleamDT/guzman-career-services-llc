@@ -82,8 +82,13 @@ function Hero() {
                     <a href={`${API_BASE}/signup`} className="btn btn-accent btn-lg">
                       Get Started Today
                     </a>
-                    <a href="#how-it-works" className="btn btn-outline btn-lg hero-btn-outline">
-                      See How It Works
+                    <a
+                      href="https://calendly.com/clientservices-guzmancareerservices/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-outline btn-lg hero-btn-outline"
+                    >
+                      Book a Free Consultation
                     </a>
                   </div>
                 </div>
