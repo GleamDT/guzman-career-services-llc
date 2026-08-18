@@ -1,6 +1,7 @@
 import React from 'react';
 import { Briefcase, RefreshCw, Compass, Globe } from 'lucide-react';
 import IconBadge from './IconBadge';
+import Reveal from './Reveal';
 import './WhoItsFor.css';
 
 const SEGMENTS = [
@@ -28,19 +29,26 @@ const SEGMENTS = [
 
 function WhoItsFor() {
     return (
-        <section id="who-its-for" className="section section-alt">
+        <section id="who-its-for" className="section section-alt who-section">
+            <div className="who-icon-decoration">
+                <Globe strokeWidth={1} />
+            </div>
             <div className="container">
-                <div className="section-header text-center">
-                    <h2 className="section-title">Who This Is For</h2>
-                </div>
+                <Reveal>
+                    <div className="section-header text-center">
+                        <h2 className="section-title">Who This Is For</h2>
+                    </div>
+                </Reveal>
 
                 <div className="who-grid">
                     {SEGMENTS.map((segment, i) => (
-                        <div className="who-card" key={i}>
-                            <IconBadge icon={segment.icon} variant="navy" size="sm" />
-                            <h3 className="who-title">{segment.title}</h3>
-                            <p className="who-quote">&ldquo;{segment.quote}&rdquo;</p>
-                        </div>
+                        <Reveal delay={i * 100} key={i}>
+                            <div className="who-card">
+                                <IconBadge icon={segment.icon} variant="navy" size="sm" />
+                                <h3 className="who-title">{segment.title}</h3>
+                                <p className="who-quote">&ldquo;{segment.quote}&rdquo;</p>
+                            </div>
+                        </Reveal>
                     ))}
                 </div>
             </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import Reveal from './Reveal';
 import './TrustBar.css';
 
 const ITEMS = [
@@ -13,10 +14,12 @@ function TrustBar() {
         <section id="trust-bar" className="trust-bar">
             <div className="container trust-bar-grid">
                 {ITEMS.map((item, i) => (
-                    <div className="trust-bar-item" key={i}>
-                        <div className="trust-bar-value">{item.value}</div>
-                        <div className="trust-bar-label">{item.label}</div>
-                    </div>
+                    <Reveal delay={i * 80} key={i}>
+                        <div className="trust-bar-item">
+                            <div className="trust-bar-value">{item.value}</div>
+                            <div className="trust-bar-label">{item.label}</div>
+                        </div>
+                    </Reveal>
                 ))}
             </div>
         </section>

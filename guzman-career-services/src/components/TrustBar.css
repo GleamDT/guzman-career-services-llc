@@ -12,9 +12,20 @@
 }
 
 .trust-bar-item {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+}
+
+.trust-bar-grid > .reveal:not(:first-child) .trust-bar-item::before {
+    content: '';
+    position: absolute;
+    left: calc(var(--space-6) / -2);
+    top: 0.15rem;
+    bottom: 0.15rem;
+    width: 1px;
+    background: var(--color-gray-200);
 }
 
 .trust-bar-value {
@@ -38,5 +49,9 @@
 
     .trust-bar-value {
         font-size: var(--text-xl);
+    }
+
+    .trust-bar-grid > .reveal .trust-bar-item::before {
+        display: none;
     }
 }

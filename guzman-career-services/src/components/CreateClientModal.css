@@ -117,7 +117,7 @@
 .ccm-field input:focus,
 .ccm-field select:focus {
     border-color: #022452;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    box-shadow: 0 0 0 3px rgba(2, 36, 82, 0.12);
 }
 
 .ccm-field input::placeholder {
@@ -185,7 +185,7 @@
 .ccm-btn--submit {
     background: #022452;
     color: white;
-    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 1px 3px rgba(2, 36, 82, 0.3);
 }
 
 .ccm-btn--submit:hover:not(:disabled) {

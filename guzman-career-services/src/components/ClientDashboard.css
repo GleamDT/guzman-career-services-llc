@@ -468,7 +468,7 @@
 .cd-btn--pay {
     background: #022452;
     color: white;
-    box-shadow: 0 1px 3px rgba(37,99,235,0.3);
+    box-shadow: 0 1px 3px rgba(2, 36, 82,0.3);
 }
 
 .cd-btn--pay:hover {
