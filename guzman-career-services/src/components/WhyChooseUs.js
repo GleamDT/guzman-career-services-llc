@@ -1,25 +1,27 @@
 import React from 'react';
+import { UserCheck, Target, ClipboardList, RefreshCw } from 'lucide-react';
+import IconBadge from './IconBadge';
 import './WhyChooseUs.css';
 
 function WhyChooseUs() {
     const reasons = [
         {
-            icon: '🧑‍💼',
+            icon: UserCheck,
             title: 'Human Application Specialists',
             description: 'Real people manage the application process.'
         },
         {
-            icon: '🎯',
+            icon: Target,
             title: 'Targeted, Not Mass-Applied',
             description: "Opportunities are evaluated against the client's criteria."
         },
         {
-            icon: '📋',
+            icon: ClipboardList,
             title: 'Transparent Tracking',
             description: 'Clients can see where applications have been submitted.'
         },
         {
-            icon: '🔄',
+            icon: RefreshCw,
             title: 'Strategy That Can Adapt',
             description: 'If market response indicates a problem, targeting can be reassessed.'
         }
@@ -39,7 +41,7 @@ function WhyChooseUs() {
                             style={{ animationDelay: `${index * 0.1}s` }}
                         >
                             <div className="reason-icon-wrapper">
-                                <div className="reason-icon">{reason.icon}</div>
+                                <IconBadge icon={reason.icon} variant="teal" />
                             </div>
                             <h3 className="reason-title">{reason.title}</h3>
                             <p className="reason-description">{reason.description}</p>

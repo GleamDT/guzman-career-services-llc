@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Mail, Clock } from 'lucide-react';
 import Logo from './Logo';
 import './Footer.css';
 
@@ -33,7 +34,6 @@ function Footer() {
                         <h4 className="footer-title">Company</h4>
                         <ul className="footer-links">
                             <li><a href="#problem">About Us</a></li>
-                            <li><a href="#testimonials">Testimonials</a></li>
                             <li><a href="#contact">Contact</a></li>
                         </ul>
                     </div>
@@ -42,11 +42,11 @@ function Footer() {
                         <h4 className="footer-title">Contact</h4>
                         <ul className="footer-contact">
                             <li>
-                                <span className="footer-contact-icon">📧</span>
+                                <Mail className="footer-contact-icon" size={18} strokeWidth={2} />
                                 <a href="mailto:clientservices@guzmancareerservices.com">clientservices@guzmancareerservices.com</a>
                             </li>
                             <li>
-                                <span className="footer-contact-icon">🕒</span>
+                                <Clock className="footer-contact-icon" size={18} strokeWidth={2} />
                                 <span>Mon-Fri: 9AM-3PM CST</span>
                             </li>
                         </ul>

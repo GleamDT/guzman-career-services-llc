@@ -128,8 +128,9 @@
 }
 
 .footer-contact-icon {
-    font-size: 1.25rem;
     flex-shrink: 0;
+    color: #00848e;
+    margin-top: 0.2rem;
 }
 
 .footer-contact li a {

@@ -1,24 +1,26 @@
 import React from 'react';
+import { Briefcase, RefreshCw, Compass, Globe } from 'lucide-react';
+import IconBadge from './IconBadge';
 import './WhoItsFor.css';
 
 const SEGMENTS = [
     {
-        icon: '💼',
+        icon: Briefcase,
         title: 'Busy Professionals',
         quote: "I don't have hours every week to apply.",
     },
     {
-        icon: '🔄',
+        icon: RefreshCw,
         title: 'Recently Laid-Off Professionals',
         quote: 'I need to maintain application momentum.',
     },
     {
-        icon: '🧭',
+        icon: Compass,
         title: 'Career Changers',
         quote: 'I need a structured approach to pursuing new opportunities.',
     },
     {
-        icon: '🌍',
+        icon: Globe,
         title: 'Eligible Newcomers',
         quote: 'I need help navigating and managing applications in the US/Canadian market.',
     },
@@ -35,7 +37,7 @@ function WhoItsFor() {
                 <div className="who-grid">
                     {SEGMENTS.map((segment, i) => (
                         <div className="who-card" key={i}>
-                            <div className="who-icon">{segment.icon}</div>
+                            <IconBadge icon={segment.icon} variant="navy" size="sm" />
                             <h3 className="who-title">{segment.title}</h3>
                             <p className="who-quote">&ldquo;{segment.quote}&rdquo;</p>
                         </div>

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { Mail, Clock } from 'lucide-react';
 import { API_BASE } from '../lib/apiBase';
+import IconBadge from './IconBadge';
 import './Contact.css';
 
 function Contact() {
@@ -58,7 +60,7 @@ function Contact() {
                     <div className="contact-info">
                         <h3 className="contact-info-title">Contact Information</h3>
                         <div className="contact-item">
-                            <div className="contact-icon">📧</div>
+                            <IconBadge icon={Mail} variant="teal" size="sm" />
                             <div className="contact-details">
                                 <div className="contact-label">Email</div>
                                 <a href="mailto:clientservices@guzmancareerservices.com" className="contact-value">
@@ -67,7 +69,7 @@ function Contact() {
                             </div>
                         </div>
                         <div className="contact-item">
-                            <div className="contact-icon">🕒</div>
+                            <IconBadge icon={Clock} variant="teal" size="sm" />
                             <div className="contact-details">
                                 <div className="contact-label">Business Hours</div>
                                 <div className="contact-value">
@@ -122,10 +124,10 @@ function Contact() {
                                 onChange={handleChange}
                                 required
                             >
-                                <option value="">Select a service</option>
-                                <option value="resume">Professional Resume & CV Optimization</option>
-                                <option value="profile">Career Profile Enhancement</option>
-                                <option value="job-application">Job Application Strategy & Support</option>
+                                <option value="">Select an option</option>
+                                <option value="consultation">New Client — Free Consultation</option>
+                                <option value="existing-client">Existing Client Support</option>
+                                <option value="general">General Inquiry</option>
                             </select>
                         </div>
                         <div className="form-group">

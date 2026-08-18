@@ -1,0 +1,43 @@
+.icon-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+}
+
+.icon-badge--md {
+    width: 56px;
+    height: 56px;
+}
+
+.icon-badge--md svg {
+    width: 26px;
+    height: 26px;
+}
+
+.icon-badge--sm {
+    width: 40px;
+    height: 40px;
+}
+
+.icon-badge--sm svg {
+    width: 20px;
+    height: 20px;
+}
+
+.icon-badge--navy {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+    color: var(--color-white);
+}
+
+.icon-badge--teal {
+    background: rgba(0, 132, 142, 0.12);
+    color: #00848e;
+}
+
+.icon-badge--outline {
+    background: transparent;
+    border: 1.5px solid var(--color-gray-200);
+    color: var(--color-primary);
+}

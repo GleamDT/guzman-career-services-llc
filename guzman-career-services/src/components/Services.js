@@ -1,19 +1,21 @@
 import React from 'react';
+import { Search, Send, BarChart3 } from 'lucide-react';
+import IconBadge from './IconBadge';
 import './Services.css';
 
 const ITEMS = [
     {
-        icon: '🔍',
+        icon: Search,
         title: 'We Find Opportunities',
         description: 'Human specialists source roles that match your target positions, locations, and criteria.',
     },
     {
-        icon: '📨',
+        icon: Send,
         title: 'We Submit Applications',
         description: 'Targeted, complete applications, submitted on your behalf, not mass-applied to everything available.',
     },
     {
-        icon: '📊',
+        icon: BarChart3,
         title: 'We Track Your Search',
         description: 'Every application is recorded, so you always have visibility into where things stand.',
     },
@@ -33,7 +35,7 @@ function Services() {
                 <div className="service-items-grid">
                     {ITEMS.map((item, i) => (
                         <div className="service-item-card" key={i}>
-                            <div className="service-item-icon">{item.icon}</div>
+                            <IconBadge icon={item.icon} variant="navy" />
                             <h3 className="service-item-title">{item.title}</h3>
                             <p className="service-item-description">{item.description}</p>
                         </div>

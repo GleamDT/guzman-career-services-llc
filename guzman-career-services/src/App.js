@@ -11,7 +11,7 @@ import AutoApplyComparison from './components/AutoApplyComparison';
 import WhyChooseUs from './components/WhyChooseUs';
 import WhoItsFor from './components/WhoItsFor';
 import FitCheck from './components/FitCheck';
-import ComingSoonSection from './components/ComingSoonSection';
+// import ComingSoonSection from './components/ComingSoonSection'; // re-enable with the sections below once there's real copy
 import CTA from './components/CTA';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
@@ -51,6 +51,8 @@ function MainSite() {
         <AutoApplyComparison />
         <WhyChooseUs />
         <WhoItsFor />
+        {/* Coming soon — no real content yet, commented out rather than shipping
+            placeholder/fake content. Re-enable once copy exists.
         <ComingSoonSection
           id="testimonials"
           eyebrow="Coming Soon"
@@ -63,20 +65,25 @@ function MainSite() {
           title="Inside the Application Desk"
           note="A look at how our specialists work, day to day."
         />
+        */}
         <FitCheck />
+        {/*
         <ComingSoonSection
           id="faq"
           eyebrow="Coming Soon"
           title="Frequently Asked Questions"
           note="Common questions about how the service works."
         />
+        */}
         <CTA />
+        {/*
         <ComingSoonSection
           id="newsletter"
           eyebrow="Coming Soon"
           title="The Application Desk"
           note="Job-search insights, delivered occasionally. Sign-up coming soon."
         />
+        */}
         <Contact />
       </main>
       <Footer />

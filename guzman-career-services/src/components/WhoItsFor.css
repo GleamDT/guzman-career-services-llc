@@ -20,9 +20,8 @@
     border-color: var(--color-primary-light);
 }
 
-.who-icon {
-    font-size: 2.25rem;
-    margin-bottom: var(--space-4);
+.who-card .icon-badge {
+    margin: 0 auto var(--space-4);
 }
 
 .who-title {

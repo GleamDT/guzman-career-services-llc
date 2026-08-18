@@ -42,26 +42,15 @@
 }
 
 .reason-icon-wrapper {
-    width: 72px;
-    height: 72px;
     margin: 0 auto var(--space-5);
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
-    border-radius: var(--radius-full);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: var(--shadow-lg);
-    transition: all var(--transition-base);
-    position: relative;
-    z-index: 1;
+    transition: transform var(--transition-base);
 }
 
 .reason-card:hover .reason-icon-wrapper {
     transform: scale(1.1) rotate(10deg);
-}
-
-.reason-icon {
-    font-size: 3rem;
 }
 
 .reason-title {
