@@ -15,7 +15,12 @@ function CTA() {
                         current job search and application goals, and determine whether our service is a good fit.
                     </p>
                     <div className="cta-buttons">
-                        <a href="mailto:clientservices@guzmancareerservices.com" className="btn btn-accent btn-lg">
+                        <a
+                            href="https://calendly.com/clientservices-guzmancareerservices/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-accent btn-lg"
+                        >
                             Book Your Free Consultation
                         </a>
                     </div>
