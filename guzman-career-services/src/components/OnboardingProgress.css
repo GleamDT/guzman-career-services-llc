@@ -1,0 +1,129 @@
+.ob-progress-mobile-only {
+    display: block;
+}
+
+@media (min-width: 768px) {
+    .ob-progress-mobile-only {
+        display: none;
+    }
+}
+
+.ob-progress {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    list-style: none;
+    margin: 0 0 1.75rem;
+    padding: 0;
+    gap: 0;
+}
+
+.ob-progress-step {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+}
+
+.ob-progress-dot {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: #e2e8f0;
+    color: #64748b;
+    transition: all 0.2s ease;
+}
+
+.ob-progress-step--done .ob-progress-dot {
+    background: var(--auth-indigo, #022452);
+    color: #fff;
+}
+
+.ob-progress-step--active .ob-progress-dot {
+    background: var(--auth-coral, #00848e);
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(0, 132, 142, 0.18);
+}
+
+.ob-progress-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-left: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ob-progress-step--done .ob-progress-label,
+.ob-progress-step--active .ob-progress-label {
+    color: var(--auth-indigo, #022452);
+}
+
+.ob-progress-connector {
+    flex: 1;
+    height: 2px;
+    background: #e2e8f0;
+    margin: 0 0.4rem;
+    min-width: 12px;
+}
+
+.ob-progress-step--done .ob-progress-connector {
+    background: var(--auth-indigo, #022452);
+}
+
+@media (max-width: 720px) {
+    .ob-progress--horizontal .ob-progress-label {
+        display: none;
+    }
+
+    .ob-progress--horizontal .ob-progress-connector {
+        margin: 0 0.25rem;
+    }
+}
+
+/* ── Vertical / slanted staircase — Login.js left panel, signup mode ────────── */
+.ob-progress--vertical {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.85rem;
+    margin: 0.25rem 0 0;
+}
+
+.ob-progress--vertical .ob-progress-step {
+    flex: none;
+    width: auto;
+    transition: margin-left 0.25s ease;
+}
+
+.ob-progress--vertical .ob-progress-dot {
+    background: rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.ob-progress--vertical .ob-progress-step--done .ob-progress-dot {
+    background: #00848e;
+    color: #fff;
+}
+
+.ob-progress--vertical .ob-progress-step--active .ob-progress-dot {
+    background: #fff;
+    color: var(--auth-indigo, #022452);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.22);
+}
+
+.ob-progress--vertical .ob-progress-label {
+    color: rgba(255, 255, 255, 0.5);
+    white-space: normal;
+}
+
+.ob-progress--vertical .ob-progress-step--done .ob-progress-label,
+.ob-progress--vertical .ob-progress-step--active .ob-progress-label {
+    color: #fff;
+}

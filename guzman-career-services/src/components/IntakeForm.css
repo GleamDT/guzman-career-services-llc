@@ -222,6 +222,39 @@
 }
 
 /* ── Callout box ── */
+.intake-education-row {
+    display: grid;
+    grid-template-columns: 1.3fr 1.3fr 1fr auto;
+    gap: 0.6rem;
+    align-items: center;
+    margin-top: 0.6rem;
+}
+
+.intake-education-row input {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 0.6rem 0.875rem;
+    font-size: 0.9rem;
+    color: #1e293b;
+    background: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.intake-education-row input:focus {
+    outline: none;
+    border-color: var(--auth-indigo, #022452);
+    box-shadow: 0 0 0 3px rgba(2, 36, 82, 0.15);
+}
+
+@media (max-width: 640px) {
+    .intake-education-row {
+        grid-template-columns: 1fr;
+    }
+}
+
 .intake-callout {
     grid-column: 1 / -1;
     background: rgba(2, 36, 82, 0.06);
@@ -431,54 +464,6 @@
 
 .intake-btn-secondary:hover:not(:disabled) {
     background: rgba(2, 36, 82, 0.14);
-}
-
-/* ── Success card ── */
-.intake-success-card {
-    max-width: 440px;
-    padding: 3rem 2.5rem;
-    text-align: center;
-    flex-direction: column;
-    align-items: center;
-}
-
-.intake-success-icon {
-    width: 4rem;
-    height: 4rem;
-    background: linear-gradient(160deg, var(--auth-indigo, #022452) 0%, var(--auth-violet, #00848e) 100%);
-    color: #fff;
-    border-radius: 50%;
-    font-size: 1.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 1.5rem;
-    font-weight: 700;
-}
-
-.intake-success-card h2 {
-    font-family: var(--auth-heading-font, Georgia, serif);
-    font-size: 1.625rem;
-    font-weight: 600;
-    color: #0f172a;
-    letter-spacing: -0.01em;
-    margin-bottom: 1rem;
-}
-
-.intake-success-card p {
-    font-size: 0.9rem;
-    color: #475569;
-    line-height: 1.6;
-    margin-bottom: 0.75rem;
-}
-
-.intake-success-note {
-    background: rgba(2, 36, 82, 0.06);
-    border-radius: 0.625rem;
-    padding: 0.875rem 1rem;
-    color: var(--auth-indigo, #022452) !important;
-    font-size: 0.85rem !important;
-    margin-bottom: 1.75rem !important;
 }
 
 /* ── T&C Buttons ── */
@@ -747,10 +732,6 @@
 
     .intake-progress-track {
         padding: 0.625rem 1.25rem;
-    }
-
-    .intake-success-card {
-        padding: 2.5rem 1.5rem;
     }
 
     .intake-tc-buttons {

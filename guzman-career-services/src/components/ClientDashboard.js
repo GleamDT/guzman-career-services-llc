@@ -6,6 +6,7 @@ import 'react-pdf/dist/Page/TextLayer.css';
 import { getAuthUser, clearToken } from '../lib/auth';
 import { authFetch } from '../lib/authFetch';
 import { downloadInvoicePDF } from '../lib/invoicePDF';
+import { downloadClientAgreementPDF } from '../lib/agreementPDF';
 import { TERMS_VERSION } from '../lib/legalContent';
 import TermsAcceptanceModal from './TermsAcceptanceModal';
 import OnboardingForm from './OnboardingForm';
@@ -157,6 +158,7 @@ function ResumeTab({ client }) {
     const [numPages, setNumPages]           = useState(null);
     const [pageWidth, setPageWidth]         = useState(500);
     const [downloadingId, setDownloadingId] = useState(null);
+    const [downloadingAgreement, setDownloadingAgreement] = useState(false);
     const previewRef                        = useRef(null);
 
     // Load resume list
@@ -223,6 +225,17 @@ function ResumeTab({ client }) {
             alert('Could not download resume: ' + err.message);
         } finally {
             setDownloadingId(null);
+        }
+    };
+
+    const handleDownloadAgreement = async () => {
+        setDownloadingAgreement(true);
+        try {
+            await downloadClientAgreementPDF(client);
+        } catch (err) {
+            alert('Could not generate agreement PDF: ' + err.message);
+        } finally {
+            setDownloadingAgreement(false);
         }
     };
 
@@ -308,6 +321,22 @@ function ResumeTab({ client }) {
                             <p>If you need updates or have questions about your resume, please contact your career consultant.</p>
                             <a href="mailto:info@guzmancareerservices.com" className="cd-revision-link">Contact Consultant</a>
                         </div>
+                        <div className="cd-resume-details-card">
+                            <h3 className="cd-resume-details-title">Signed Agreement</h3>
+                            <p className="cd-agreement-summary">
+                                {client.tc_agreed
+                                    ? <>Signed by <strong>{client.legal_name}</strong> on {client.signature_date ? new Date(client.signature_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}.</>
+                                    : 'No signed agreement on file yet.'}
+                            </p>
+                            {client.tc_agreed && (
+                                <button className="cd-btn cd-btn--download" onClick={handleDownloadAgreement} disabled={downloadingAgreement}>
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                                    </svg>
+                                    {downloadingAgreement ? 'Opening…' : 'Download Signed Agreement'}
+                                </button>
+                            )}
+                        </div>
                     </aside>
                     <section className="cd-resume-preview-wrap" ref={previewRef}>
                         {previewUrl ? (
@@ -339,14 +368,32 @@ function ResumeTab({ client }) {
                     </section>
                 </div>
             ) : (
-                <div style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>
-                    <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ margin: '0 auto 1rem', display: 'block' }}>
-                        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                    </svg>
-                    <p style={{ margin: 0, fontSize: '0.9rem' }}>No resume uploaded yet. Your consultant will add it here.</p>
-                    <a href="mailto:info@guzmancareerservices.com" style={{ display: 'inline-block', marginTop: '1rem', color: '#022452', fontWeight: 600, fontSize: '0.875rem' }}>
-                        Contact Consultant
-                    </a>
+                <div className="cd-resume-grid">
+                    <div style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>
+                        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ margin: '0 auto 1rem', display: 'block' }}>
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+                        </svg>
+                        <p style={{ margin: 0, fontSize: '0.9rem' }}>No resume uploaded yet. Your consultant will add it here.</p>
+                        <a href="mailto:info@guzmancareerservices.com" style={{ display: 'inline-block', marginTop: '1rem', color: '#022452', fontWeight: 600, fontSize: '0.875rem' }}>
+                            Contact Consultant
+                        </a>
+                    </div>
+                    <div className="cd-resume-details-card">
+                        <h3 className="cd-resume-details-title">Signed Agreement</h3>
+                        <p className="cd-agreement-summary">
+                            {client.tc_agreed
+                                ? <>Signed by <strong>{client.legal_name}</strong> on {client.signature_date ? new Date(client.signature_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}.</>
+                                : 'No signed agreement on file yet.'}
+                        </p>
+                        {client.tc_agreed && (
+                            <button className="cd-btn cd-btn--download" onClick={handleDownloadAgreement} disabled={downloadingAgreement}>
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                                </svg>
+                                {downloadingAgreement ? 'Opening…' : 'Download Signed Agreement'}
+                            </button>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
@@ -363,9 +410,7 @@ function ClientDashboard() {
     const [paymentBanner, setPaymentBanner] = useState(null); // 'success' | 'cancelled' | null
     const [showTermsModal, setShowTermsModal] = useState(false);
     const [showOnboardingModal, setShowOnboardingModal] = useState(false);
-    const [showPaymentModal, setShowPaymentModal] = useState(false);
     const autoOpenedOnboardingRef = useRef(false);
-    const autoOpenedPaymentRef = useRef(false);
     const navigate = useNavigate();
 
     const loadData = useCallback(async () => {
@@ -400,17 +445,6 @@ function ClientDashboard() {
             }
             if (invoicesData.invoices) {
                 setInvoices(invoicesData.invoices);
-                // Same modal-over-dashboard treatment as onboarding: only auto-open
-                // once, and only once onboarding itself is done and no plan chosen yet.
-                if (
-                    profileData.client &&
-                    profileData.client.status !== 'Pending' &&
-                    !autoOpenedPaymentRef.current &&
-                    !invoicesData.invoices.some(inv => inv.invoice_kind)
-                ) {
-                    autoOpenedPaymentRef.current = true;
-                    setShowPaymentModal(true);
-                }
             }
         } catch (err) {
             console.error('Dashboard load error:', err);
@@ -470,8 +504,6 @@ function ClientDashboard() {
 
     const handleOnboardingComplete = () => {
         setShowOnboardingModal(false);
-        autoOpenedPaymentRef.current = true;
-        setShowPaymentModal(true);
         loadData();
     };
 
@@ -491,6 +523,25 @@ function ClientDashboard() {
         return daysUntilDue <= 7;
     };
     const hasUnpaidInitialPayment = invoices.some(inv => inv.invoice_kind && inv.status === 'Pending' && inReminderWindow(inv));
+    // Onboarding is not truly "complete" until the initial program payment lands —
+    // hard-gate the rest of the portal behind InitialPaymentPage until then, rather
+    // than letting clients browse with just a dismissible reminder banner.
+    const needsPayment = !loading && Boolean(client.id) && client.status !== 'Pending'
+        && !invoices.some(inv => inv.status === 'Paid');
+
+    if (needsPayment) {
+        return (
+            <div className="cd-layout">
+                {showTermsModal && (
+                    <TermsAcceptanceModal
+                        onAccept={handleAcceptTerms}
+                        onDecline={handleDeclineTerms}
+                    />
+                )}
+                <InitialPaymentPage client={client} invoices={invoices} mandatory />
+            </div>
+        );
+    }
 
     return (
         <div className="cd-layout">
@@ -505,10 +556,6 @@ function ClientDashboard() {
                 client.intake_form_type === 'tech2mate'
                     ? <Tech2mateOnboardingForm client={client} onClose={() => setShowOnboardingModal(false)} onComplete={handleOnboardingComplete} />
                     : <OnboardingForm client={client} onClose={() => setShowOnboardingModal(false)} onComplete={handleOnboardingComplete} />
-            )}
-
-            {showPaymentModal && (
-                <InitialPaymentPage client={client} onClose={() => setShowPaymentModal(false)} />
             )}
 
             {client.hibernated && (
@@ -579,7 +626,7 @@ function ClientDashboard() {
                     <div className="cd-topbar-user">
                         <div className="cd-user-text">
                             <p className="cd-user-name">{displayName}</p>
-                            <p className="cd-user-role">{client.intake_form_type === 'tech2mate' ? 'Tech2Mate' : 'General'} Client</p>
+                            <p className="cd-user-role">{client.intake_form_type === 'tech2mate' ? 'Tech2Mate' : 'Guzman'} Client</p>
                         </div>
                         <div className="cd-user-avatar">{initials}</div>
                     </div>
@@ -590,7 +637,7 @@ function ClientDashboard() {
                         <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                         </svg>
-                        Payment successful! Your invoice has been marked as paid.
+                        Payment successful! Your onboarding is now complete. Welcome to your portal.
                         <button className="cd-banner-close" onClick={() => setPaymentBanner(null)}>✕</button>
                     </div>
                 )}
@@ -615,21 +662,6 @@ function ClientDashboard() {
                             style={{ marginLeft: 'auto', fontWeight: 700, background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
                         >
                             Continue Onboarding →
-                        </button>
-                    </div>
-                )}
-                {client.status !== 'Pending' && !hasChosenPaymentPlan && !showPaymentModal && (
-                    <div className="cd-payment-banner cd-payment-banner--cancelled">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                        </svg>
-                        Choose your payment plan to get started.
-                        <button
-                            type="button"
-                            onClick={() => setShowPaymentModal(true)}
-                            style={{ marginLeft: 'auto', fontWeight: 700, background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
-                        >
-                            Choose Plan →
                         </button>
                     </div>
                 )}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
 import { setToken } from '../lib/auth';
 import Logo from './Logo';
+import OnboardingProgress from './OnboardingProgress';
 import './Login.css';
 
 function Login({ isOpen, onClose, asPage = false }) {
@@ -161,7 +162,7 @@ function Login({ isOpen, onClose, asPage = false }) {
             : { title: 'Welcome Back', subtitle: 'Please enter your details to access your portal.' };
 
     const tagline = mode === 'signup'
-        ? "Create an account to get started — you'll complete your profile right after signing up."
+        ? "Create an account to get started. You'll complete your profile right after signing up."
         : 'Log in to manage your applications, invoices, and career journey with Guzman Career Services.';
 
     if (!isOpen) return null;
@@ -192,6 +193,9 @@ function Login({ isOpen, onClose, asPage = false }) {
                             <h2>Your Career Portal</h2>
                             <p>{tagline}</p>
                         </div>
+                        {mode === 'signup' && !forgotMode && (
+                            <OnboardingProgress currentStage={1} variant="vertical" />
+                        )}
                     </div>
                 </div>
 
@@ -260,6 +264,9 @@ function Login({ isOpen, onClose, asPage = false }) {
                             )
                         ) : mode === 'signup' ? (
                             <>
+                                <div className="ob-progress-mobile-only">
+                                    <OnboardingProgress currentStage={1} />
+                                </div>
                                 <form className="login-form" onSubmit={handleSignupSubmit}>
                                     <div className="login-fields">
                                         <div className="login-field">
@@ -347,7 +354,7 @@ function Login({ isOpen, onClose, asPage = false }) {
                                                     className={signupData.track === 'general' ? 'active' : ''}
                                                     onClick={() => selectTrack('general')}
                                                 >
-                                                    General
+                                                    Guzman
                                                 </button>
                                                 <button
                                                     type="button"

@@ -620,6 +620,13 @@
     overflow-wrap: break-word;
 }
 
+.cd-agreement-summary {
+    font-size: 0.8rem;
+    color: #475569;
+    line-height: 1.6;
+    margin: 0 0 0.875rem;
+}
+
 .cd-resume-revision-card {
     background: #eef2ff;
     border: 1px solid #c7d2fe;

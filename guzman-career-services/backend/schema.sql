@@ -65,6 +65,11 @@ CREATE TABLE IF NOT EXISTS clients (
     intake_resume_path TEXT,
     intake_resume_filename TEXT,
     intake_resume_uploaded_at TIMESTAMPTZ,
+    -- Communications email (distinct from the account login email), plus
+    -- job-criteria/background extensions to the onboarding wizard.
+    comms_email TEXT NOT NULL DEFAULT '',
+    min_salary_expectation TEXT NOT NULL DEFAULT '',
+    education_history JSONB NOT NULL DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

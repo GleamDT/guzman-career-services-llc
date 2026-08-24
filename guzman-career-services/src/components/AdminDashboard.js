@@ -992,7 +992,7 @@ function IntakeDetailsModal({ submission, onClose, onCreateAccount, onDeleted })
                     {row('Work Authorization', submission.work_authorization)}
 
                     <div className="idm-section-title">Professional Details</div>
-                    {row('Form Type', submission.intake_form_type === 'tech2mate' ? 'Tech2Mate Student' : 'General Client')}
+                    {row('Form Type', submission.intake_form_type === 'tech2mate' ? 'Tech2Mate Student' : 'Guzman Client')}
                     {row('Job Title(s)', submission.job_titles)}
                     {row('LinkedIn Profile', submission.linkedin_profile)}
                     {row('Shared Email', submission.shared_email)}

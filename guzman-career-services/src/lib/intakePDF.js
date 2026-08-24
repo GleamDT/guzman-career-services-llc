@@ -121,7 +121,7 @@ export async function downloadIntakePDF(submission) {
 
     // ── Professional Details ─────────────────────────────────────────────────
     sectionTitle('Professional Details');
-    row('Form Type', submission.intake_form_type === 'tech2mate' ? 'Tech2Mate Student' : 'General Client');
+    row('Form Type', submission.intake_form_type === 'tech2mate' ? 'Tech2Mate Student' : 'Guzman Client');
     row('Job Title(s)', submission.job_titles);
     row('LinkedIn Profile', submission.linkedin_profile);
     row('Shared Email', submission.shared_email);

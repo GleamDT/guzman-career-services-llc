@@ -961,7 +961,8 @@ app.get('/api/clients/me', requireAuth, async (req, res) => {
 app.patch('/api/clients/me/onboarding', requireAuth, async (req, res) => {
     if (req.user.role !== 'client') return res.status(403).json({ error: 'Forbidden' });
     const { fullName, referredBy, phone, fullAddress, country, sex, veteranStatus, disabilityStatus,
-        raceIdentity, workAuthorization, jobTitles, sharedEmail, sharedPassword,
+        raceIdentity, workAuthorization, jobTitles, minSalaryExpectation, educationHistory,
+        sharedEmail, sharedPassword, commsEmail,
         legalName, signatureDate, tcAgreed,
         linkedinProfile, additionalNotes } = req.body;
     if (!fullName || !legalName || !tcAgreed) {
@@ -977,15 +978,17 @@ app.patch('/api/clients/me/onboarding', requireAuth, async (req, res) => {
                 veteran_status = $6, disability_status = $7, race_identity = $8, work_authorization = $9,
                 job_titles = $10, shared_email = $11, shared_password = $12, legal_name = $13,
                 signature_date = $14, tc_agreed = $15, linkedin_profile = $16, additional_notes = $17,
-                ip_address = $18, user_agent = $19, device_type = $20, country = $21, status = 'Active'
-            WHERE id = $22
+                ip_address = $18, user_agent = $19, device_type = $20, country = $21,
+                min_salary_expectation = $22, education_history = $23, comms_email = $24, status = 'Active'
+            WHERE id = $25
             RETURNING *
         `, [
             fullName, referredBy || '', phone || '', fullAddress || '', sex || '',
             veteranStatus || '', disabilityStatus || '', raceIdentity || '', workAuthorization || '',
             jobTitles || '', sharedEmail || '', sharedPassword || '', legalName,
             signatureDate || new Date().toISOString().split('T')[0], true, linkedinProfile || '', additionalNotes || '',
-            ipAddress, userAgent, deviceType, country || '', req.user.sub,
+            ipAddress, userAgent, deviceType, country || '',
+            minSalaryExpectation || '', JSON.stringify(educationHistory || []), commsEmail || '', req.user.sub,
         ]);
         const client = result.rows[0];
         if (!client) return res.status(404).json({ error: 'Client not found.' });
@@ -1004,7 +1007,8 @@ app.patch('/api/clients/me/onboarding', requireAuth, async (req, res) => {
 app.patch('/api/clients/me/onboarding-draft', requireAuth, async (req, res) => {
     if (req.user.role !== 'client') return res.status(403).json({ error: 'Forbidden' });
     const { step, fullName, referredBy, phone, fullAddress, country, sex, veteranStatus, disabilityStatus,
-        raceIdentity, workAuthorization, jobTitles, sharedEmail, sharedPassword,
+        raceIdentity, workAuthorization, jobTitles, minSalaryExpectation, educationHistory,
+        sharedEmail, sharedPassword, commsEmail,
         legalName, signatureDate, tcAgreed,
         linkedinProfile, additionalNotes } = req.body;
     try {
@@ -1014,15 +1018,17 @@ app.patch('/api/clients/me/onboarding-draft', requireAuth, async (req, res) => {
                 veteran_status = $6, disability_status = $7, race_identity = $8, work_authorization = $9,
                 job_titles = $10, shared_email = $11, shared_password = $12, legal_name = $13,
                 signature_date = $14, tc_agreed = $15, linkedin_profile = $16, additional_notes = $17,
-                onboarding_step = $18, country = $19
-            WHERE id = $20
+                onboarding_step = $18, country = $19, min_salary_expectation = $20, education_history = $21,
+                comms_email = $22
+            WHERE id = $23
             RETURNING *
         `, [
             fullName || '', referredBy || '', phone || '', fullAddress || '', sex || '',
             veteranStatus || '', disabilityStatus || '', raceIdentity || '', workAuthorization || '',
             jobTitles || '', sharedEmail || '', sharedPassword || '', legalName || '',
             signatureDate || new Date().toISOString().split('T')[0], Boolean(tcAgreed), linkedinProfile || '', additionalNotes || '',
-            Number(step) || 1, country || '', req.user.sub,
+            Number(step) || 1, country || '', minSalaryExpectation || '', JSON.stringify(educationHistory || []),
+            commsEmail || '', req.user.sub,
         ]);
         const client = result.rows[0];
         if (!client) return res.status(404).json({ error: 'Client not found.' });
@@ -1066,7 +1072,7 @@ app.post('/api/clients/me/initial-payment', requireAuth, async (req, res) => {
         const client = clientRow.rows[0];
         if (!client) return res.status(404).json({ error: 'Client not found.' });
         const track = client.intake_form_type === 'tech2mate' ? 'tech2mate' : 'general';
-        const trackLabel = track === 'tech2mate' ? 'Tech2Mate Student' : 'General Client';
+        const trackLabel = track === 'tech2mate' ? 'Tech2Mate Student' : 'Guzman Client';
         const pricing = INITIAL_PAYMENT_PLANS[track];
 
         const invoices = [];

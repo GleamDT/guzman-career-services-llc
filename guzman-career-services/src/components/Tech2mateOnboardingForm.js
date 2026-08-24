@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { authFetch, getAuthToken } from '../lib/authFetch';
 import './IntakeForm.css';
 import { TECH2MATES_TERMS_OF_SERVICE, PRIVACY_POLICY } from '../lib/legalContent';
-import { COUNTRIES } from '../lib/countries';
+import {
+    ONBOARDING_COUNTRIES, regionOptionsFor, regionLabelFor,
+    postalLabelFor, postalPlaceholderFor, buildFullAddress,
+} from '../lib/usCaRegions';
+import OnboardingProgress, { stageForOnboardingStep } from './OnboardingProgress';
 
 const STEPS = [
     { label: 'Personal Info' },
@@ -16,16 +20,23 @@ const initialData = {
     fullName: '',
     phone: '',
     fullAddress: '',
+    addressStreet: '',
+    addressCity: '',
+    addressRegion: '',
+    addressPostalCode: '',
     country: '',
     sex: '',
     veteranStatus: '',
     disabilityStatus: '',
     raceIdentity: '',
     workAuthorization: '',
+    educationHistory: [{ institution: '', degree: '', datesAttended: '' }],
     jobTitles: '',
+    minSalaryExpectation: '',
     linkedinProfile: '',
     sharedEmail: '',
     sharedPassword: '',
+    commsEmail: '',
     legalName: '',
     signatureDate: new Date().toISOString().split('T')[0],
     tcAgreed: false,
@@ -39,16 +50,25 @@ function dataFromClient(client) {
         fullName: client.full_name || '',
         phone: client.phone || '',
         fullAddress: client.full_address || '',
+        addressStreet: '',
+        addressCity: '',
+        addressRegion: '',
+        addressPostalCode: '',
         country: client.country || '',
         sex: client.sex || '',
         veteranStatus: client.veteran_status || '',
         disabilityStatus: client.disability_status || '',
         raceIdentity: client.race_identity || '',
         workAuthorization: client.work_authorization || '',
+        educationHistory: (client.education_history && client.education_history.length > 0)
+            ? client.education_history
+            : [{ institution: '', degree: '', datesAttended: '' }],
         jobTitles: client.job_titles || '',
+        minSalaryExpectation: client.min_salary_expectation || '',
         linkedinProfile: client.linkedin_profile || '',
         sharedEmail: client.shared_email || '',
         sharedPassword: client.shared_password || '',
+        commsEmail: client.comms_email || '',
         legalName: client.legal_name || '',
         signatureDate: (client.signature_date || '').slice(0, 10) || new Date().toISOString().split('T')[0],
         tcAgreed: Boolean(client.tc_agreed),
@@ -66,11 +86,16 @@ function Tech2mateOnboardingForm({ client, onClose, onComplete }) {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [success, setSuccess] = useState(false);
     const [showTermsModal, setShowTermsModal] = useState(false);
     const [termsModalTab, setTermsModalTab] = useState('terms');
 
     const set = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+
+    // Keep the single fullAddress string (what the backend stores) in sync with
+    // the structured street/city/region/postal fields the user actually edits.
+    useEffect(() => {
+        setFormData(prev => ({ ...prev, fullAddress: buildFullAddress(prev) }));
+    }, [formData.addressStreet, formData.addressCity, formData.addressRegion, formData.addressPostalCode]);
 
     const ALLOWED_RESUME_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
 
@@ -93,8 +118,11 @@ function Tech2mateOnboardingForm({ client, onClose, onComplete }) {
         if (step === 1) {
             if (!formData.fullName.trim()) return 'Full name is required.';
             if (!formData.phone.trim()) return 'Phone number is required.';
-            if (!formData.fullAddress.trim()) return 'Full address is required.';
             if (!formData.country) return 'Please select your country.';
+            if (!formData.addressStreet.trim()) return 'Street address is required.';
+            if (!formData.addressCity.trim()) return 'City is required.';
+            if (!formData.addressRegion) return `Please select your ${regionLabelFor(formData.country).toLowerCase()}.`;
+            if (!formData.addressPostalCode.trim()) return `${postalLabelFor(formData.country)} is required.`;
             if (!formData.sex) return 'Please select your sex.';
         }
         if (step === 2) {
@@ -102,11 +130,17 @@ function Tech2mateOnboardingForm({ client, onClose, onComplete }) {
             if (!formData.disabilityStatus) return 'Please indicate your disability status.';
             if (!formData.raceIdentity) return 'Please select your race/ethnicity identity.';
             if (!formData.workAuthorization) return 'Please select your work authorization status.';
+            const hasCompleteEducationEntry = formData.educationHistory.some(
+                e => e.institution.trim() && e.degree.trim() && e.datesAttended.trim()
+            );
+            if (!hasCompleteEducationEntry) return 'Please add at least one complete education entry (institution, degree, and dates attended).';
         }
         if (step === 3) {
             if (!formData.jobTitles.trim()) return 'Please enter your job title(s).';
+            if (!formData.minSalaryExpectation.trim()) return 'Please enter your minimum salary expectation.';
             if (!formData.sharedEmail.trim() || !/\S+@\S+\.\S+/.test(formData.sharedEmail)) return 'A valid shared email address is required.';
             if (!formData.sharedPassword || formData.sharedPassword.length < 6) return 'Password must be at least 6 characters.';
+            if (!formData.commsEmail.trim() || !/\S+@\S+\.\S+/.test(formData.commsEmail)) return 'A valid primary communications email is required.';
         }
         if (step === 4) {
             if (!resumeFile && !existingResumeFilename) return 'Please upload your resume (PDF).';
@@ -177,34 +211,12 @@ function Tech2mateOnboardingForm({ client, onClose, onComplete }) {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Submission failed.');
 
-            setSuccess(true);
+            onComplete();
         } catch (err) {
             setError(err.message);
         } finally {
             setLoading(false);
         }
-    }
-
-    if (success) {
-        return (
-            <div className="intake-overlay">
-                <div className="intake-container intake-success-card">
-                    <div className="intake-success-icon">✓</div>
-                    <h2>Onboarding Complete!</h2>
-                    <p>
-                        Thanks for completing your onboarding with Guzman Career Services LLC.
-                        Your information has been saved to your account.
-                    </p>
-                    <p className="intake-success-note">
-                        Our dedicated team will review your submission and reach out within
-                        <strong> 1–2 business days</strong> to discuss your next steps.
-                    </p>
-                    <button className="intake-btn-primary" onClick={onComplete}>
-                        Continue to Payment
-                    </button>
-                </div>
-            </div>
-        );
     }
 
     return (
@@ -215,6 +227,7 @@ function Tech2mateOnboardingForm({ client, onClose, onComplete }) {
                 )}
                 {/* Header */}
                 <div className="intake-header">
+                    <OnboardingProgress currentStage={stageForOnboardingStep(step)} />
                     <h2 className="intake-title">Job Application Services — Tech2Mate Onboarding</h2>
                     <p className="intake-subtitle">
                         Please complete this form accurately. The information provided will be used to submit
@@ -249,25 +262,50 @@ function Tech2mateOnboardingForm({ client, onClose, onComplete }) {
                                 <label>Phone Number <span className="req">*</span></label>
                                 <input type="tel" value={formData.phone} onChange={e => set('phone', e.target.value)} placeholder="(555) 000-0000" />
                             </div>
-                            <div className="intake-field intake-field-full">
-                                <label>Full Address <span className="req">*</span></label>
-                                <textarea rows={3} value={formData.fullAddress} onChange={e => set('fullAddress', e.target.value)} placeholder="Street, City, State, ZIP" />
-                            </div>
                             <div className="intake-field">
                                 <label>Country <span className="req">*</span></label>
-                                <select value={formData.country} onChange={e => set('country', e.target.value)}>
+                                <select
+                                    value={formData.country}
+                                    onChange={e => { set('country', e.target.value); set('addressRegion', ''); }}
+                                >
                                     <option value="">Select…</option>
-                                    {COUNTRIES.map(c => <option key={c}>{c}</option>)}
+                                    {ONBOARDING_COUNTRIES.map(c => <option key={c}>{c}</option>)}
                                 </select>
                             </div>
+                            {formData.country && (
+                                <>
+                                    <div className="intake-field intake-field-full">
+                                        <label>Street Address <span className="req">*</span></label>
+                                        <input type="text" value={formData.addressStreet} onChange={e => set('addressStreet', e.target.value)} placeholder="123 Main Street, Apt 4B" />
+                                    </div>
+                                    <div className="intake-field">
+                                        <label>City <span className="req">*</span></label>
+                                        <input type="text" value={formData.addressCity} onChange={e => set('addressCity', e.target.value)} placeholder="City" />
+                                    </div>
+                                    <div className="intake-field">
+                                        <label>{regionLabelFor(formData.country)} <span className="req">*</span></label>
+                                        <select value={formData.addressRegion} onChange={e => set('addressRegion', e.target.value)}>
+                                            <option value="">Select…</option>
+                                            {regionOptionsFor(formData.country).map(r => <option key={r}>{r}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="intake-field">
+                                        <label>{postalLabelFor(formData.country)} <span className="req">*</span></label>
+                                        <input
+                                            type="text"
+                                            value={formData.addressPostalCode}
+                                            onChange={e => set('addressPostalCode', e.target.value)}
+                                            placeholder={postalPlaceholderFor(formData.country)}
+                                        />
+                                    </div>
+                                </>
+                            )}
                             <div className="intake-field">
                                 <label>Sex <span className="req">*</span></label>
                                 <select value={formData.sex} onChange={e => set('sex', e.target.value)}>
                                     <option value="">Select…</option>
                                     <option>Male</option>
                                     <option>Female</option>
-                                    <option>Non-binary</option>
-                                    <option>Prefer not to say</option>
                                 </select>
                             </div>
                         </div>
@@ -323,9 +361,9 @@ function Tech2mateOnboardingForm({ client, onClose, onComplete }) {
                                 <label>Work Authorization Status <span className="req">*</span></label>
                                 <div className="intake-radios intake-radios-col">
                                     {[
-                                        'U.S. Citizen',
-                                        'Green Card Holder',
-                                        'EAD (Employment Authorization Document)',
+                                        'Citizen',
+                                        'Green Card Holder/Permanent Resident',
+                                        'EAD',
                                     ].map(v => (
                                         <label key={v} className="intake-radio">
                                             <input type="radio" name="workAuth" value={v} checked={formData.workAuthorization === v} onChange={() => set('workAuthorization', v)} />
@@ -333,6 +371,61 @@ function Tech2mateOnboardingForm({ client, onClose, onComplete }) {
                                         </label>
                                     ))}
                                 </div>
+                            </div>
+
+                            <div className="intake-field intake-field-full">
+                                <label>Education History <span className="req">*</span></label>
+                                <span className="intake-hint">Add every school attended, with dates. Click "Add Another" for more than one.</span>
+                                {formData.educationHistory.map((edu, i) => (
+                                    <div className="intake-education-row" key={i}>
+                                        <input
+                                            type="text"
+                                            value={edu.institution}
+                                            onChange={e => {
+                                                const next = [...formData.educationHistory];
+                                                next[i] = { ...next[i], institution: e.target.value };
+                                                set('educationHistory', next);
+                                            }}
+                                            placeholder="School / Institution"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={edu.degree}
+                                            onChange={e => {
+                                                const next = [...formData.educationHistory];
+                                                next[i] = { ...next[i], degree: e.target.value };
+                                                set('educationHistory', next);
+                                            }}
+                                            placeholder="Degree / Program"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={edu.datesAttended}
+                                            onChange={e => {
+                                                const next = [...formData.educationHistory];
+                                                next[i] = { ...next[i], datesAttended: e.target.value };
+                                                set('educationHistory', next);
+                                            }}
+                                            placeholder="Dates Attended (e.g. 2018 – 2022)"
+                                        />
+                                        {formData.educationHistory.length > 1 && (
+                                            <button
+                                                type="button"
+                                                className="intake-dz-remove"
+                                                onClick={() => set('educationHistory', formData.educationHistory.filter((_, idx) => idx !== i))}
+                                            >
+                                                Remove
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                                <button
+                                    type="button"
+                                    className="intake-tc-link-btn"
+                                    onClick={() => set('educationHistory', [...formData.educationHistory, { institution: '', degree: '', datesAttended: '' }])}
+                                >
+                                    + Add Another School
+                                </button>
                             </div>
                         </div>
                     )}
@@ -343,6 +436,11 @@ function Tech2mateOnboardingForm({ client, onClose, onComplete }) {
                                 <label>Job Title(s) <span className="req">*</span></label>
                                 <input type="text" value={formData.jobTitles} onChange={e => set('jobTitles', e.target.value)} placeholder="e.g. Software Engineer, Project Manager" />
                                 <span className="intake-hint">Separate multiple titles with commas.</span>
+                            </div>
+
+                            <div className="intake-field intake-field-full">
+                                <label>Minimum Salary Expectation <span className="req">*</span></label>
+                                <input type="text" value={formData.minSalaryExpectation} onChange={e => set('minSalaryExpectation', e.target.value)} placeholder="e.g. $70,000" />
                             </div>
 
                             <div className="intake-field intake-field-full">
@@ -380,6 +478,14 @@ function Tech2mateOnboardingForm({ client, onClose, onComplete }) {
                                         {showPassword ? '🙈' : '👁️'}
                                     </button>
                                 </div>
+                            </div>
+
+                            <div className="intake-field intake-field-full">
+                                <label>Primary Email Address for Communications <span className="req">*</span></label>
+                                <input type="email" value={formData.commsEmail} onChange={e => set('commsEmail', e.target.value)} placeholder="you@example.com" />
+                                <span className="intake-hint">
+                                    The address we'll use to reach you about your job search. Can be different from your shared job-search email above.
+                                </span>
                             </div>
                         </div>
                     )}
