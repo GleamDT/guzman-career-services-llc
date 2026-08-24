@@ -8,17 +8,17 @@ const ITEMS = [
     {
         icon: Search,
         title: 'We Find Opportunities',
-        description: 'Human specialists source roles that match your target positions, locations, and criteria.',
+        description: 'Human specialists source opportunities aligned with your approved job-search criteria.',
     },
     {
         icon: Send,
         title: 'We Submit Applications',
-        description: 'Targeted, complete applications, submitted on your behalf, not mass-applied to everything available.',
+        description: 'We complete targeted applications on your behalf rather than indiscriminately mass-applying.',
     },
     {
         icon: BarChart3,
         title: 'We Track Your Search',
-        description: 'Every application is recorded, so you always have visibility into where things stand.',
+        description: 'Applications are recorded in your tracker so you have visibility into where submissions have been made.',
     },
 ];
 

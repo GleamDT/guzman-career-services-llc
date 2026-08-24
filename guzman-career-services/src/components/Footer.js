@@ -16,7 +16,7 @@ function Footer() {
                             <Logo variant="white" className="footer-logo-img" />
                         </div>
                         <p className="footer-description">
-                            Professional career services helping you land your dream job with confidence and success.
+                            Human-managed job applications for professionals across the US & Canada.
                         </p>
                     </div>
 

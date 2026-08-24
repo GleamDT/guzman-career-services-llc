@@ -9,6 +9,14 @@ import { API_BASE } from '../lib/apiBase';
 
 const SLIDES = [
   {
+    number: '00',
+    variant: 'intro',
+    titleLines: ['WE APPLY.', 'YOU PREPARE.'],
+    lead: 'Human-managed job applications, built around your career goals.',
+    subtitle: 'We research relevant opportunities, submit targeted applications, and track your search, so you can focus on what comes next.',
+    trustLine: 'Real specialists • Targeted applications • US & Canada',
+  },
+  {
     number: '01',
     titleBefore: 'Tell Us ',
     titleHighlight: "What You're Looking For",
@@ -73,24 +81,40 @@ function Hero() {
                     <span className="hero-kicker-number">{slide.number}</span>
                     <span className="hero-kicker-line"></span>
                   </div>
-                  <h1 className="hero-title">
-                    {slide.titleBefore}
-                    <span className="hero-highlight">{slide.titleHighlight}</span>
-                  </h1>
+                  {slide.variant === 'intro' ? (
+                    <h1 className="hero-title hero-title--intro">
+                      {slide.titleLines.map((line, li) => (
+                        <span className="hero-title-line" key={li}>{line}</span>
+                      ))}
+                    </h1>
+                  ) : (
+                    <h1 className="hero-title">
+                      {slide.titleBefore}
+                      <span className="hero-highlight">{slide.titleHighlight}</span>
+                    </h1>
+                  )}
+                  {slide.lead && <p className="hero-lead">{slide.lead}</p>}
                   <p className="hero-subtitle">{slide.subtitle}</p>
                   <div className="hero-cta">
                     <a href={`${API_BASE}/signup`} className="btn btn-accent btn-lg">
                       Get Started Today
                     </a>
-                    <a
-                      href="https://calendly.com/clientservices-guzmancareerservices/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-outline btn-lg hero-btn-outline"
-                    >
-                      Book a Free Consultation
-                    </a>
+                    {slide.variant === 'intro' ? (
+                      <a href="#how-it-works" className="btn btn-outline btn-lg hero-btn-outline">
+                        See How It Works
+                      </a>
+                    ) : (
+                      <a
+                        href="https://calendly.com/clientservices-guzmancareerservices/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-outline btn-lg hero-btn-outline"
+                      >
+                        Book a Free Consultation
+                      </a>
+                    )}
                   </div>
+                  {slide.trustLine && <p className="hero-trust-line">{slide.trustLine}</p>}
                 </div>
               </div>
             </SwiperSlide>
@@ -110,12 +134,6 @@ function Hero() {
         <div className="hero-autoplay-progress" ref={progressRef}>
           <div className="hero-autoplay-progress-bar"></div>
         </div>
-      </div>
-
-      <div className="hero-scroll">
-        <a href="#trust-bar" className="scroll-indicator">
-          <span></span>
-        </a>
       </div>
     </section>
   );

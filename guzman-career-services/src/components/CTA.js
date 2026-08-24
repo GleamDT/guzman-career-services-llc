@@ -31,7 +31,7 @@ function CTA() {
                         </div>
                         <div className="trust-item">
                             <span className="trust-icon">✓</span>
-                            <span className="trust-text">No Guaranteed-Job Promises</span>
+                            <span className="trust-text">No Unrealistic Promises</span>
                         </div>
                         <div className="trust-item">
                             <span className="trust-icon">✓</span>

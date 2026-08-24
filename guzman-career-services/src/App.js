@@ -9,6 +9,7 @@ import Services from './components/Services';
 import HowItWorks from './components/HowItWorks';
 import AutoApplyComparison from './components/AutoApplyComparison';
 import WhyChooseUs from './components/WhyChooseUs';
+import Testimonials from './components/Testimonials';
 import WhoItsFor from './components/WhoItsFor';
 import FitCheck from './components/FitCheck';
 // import ComingSoonSection from './components/ComingSoonSection'; // re-enable with the sections below once there's real copy
@@ -50,15 +51,10 @@ function MainSite() {
         <HowItWorks />
         <AutoApplyComparison />
         <WhyChooseUs />
+        <Testimonials />
         <WhoItsFor />
         {/* Coming soon — no real content yet, commented out rather than shipping
             placeholder/fake content. Re-enable once copy exists.
-        <ComingSoonSection
-          id="testimonials"
-          eyebrow="Coming Soon"
-          title="Client Results & Testimonials"
-          note="Verified client outcomes will be published here."
-        />
         <ComingSoonSection
           id="application-desk"
           eyebrow="Coming Soon"

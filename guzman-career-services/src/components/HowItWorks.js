@@ -17,7 +17,7 @@ function HowItWorks() {
         {
             number: '03',
             title: 'We Find Relevant Opportunities',
-            description: 'Human specialists research and evaluate jobs against your criteria.'
+            description: 'Your application specialist researches openings based on your approved roles, locations, work preferences and other search criteria. Opportunities are evaluated before moving into the application process.'
         },
         {
             number: '04',

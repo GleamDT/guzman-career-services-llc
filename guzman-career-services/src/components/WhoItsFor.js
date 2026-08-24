@@ -22,8 +22,9 @@ const SEGMENTS = [
     },
     {
         icon: Globe,
-        title: 'Eligible Newcomers',
-        quote: 'I need help navigating and managing applications in the US/Canadian market.',
+        title: 'Newcomer Professionals',
+        quote: 'Professionals navigating job applications in the US or Canadian market who are eligible to pursue their target opportunities.',
+        plain: true,
     },
 ];
 
@@ -46,7 +47,9 @@ function WhoItsFor() {
                             <div className="who-card">
                                 <IconBadge icon={segment.icon} variant="navy" size="sm" />
                                 <h3 className="who-title">{segment.title}</h3>
-                                <p className="who-quote">&ldquo;{segment.quote}&rdquo;</p>
+                                <p className={`who-quote${segment.plain ? ' who-quote--plain' : ''}`}>
+                                    {segment.plain ? segment.quote : <>&ldquo;{segment.quote}&rdquo;</>}
+                                </p>
                             </div>
                         </Reveal>
                     ))}

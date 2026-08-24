@@ -72,6 +72,10 @@
     line-height: 1.6;
 }
 
+.who-quote--plain {
+    font-style: normal;
+}
+
 @media (max-width: 768px) {
     .who-grid {
         grid-template-columns: 1fr;

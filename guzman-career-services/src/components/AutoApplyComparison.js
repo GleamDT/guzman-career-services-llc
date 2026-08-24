@@ -3,11 +3,11 @@ import Reveal from './Reveal';
 import './AutoApplyComparison.css';
 
 const ROWS = [
-    { autoApply: 'Keyword matching', guzman: 'Human review' },
-    { autoApply: 'Maximum volume', guzman: 'Targeted applications' },
-    { autoApply: 'Limited screening', guzman: 'Opportunity evaluation' },
-    { autoApply: 'Automated submissions', guzman: 'Human-managed process' },
-    { autoApply: 'Little visibility', guzman: 'Application tracking' },
+    { autoApply: 'Automation-led matching', guzman: 'Human review' },
+    { autoApply: 'Volume-focused', guzman: 'Targeted applications' },
+    { autoApply: 'Automated screening', guzman: 'Opportunity evaluation' },
+    { autoApply: 'Automated submission', guzman: 'Human-managed process' },
+    { autoApply: 'Platform-dependent tracking', guzman: 'Transparent application tracking' },
 ];
 
 function AutoApplyComparison() {
@@ -27,7 +27,7 @@ function AutoApplyComparison() {
                 <Reveal delay={150}>
                     <div className="comparison-table">
                         <div className="comparison-table-header">
-                            <div className="comparison-col comparison-col--auto">Mass Auto-Apply</div>
+                            <div className="comparison-col comparison-col--auto">Typical Mass Auto-Apply Approach</div>
                             <div className="comparison-col comparison-col--guzman">Guzman</div>
                         </div>
                         {ROWS.map((row, i) => (
