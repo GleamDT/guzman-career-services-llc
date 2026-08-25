@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { Mail, Clock } from 'lucide-react';
+import { API_BASE } from '../lib/apiBase';
+import IconBadge from './IconBadge';
 import './Contact.css';
 
 function Contact() {
@@ -25,7 +28,7 @@ function Contact() {
         setResult('');
 
         try {
-            const response = await fetch('/api/contact', {
+            const response = await fetch(`${API_BASE}/api/contact`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
@@ -57,16 +60,16 @@ function Contact() {
                     <div className="contact-info">
                         <h3 className="contact-info-title">Contact Information</h3>
                         <div className="contact-item">
-                            <div className="contact-icon">📧</div>
+                            <IconBadge icon={Mail} variant="teal" size="sm" />
                             <div className="contact-details">
                                 <div className="contact-label">Email</div>
-                                <a href="mailto:info@guzmancareerservices.com" className="contact-value">
-                                    info@guzmancareerservices.com
+                                <a href="mailto:clientservices@guzmancareerservices.com" className="contact-value">
+                                    clientservices@guzmancareerservices.com
                                 </a>
                             </div>
                         </div>
                         <div className="contact-item">
-                            <div className="contact-icon">🕒</div>
+                            <IconBadge icon={Clock} variant="teal" size="sm" />
                             <div className="contact-details">
                                 <div className="contact-label">Business Hours</div>
                                 <div className="contact-value">
@@ -121,10 +124,10 @@ function Contact() {
                                 onChange={handleChange}
                                 required
                             >
-                                <option value="">Select a service</option>
-                                <option value="resume">Professional Resume & CV Optimization</option>
-                                <option value="profile">Career Profile Enhancement</option>
-                                <option value="job-application">Job Application Strategy & Support</option>
+                                <option value="">Select an option</option>
+                                <option value="consultation">New Client — Free Consultation</option>
+                                <option value="existing-client">Existing Client Support</option>
+                                <option value="general">General Inquiry</option>
                             </select>
                         </div>
                         <div className="form-group">

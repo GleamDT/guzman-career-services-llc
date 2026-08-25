@@ -3,10 +3,16 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { getAuthUser } from './lib/auth';
 import Header from './components/Header';
 import Hero from './components/Hero';
+import TrustBar from './components/TrustBar';
+import Problem from './components/Problem';
 import Services from './components/Services';
 import HowItWorks from './components/HowItWorks';
-import About from './components/About';
+import AutoApplyComparison from './components/AutoApplyComparison';
 import WhyChooseUs from './components/WhyChooseUs';
+import Testimonials from './components/Testimonials';
+import WhoItsFor from './components/WhoItsFor';
+import FitCheck from './components/FitCheck';
+// import ComingSoonSection from './components/ComingSoonSection'; // re-enable with the sections below once there's real copy
 import CTA from './components/CTA';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
@@ -15,6 +21,10 @@ import ClientDashboard from './components/ClientDashboard';
 import SetPassword from './components/SetPassword';
 import TermsOfService from './components/TermsOfService';
 import PrivacyPolicy from './components/PrivacyPolicy';
+import PortalHome from './components/PortalHome';
+import Login from './components/Login';
+import VerifyOtpPage from './components/VerifyOtpPage';
+import { SITE_MODE } from './lib/siteMode';
 import './App.css';
 
 function getAuth() {
@@ -35,11 +45,41 @@ function MainSite() {
       <Header />
       <main>
         <Hero />
+        <TrustBar />
+        <Problem />
         <Services />
         <HowItWorks />
-        <About />
+        <AutoApplyComparison />
         <WhyChooseUs />
+        <Testimonials />
+        <WhoItsFor />
+        {/* Coming soon — no real content yet, commented out rather than shipping
+            placeholder/fake content. Re-enable once copy exists.
+        <ComingSoonSection
+          id="application-desk"
+          eyebrow="Coming Soon"
+          title="Inside the Application Desk"
+          note="A look at how our specialists work, day to day."
+        />
+        */}
+        <FitCheck />
+        {/*
+        <ComingSoonSection
+          id="faq"
+          eyebrow="Coming Soon"
+          title="Frequently Asked Questions"
+          note="Common questions about how the service works."
+        />
+        */}
         <CTA />
+        {/*
+        <ComingSoonSection
+          id="newsletter"
+          eyebrow="Coming Soon"
+          title="The Application Desk"
+          note="Job-search insights, delivered occasionally. Sign-up coming soon."
+        />
+        */}
         <Contact />
       </main>
       <Footer />
@@ -63,10 +103,24 @@ function App() {
   // This prevents a flash-redirect when a client clicks their invite link
   if (!authReady) return null;
 
-  return (
-    <Routes>
-      <Route path="/" element={<MainSite />} />
-      <Route path="/auth/callback" element={<Navigate to="/" replace />} />
+  if (SITE_MODE === 'marketing') {
+    return (
+      <Routes>
+        <Route path="/" element={<MainSite />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
+
+  const portalOnlyRoutes = (
+    <>
+      <Route path="/login" element={<Login isOpen={true} onClose={() => {}} asPage />} />
+      <Route path="/signup" element={<Login isOpen={true} onClose={() => {}} asPage />} />
+      <Route path="/verify-email" element={<VerifyOtpPage />} />
+      <Route path="/onboarding" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/payment" element={<Navigate to="/dashboard" replace />} />
       <Route path="/admin" element={
         <ProtectedRoute requiredRole="admin"><AdminDashboard userRole="admin" /></ProtectedRoute>
       } />
@@ -79,6 +133,25 @@ function App() {
       <Route path="/set-password" element={<SetPassword />} />
       <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+    </>
+  );
+
+  if (SITE_MODE === 'portal') {
+    return (
+      <Routes>
+        <Route path="/" element={<PortalHome />} />
+        <Route path="/auth/callback" element={<Navigate to="/" replace />} />
+        {portalOnlyRoutes}
+      </Routes>
+    );
+  }
+
+  // unified — today's exact existing behavior, plus the new signup/onboarding routes
+  return (
+    <Routes>
+      <Route path="/" element={<MainSite />} />
+      <Route path="/auth/callback" element={<Navigate to="/" replace />} />
+      {portalOnlyRoutes}
     </Routes>
   );
 }

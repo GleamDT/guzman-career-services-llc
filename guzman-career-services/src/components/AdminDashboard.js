@@ -8,6 +8,7 @@ import { downloadInvoicePDF } from '../lib/invoicePDF';
 import { downloadIntakePDF } from '../lib/intakePDF';
 import { authFetch, getAuthToken } from '../lib/authFetch';
 import { clearToken } from '../lib/auth';
+import Logo from './Logo';
 import './AdminDashboard.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -991,7 +992,7 @@ function IntakeDetailsModal({ submission, onClose, onCreateAccount, onDeleted })
                     {row('Work Authorization', submission.work_authorization)}
 
                     <div className="idm-section-title">Professional Details</div>
-                    {row('Form Type', submission.intake_form_type === 'tech2mate' ? 'Tech2Mate Student' : 'General Client')}
+                    {row('Form Type', submission.intake_form_type === 'tech2mate' ? 'Tech2Mate Student' : 'Guzman Client')}
                     {row('Job Title(s)', submission.job_titles)}
                     {row('LinkedIn Profile', submission.linkedin_profile)}
                     {row('Shared Email', submission.shared_email)}
@@ -1802,7 +1803,7 @@ function AdminDashboard({ userRole = 'admin' }) {
             {/* Sidebar */}
             <aside className={`admin-sidebar ${sidebarOpen ? 'admin-sidebar--open' : ''}`}>
                 <div className="admin-sidebar-logo">
-                    <img src="/logo.png" alt="Guzman Career Services" className="admin-sidebar-logo-img" />
+                    <Logo variant="white" className="admin-sidebar-logo-img" />
                 </div>
                 <nav className="admin-nav">
                     {NAV_ITEMS

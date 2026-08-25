@@ -105,7 +105,7 @@
     border: 1px solid #d1d5db;
     border-radius: 0.5rem;
     font-size: 0.875rem;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     color: #0f172a;
     background: white;
     outline: none;
@@ -116,8 +116,8 @@
 
 .ccm-field input:focus,
 .ccm-field select:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    border-color: #022452;
+    box-shadow: 0 0 0 3px rgba(2, 36, 82, 0.12);
 }
 
 .ccm-field input::placeholder {
@@ -130,10 +130,10 @@
     align-items: center;
     gap: 0.625rem;
     padding: 0.75rem 1rem;
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
+    background: #e6f4f5;
+    border: 1px solid #b8dde0;
     border-radius: 0.5rem;
-    color: #1d4ed8;
+    color: #011530;
     font-size: 0.8125rem;
     font-weight: 500;
 }
@@ -169,7 +169,7 @@
     cursor: pointer;
     border: none;
     transition: all 0.15s;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Montserrat', sans-serif;
 }
 
 .ccm-btn--cancel {
@@ -183,13 +183,13 @@
 }
 
 .ccm-btn--submit {
-    background: #2563eb;
+    background: #022452;
     color: white;
-    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 1px 3px rgba(2, 36, 82, 0.3);
 }
 
 .ccm-btn--submit:hover:not(:disabled) {
-    background: #1d4ed8;
+    background: #011530;
 }
 
 .ccm-btn--submit:disabled {

@@ -1,5 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Mail, Clock } from 'lucide-react';
+import Logo from './Logo';
 import './Footer.css';
 
 function Footer() {
@@ -11,31 +13,27 @@ function Footer() {
                 <div className="footer-content">
                     <div className="footer-section">
                         <div className="footer-logo">
-                            <img src={process.env.PUBLIC_URL + '/logo.png'} alt="Guzman Career Services" className="footer-logo-img" />
+                            <Logo variant="white" className="footer-logo-img" />
                         </div>
                         <p className="footer-description">
-                            Professional career services helping you land your dream job with confidence and success.
+                            Human-managed job applications for professionals across the US & Canada.
                         </p>
                     </div>
 
                     <div className="footer-section">
-                        <h4 className="footer-title">Services</h4>
+                        <h4 className="footer-title">Our Service</h4>
                         <ul className="footer-links">
-                            <li><a href="#services">Job Application Assistance</a></li>
-                            <li><a href="#services">Resume Optimization</a></li>
-
-                            <li><a href="#services">Cover Letter Writing</a></li>
-                            <li><a href="#services">Interview Coaching</a></li>
-                            <li><a href="#services">Career Consulting</a></li>
+                            <li><a href="#services">What We Handle</a></li>
+                            <li><a href="#how-it-works">How It Works</a></li>
+                            <li><a href="#who-its-for">Who It's For</a></li>
+                            <li><a href="#fit-check">Is This Right for You</a></li>
                         </ul>
                     </div>
 
                     <div className="footer-section">
                         <h4 className="footer-title">Company</h4>
                         <ul className="footer-links">
-                            <li><a href="#about">About Us</a></li>
-                            <li><a href="#how-it-works">How It Works</a></li>
-                            <li><a href="#testimonials">Testimonials</a></li>
+                            <li><a href="#problem">About Us</a></li>
                             <li><a href="#contact">Contact</a></li>
                         </ul>
                     </div>
@@ -44,11 +42,11 @@ function Footer() {
                         <h4 className="footer-title">Contact</h4>
                         <ul className="footer-contact">
                             <li>
-                                <span className="footer-contact-icon">📧</span>
-                                <a href="mailto:info@guzmancareerservices.com">info@guzmancareerservices.com</a>
+                                <Mail className="footer-contact-icon" size={18} strokeWidth={2} />
+                                <a href="mailto:clientservices@guzmancareerservices.com">clientservices@guzmancareerservices.com</a>
                             </li>
                             <li>
-                                <span className="footer-contact-icon">🕒</span>
+                                <Clock className="footer-contact-icon" size={18} strokeWidth={2} />
                                 <span>Mon-Fri: 9AM-3PM CST</span>
                             </li>
                         </ul>

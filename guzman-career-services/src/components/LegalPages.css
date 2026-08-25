@@ -58,7 +58,7 @@
 .legal-title-block h2 {
     font-size: 1.5rem;
     font-weight: 600;
-    color: #2563eb;
+    color: #022452;
     margin: 0 0 1rem 0;
 }
 
@@ -82,7 +82,7 @@
 }
 
 .section-number {
-    color: #2563eb;
+    color: #022452;
     font-weight: 800;
 }
 
@@ -111,7 +111,7 @@
     content: '•';
     position: absolute;
     left: 0;
-    color: #2563eb;
+    color: #022452;
     font-weight: bold;
 }
 
@@ -124,7 +124,7 @@
     padding: 1rem;
     background: #f8fafc;
     border-radius: 8px;
-    border-left: 3px solid #2563eb;
+    border-left: 3px solid #022452;
 }
 
 .subsection {
@@ -139,15 +139,15 @@
 }
 
 .legal-final-acknowledgment {
-    background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+    background: linear-gradient(135deg, #e6f4f5 0%, #eef7f8 100%);
     padding: 2rem;
     border-radius: 12px;
-    border: 1px solid #bfdbfe;
+    border: 1px solid #b8dde0;
     margin-top: 2rem;
 }
 
 .legal-final-acknowledgment h3 {
-    color: #1e40af;
+    color: #011530;
     font-size: 1.25rem;
     margin-bottom: 1rem;
 }
@@ -155,7 +155,7 @@
 .final-footer {
     background: #fff;
     font-weight: 600;
-    color: #1e40af;
+    color: #011530;
 }
 
 .legal-back-link {
@@ -165,14 +165,14 @@
 }
 
 .legal-back-link a {
-    color: #2563eb;
+    color: #022452;
     font-weight: 600;
     text-decoration: none;
     transition: color 0.2s ease;
 }
 
 .legal-back-link a:hover {
-    color: #1d4ed8;
+    color: #011530;
 }
 
 .legal-footer {

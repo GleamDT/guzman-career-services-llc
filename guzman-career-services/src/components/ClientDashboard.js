@@ -6,8 +6,13 @@ import 'react-pdf/dist/Page/TextLayer.css';
 import { getAuthUser, clearToken } from '../lib/auth';
 import { authFetch } from '../lib/authFetch';
 import { downloadInvoicePDF } from '../lib/invoicePDF';
+import { downloadClientAgreementPDF } from '../lib/agreementPDF';
 import { TERMS_VERSION } from '../lib/legalContent';
 import TermsAcceptanceModal from './TermsAcceptanceModal';
+import OnboardingForm from './OnboardingForm';
+import Tech2mateOnboardingForm from './Tech2mateOnboardingForm';
+import InitialPaymentPage from './InitialPaymentPage';
+import Logo from './Logo';
 import './ClientDashboard.css';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -153,6 +158,7 @@ function ResumeTab({ client }) {
     const [numPages, setNumPages]           = useState(null);
     const [pageWidth, setPageWidth]         = useState(500);
     const [downloadingId, setDownloadingId] = useState(null);
+    const [downloadingAgreement, setDownloadingAgreement] = useState(false);
     const previewRef                        = useRef(null);
 
     // Load resume list
@@ -219,6 +225,17 @@ function ResumeTab({ client }) {
             alert('Could not download resume: ' + err.message);
         } finally {
             setDownloadingId(null);
+        }
+    };
+
+    const handleDownloadAgreement = async () => {
+        setDownloadingAgreement(true);
+        try {
+            await downloadClientAgreementPDF(client);
+        } catch (err) {
+            alert('Could not generate agreement PDF: ' + err.message);
+        } finally {
+            setDownloadingAgreement(false);
         }
     };
 
@@ -304,6 +321,22 @@ function ResumeTab({ client }) {
                             <p>If you need updates or have questions about your resume, please contact your career consultant.</p>
                             <a href="mailto:info@guzmancareerservices.com" className="cd-revision-link">Contact Consultant</a>
                         </div>
+                        <div className="cd-resume-details-card">
+                            <h3 className="cd-resume-details-title">Signed Agreement</h3>
+                            <p className="cd-agreement-summary">
+                                {client.tc_agreed
+                                    ? <>Signed by <strong>{client.legal_name}</strong> on {client.signature_date ? new Date(client.signature_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}.</>
+                                    : 'No signed agreement on file yet.'}
+                            </p>
+                            {client.tc_agreed && (
+                                <button className="cd-btn cd-btn--download" onClick={handleDownloadAgreement} disabled={downloadingAgreement}>
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                                    </svg>
+                                    {downloadingAgreement ? 'Opening…' : 'Download Signed Agreement'}
+                                </button>
+                            )}
+                        </div>
                     </aside>
                     <section className="cd-resume-preview-wrap" ref={previewRef}>
                         {previewUrl ? (
@@ -335,14 +368,32 @@ function ResumeTab({ client }) {
                     </section>
                 </div>
             ) : (
-                <div style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>
-                    <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ margin: '0 auto 1rem', display: 'block' }}>
-                        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                    </svg>
-                    <p style={{ margin: 0, fontSize: '0.9rem' }}>No resume uploaded yet. Your consultant will add it here.</p>
-                    <a href="mailto:info@guzmancareerservices.com" style={{ display: 'inline-block', marginTop: '1rem', color: '#2563eb', fontWeight: 600, fontSize: '0.875rem' }}>
-                        Contact Consultant
-                    </a>
+                <div className="cd-resume-grid">
+                    <div style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>
+                        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ margin: '0 auto 1rem', display: 'block' }}>
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+                        </svg>
+                        <p style={{ margin: 0, fontSize: '0.9rem' }}>No resume uploaded yet. Your consultant will add it here.</p>
+                        <a href="mailto:info@guzmancareerservices.com" style={{ display: 'inline-block', marginTop: '1rem', color: '#022452', fontWeight: 600, fontSize: '0.875rem' }}>
+                            Contact Consultant
+                        </a>
+                    </div>
+                    <div className="cd-resume-details-card">
+                        <h3 className="cd-resume-details-title">Signed Agreement</h3>
+                        <p className="cd-agreement-summary">
+                            {client.tc_agreed
+                                ? <>Signed by <strong>{client.legal_name}</strong> on {client.signature_date ? new Date(client.signature_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}.</>
+                                : 'No signed agreement on file yet.'}
+                        </p>
+                        {client.tc_agreed && (
+                            <button className="cd-btn cd-btn--download" onClick={handleDownloadAgreement} disabled={downloadingAgreement}>
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                                </svg>
+                                {downloadingAgreement ? 'Opening…' : 'Download Signed Agreement'}
+                            </button>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
@@ -358,7 +409,49 @@ function ClientDashboard() {
     const [loading, setLoading]         = useState(true);
     const [paymentBanner, setPaymentBanner] = useState(null); // 'success' | 'cancelled' | null
     const [showTermsModal, setShowTermsModal] = useState(false);
+    const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+    const autoOpenedOnboardingRef = useRef(false);
     const navigate = useNavigate();
+
+    const loadData = useCallback(async () => {
+        try {
+            const user = getAuthUser();
+            if (!user) return;
+
+            // Fetch client profile + invoices in parallel
+            const [profileRes, invoicesRes] = await Promise.all([
+                authFetch('/api/clients/me'),
+                authFetch('/api/clients/me/invoices'),
+            ]);
+
+            const profileData = await profileRes.json();
+            const invoicesData = await invoicesRes.json();
+
+            if (profileData.client) {
+                setClient(profileData.client);
+                // Onboarding renders as a dismissible modal over the dashboard rather
+                // than its own page, so it can be closed and picked back up later —
+                // only auto-open it once, on the very first load after login.
+                if (profileData.client.status === 'Pending' && !autoOpenedOnboardingRef.current) {
+                    autoOpenedOnboardingRef.current = true;
+                    setShowOnboardingModal(true);
+                }
+                if (profileData.client.tc_accepted_version !== TERMS_VERSION) {
+                    setShowTermsModal(true);
+                }
+                if (!profileData.client.has_logged_in) {
+                    authFetch(`/api/clients/${profileData.client.id}/mark-logged-in`, { method: 'PATCH' }).catch(() => {});
+                }
+            }
+            if (invoicesData.invoices) {
+                setInvoices(invoicesData.invoices);
+            }
+        } catch (err) {
+            console.error('Dashboard load error:', err);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -381,38 +474,7 @@ function ClientDashboard() {
         }
 
         loadData();
-    }, []);
-
-    const loadData = async () => {
-        try {
-            const user = getAuthUser();
-            if (!user) return;
-
-            // Fetch client profile + invoices in parallel
-            const [profileRes, invoicesRes] = await Promise.all([
-                authFetch('/api/clients/me'),
-                authFetch('/api/clients/me/invoices'),
-            ]);
-
-            const profileData = await profileRes.json();
-            const invoicesData = await invoicesRes.json();
-
-            if (profileData.client) {
-                setClient(profileData.client);
-                if (profileData.client.tc_accepted_version !== TERMS_VERSION) {
-                    setShowTermsModal(true);
-                }
-                if (!profileData.client.has_logged_in) {
-                    authFetch(`/api/clients/${profileData.client.id}/mark-logged-in`, { method: 'PATCH' }).catch(() => {});
-                }
-            }
-            if (invoicesData.invoices) setInvoices(invoicesData.invoices);
-        } catch (err) {
-            console.error('Dashboard load error:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [loadData]);
 
     const handleAcceptTerms = async (termsVersion) => {
         try {
@@ -440,9 +502,46 @@ function ClientDashboard() {
         navigate('/');
     };
 
+    const handleOnboardingComplete = () => {
+        setShowOnboardingModal(false);
+        loadData();
+    };
+
     const tabs = ['Invoices', 'My Resume'];
     const displayName = client.full_name || 'Client';
     const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    const hasChosenPaymentPlan = invoices.some(inv => inv.invoice_kind);
+    // Silent right after paying an installment — the balance banner only reappears once
+    // it's within the same 1-week window as the reminder emails (due soon or overdue),
+    // not the instant the split payment is chosen.
+    const inReminderWindow = (inv) => {
+        if (!inv.due_date) return false;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const due = new Date(inv.due_date);
+        const daysUntilDue = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
+        return daysUntilDue <= 7;
+    };
+    const hasUnpaidInitialPayment = invoices.some(inv => inv.invoice_kind && inv.status === 'Pending' && inReminderWindow(inv));
+    // Onboarding is not truly "complete" until the initial program payment lands —
+    // hard-gate the rest of the portal behind InitialPaymentPage until then, rather
+    // than letting clients browse with just a dismissible reminder banner.
+    const needsPayment = !loading && Boolean(client.id) && client.status !== 'Pending'
+        && !invoices.some(inv => inv.status === 'Paid');
+
+    if (needsPayment) {
+        return (
+            <div className="cd-layout">
+                {showTermsModal && (
+                    <TermsAcceptanceModal
+                        onAccept={handleAcceptTerms}
+                        onDecline={handleDeclineTerms}
+                    />
+                )}
+                <InitialPaymentPage client={client} invoices={invoices} mandatory />
+            </div>
+        );
+    }
 
     return (
         <div className="cd-layout">
@@ -451,6 +550,12 @@ function ClientDashboard() {
                     onAccept={handleAcceptTerms}
                     onDecline={handleDeclineTerms}
                 />
+            )}
+
+            {showOnboardingModal && (
+                client.intake_form_type === 'tech2mate'
+                    ? <Tech2mateOnboardingForm client={client} onClose={() => setShowOnboardingModal(false)} onComplete={handleOnboardingComplete} />
+                    : <OnboardingForm client={client} onClose={() => setShowOnboardingModal(false)} onComplete={handleOnboardingComplete} />
             )}
 
             {client.hibernated && (
@@ -477,7 +582,7 @@ function ClientDashboard() {
             {/* Sidebar */}
             <aside className={`cd-sidebar ${sidebarOpen ? 'cd-sidebar--open' : ''}`}>
                 <div className="cd-sidebar-logo">
-                    <img src="/logo.png" alt="Guzman Career Services" className="cd-sidebar-logo-img" />
+                    <Logo variant="white" className="cd-sidebar-logo-img" />
                 </div>
                 <nav className="cd-nav">
                     {tabs.map(tab => (
@@ -521,7 +626,7 @@ function ClientDashboard() {
                     <div className="cd-topbar-user">
                         <div className="cd-user-text">
                             <p className="cd-user-name">{displayName}</p>
-                            <p className="cd-user-role">{client.intake_form_type === 'tech2mate' ? 'Tech2Mate' : 'General'} Client</p>
+                            <p className="cd-user-role">{client.intake_form_type === 'tech2mate' ? 'Tech2Mate' : 'Guzman'} Client</p>
                         </div>
                         <div className="cd-user-avatar">{initials}</div>
                     </div>
@@ -532,7 +637,7 @@ function ClientDashboard() {
                         <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                         </svg>
-                        Payment successful! Your invoice has been marked as paid.
+                        Payment successful! Your onboarding is now complete. Welcome to your portal.
                         <button className="cd-banner-close" onClick={() => setPaymentBanner(null)}>✕</button>
                     </div>
                 )}
@@ -543,6 +648,35 @@ function ClientDashboard() {
                         </svg>
                         Payment cancelled. No charge was made.
                         <button className="cd-banner-close" onClick={() => setPaymentBanner(null)}>✕</button>
+                    </div>
+                )}
+                {client.status === 'Pending' && !showOnboardingModal && (
+                    <div className="cd-payment-banner cd-payment-banner--cancelled">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                        </svg>
+                        Complete your onboarding to activate your account.
+                        <button
+                            type="button"
+                            onClick={() => setShowOnboardingModal(true)}
+                            style={{ marginLeft: 'auto', fontWeight: 700, background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                            Continue Onboarding →
+                        </button>
+                    </div>
+                )}
+                {client.status !== 'Pending' && hasChosenPaymentPlan && hasUnpaidInitialPayment && (
+                    <div className="cd-payment-banner cd-payment-banner--cancelled">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                        </svg>
+                        You have a payment due.
+                        <button
+                            style={{ marginLeft: 'auto', fontWeight: 700, background: 'none', border: 'none', color: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}
+                            onClick={() => setActiveTab('Invoices')}
+                        >
+                            Pay Now →
+                        </button>
                     </div>
                 )}
 

@@ -1,0 +1,105 @@
+.fit-check-section {
+    position: relative;
+    background: linear-gradient(180deg, var(--color-white) 0%, var(--color-gray-50) 100%);
+    overflow: hidden;
+}
+
+.fit-check-section::before {
+    content: '';
+    position: absolute;
+    top: 8%;
+    left: 6%;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(0, 132, 142, 0.10) 0%, rgba(0, 132, 142, 0) 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.fit-check-section .container {
+    position: relative;
+    z-index: 1;
+}
+
+.fit-check-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--space-8);
+    max-width: 960px;
+    margin: var(--space-12) auto 0;
+}
+
+.fit-check-column {
+    border-radius: var(--radius-2xl);
+    padding: var(--space-8);
+    border: 1px solid var(--color-gray-200);
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.fit-check-column:hover {
+    transform: translateY(-4px);
+}
+
+.fit-check-column--good {
+    background: rgba(0, 132, 142, 0.05);
+    border-color: rgba(0, 132, 142, 0.25);
+    box-shadow: 0 8px 30px rgba(0, 132, 142, 0.08);
+}
+
+.fit-check-column--bad {
+    background: var(--color-gray-50);
+}
+
+.fit-check-heading {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    color: var(--color-gray-900);
+    margin-bottom: var(--space-5);
+}
+
+.fit-check-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.fit-check-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: var(--text-base);
+    color: var(--color-gray-700);
+    line-height: 1.6;
+}
+
+.fit-check-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+}
+
+.fit-check-icon--yes {
+    background: rgba(0, 132, 142, 0.15);
+    color: #00848e;
+}
+
+.fit-check-icon--no {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+@media (max-width: 768px) {
+    .fit-check-column {
+        padding: var(--space-6);
+    }
+}

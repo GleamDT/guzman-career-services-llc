@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { PRIVACY_POLICY } from '../lib/legalContent';
+import Logo from './Logo';
 import './LegalPages.css';
 
 function PrivacyPolicy() {
@@ -9,7 +10,7 @@ function PrivacyPolicy() {
             <header className="legal-header">
                 <div className="container">
                     <Link to="/" className="legal-logo">
-                        <img src="/logo.png" alt="Guzman Career Services" />
+                        <Logo />
                     </Link>
                 </div>
             </header>

@@ -1,3 +1,37 @@
+.why-choose-section {
+    position: relative;
+    overflow: hidden;
+}
+
+.why-choose-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.why-choose-glow--1 {
+    top: -80px;
+    right: -60px;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(0, 132, 142, 0.10) 0%, rgba(0, 132, 142, 0) 70%);
+}
+
+.why-choose-glow--2 {
+    bottom: -100px;
+    left: -80px;
+    width: 360px;
+    height: 360px;
+    background: radial-gradient(circle, rgba(2, 36, 82, 0.08) 0%, rgba(2, 36, 82, 0) 70%);
+}
+
+.why-choose-section .container {
+    position: relative;
+    z-index: 1;
+}
+
 .reasons-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -8,13 +42,11 @@
 .reason-card {
     background: var(--color-white);
     border-radius: var(--radius-xl);
-    padding: var(--space-10);
+    padding: var(--space-6);
     text-align: center;
     box-shadow: var(--shadow-md);
     border: 1px solid var(--color-gray-200);
     transition: all var(--transition-base);
-    animation: fadeInUp 0.6s ease-out forwards;
-    opacity: 0;
     position: relative;
     overflow: hidden;
 }
@@ -26,7 +58,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, rgba(30, 58, 138, 0.03) 0%, rgba(59, 130, 246, 0.03) 100%);
+    background: linear-gradient(135deg, rgba(2, 36, 82, 0.04) 0%, rgba(0, 132, 142, 0.04) 100%);
     opacity: 0;
     transition: opacity var(--transition-base);
 }
@@ -42,26 +74,15 @@
 }
 
 .reason-icon-wrapper {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto var(--space-6);
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
-    border-radius: var(--radius-full);
+    margin: 0 auto var(--space-5);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: var(--shadow-lg);
-    transition: all var(--transition-base);
-    position: relative;
-    z-index: 1;
+    transition: transform var(--transition-base);
 }
 
 .reason-card:hover .reason-icon-wrapper {
     transform: scale(1.1) rotate(10deg);
-}
-
-.reason-icon {
-    font-size: 3rem;
 }
 
 .reason-title {

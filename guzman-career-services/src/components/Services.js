@@ -1,77 +1,54 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Search, Send, BarChart3 } from 'lucide-react';
+import IconBadge from './IconBadge';
+import Reveal from './Reveal';
 import './Services.css';
-import IntakeForm from './IntakeForm';
+
+const ITEMS = [
+    {
+        icon: Search,
+        title: 'We Find Opportunities',
+        description: 'Human specialists source opportunities aligned with your approved job-search criteria.',
+    },
+    {
+        icon: Send,
+        title: 'We Submit Applications',
+        description: 'We complete targeted applications on your behalf rather than indiscriminately mass-applying.',
+    },
+    {
+        icon: BarChart3,
+        title: 'We Track Your Search',
+        description: 'Applications are recorded in your tracker so you have visibility into where submissions have been made.',
+    },
+];
 
 function Services() {
-    const [showIntakeForm, setShowIntakeForm] = useState(false);
-
-    const generalService = {
-        id: 'general',
-        icon: '💼',
-        title: 'General Client Services',
-        tagline: 'Comprehensive Career Support',
-        description: 'Our full-service career support is designed for professionals at every stage. From resume optimization to interview coaching, we provide personalized guidance to help you land your dream job and advance your career.',
-        features: [
-            'Professional resume & CV optimization',
-            'Career profile enhancement',
-            'Job application strategy & support'
-        ],
-        buttonText: 'Get Started Today',
-        gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
-    };
-
-    // Tech2mates temporarily hidden — uncomment to re-enable
-    // const tech2matesService = { ... }
-
     return (
-        <section id="services" className="section">
+        <section id="services" className="section services-section">
+            <div className="services-glow services-glow--1"></div>
+            <div className="services-glow services-glow--2"></div>
             <div className="container">
-                <div className="section-header text-center">
-                    <h2 className="section-title">Our Professional Services</h2>
-                    <p className="section-subtitle">
-                        Choose the service path that best fits your career goals
-                    </p>
-                </div>
-
-                <div className="service-categories">
-                    <div
-                        key={generalService.id}
-                        className="service-category-card"
-                    >
-                        <div className="category-header" style={{ background: generalService.gradient }}>
-                            <div className="category-icon">{generalService.icon}</div>
-                            <div className="category-title-group">
-                                <span className="category-tagline">{generalService.tagline}</span>
-                                <h3 className="category-title">{generalService.title}</h3>
-                            </div>
-                        </div>
-
-                        <div className="category-content">
-                            <p className="category-description">{generalService.description}</p>
-
-                            <ul className="category-features">
-                                {generalService.features.map((feature, idx) => (
-                                    <li key={idx} className="feature-item">
-                                        <span className="feature-icon">✓</span>
-                                        <span>{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <button
-                                className="category-button"
-                                style={{ background: generalService.gradient }}
-                                onClick={() => setShowIntakeForm(true)}
-                            >
-                                {generalService.buttonText}
-                                <span className="button-arrow">→</span>
-                            </button>
-                        </div>
+                <Reveal>
+                    <div className="section-header text-center">
+                        <h2 className="section-title">What Guzman Actually Handles</h2>
+                        <p className="section-subtitle">
+                            A managed job-application service, not a tool you have to operate yourself
+                        </p>
                     </div>
+                </Reveal>
+
+                <div className="service-items-grid">
+                    {ITEMS.map((item, i) => (
+                        <Reveal delay={i * 120} key={i}>
+                            <div className="service-item-card">
+                                <IconBadge icon={item.icon} variant="navy" />
+                                <h3 className="service-item-title">{item.title}</h3>
+                                <p className="service-item-description">{item.description}</p>
+                            </div>
+                        </Reveal>
+                    ))}
                 </div>
             </div>
-
-            {showIntakeForm && <IntakeForm onClose={() => setShowIntakeForm(false)} />}
         </section>
     );
 }

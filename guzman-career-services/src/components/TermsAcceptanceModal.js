@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { TERMS_OF_SERVICE, PRIVACY_POLICY, TERMS_VERSION } from '../lib/legalContent';
+import Logo from './Logo';
 import './TermsAcceptanceModal.css';
 
 function TermsAcceptanceModal({ onAccept, onDecline }) {
@@ -43,7 +44,7 @@ function TermsAcceptanceModal({ onAccept, onDecline }) {
             <div className="tam-modal">
                 <div className="tam-header">
                     <div className="tam-logo">
-                        <img src="/logo.png" alt="Guzman Career Services" />
+                        <Logo />
                     </div>
                     <h2>Updated Terms & Conditions</h2>
                     <p>Please review and accept our updated Terms and Conditions and Privacy Policy to continue using your account.</p>

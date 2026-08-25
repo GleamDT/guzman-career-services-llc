@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS users (
     reset_token TEXT UNIQUE,
     reset_token_expires_at TIMESTAMPTZ,
     password_set BOOLEAN NOT NULL DEFAULT false,
+    email_verified BOOLEAN NOT NULL DEFAULT true,
+    otp_code TEXT,
+    otp_expires_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -36,6 +39,37 @@ CREATE TABLE IF NOT EXISTS clients (
     resume_uploaded_at TIMESTAMPTZ,
     resume_uploaded_by TEXT NOT NULL DEFAULT '',
     hibernated BOOLEAN NOT NULL DEFAULT false,
+    -- Onboarding fields (filled in post-signup, post-login; see PATCH /api/clients/me/onboarding)
+    legal_name TEXT NOT NULL DEFAULT '',
+    signature_date DATE,
+    tc_agreed BOOLEAN NOT NULL DEFAULT false,
+    ip_address TEXT NOT NULL DEFAULT '',
+    user_agent TEXT NOT NULL DEFAULT '',
+    device_type TEXT NOT NULL DEFAULT '',
+    sex TEXT NOT NULL DEFAULT '',
+    veteran_status TEXT NOT NULL DEFAULT '',
+    disability_status TEXT NOT NULL DEFAULT '',
+    race_identity TEXT NOT NULL DEFAULT '',
+    work_authorization TEXT NOT NULL DEFAULT '',
+    job_titles TEXT NOT NULL DEFAULT '',
+    referred_by TEXT NOT NULL DEFAULT '',
+    full_address TEXT NOT NULL DEFAULT '',
+    linkedin_profile TEXT NOT NULL DEFAULT '',
+    additional_notes TEXT NOT NULL DEFAULT '',
+    shared_email TEXT NOT NULL DEFAULT '',
+    shared_password TEXT NOT NULL DEFAULT '',
+    onboarding_step SMALLINT NOT NULL DEFAULT 1,
+    country TEXT NOT NULL DEFAULT '',
+    -- Client's own onboarding resume upload — kept separate from resume_path above,
+    -- which is the consultant-facing resume shown on the client's "My Resume" tab.
+    intake_resume_path TEXT,
+    intake_resume_filename TEXT,
+    intake_resume_uploaded_at TIMESTAMPTZ,
+    -- Communications email (distinct from the account login email), plus
+    -- job-criteria/background extensions to the onboarding wizard.
+    comms_email TEXT NOT NULL DEFAULT '',
+    min_salary_expectation TEXT NOT NULL DEFAULT '',
+    education_history JSONB NOT NULL DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -50,6 +84,10 @@ CREATE TABLE IF NOT EXISTS invoices (
     status TEXT NOT NULL DEFAULT 'Pending',
     due_date DATE,
     paid_at TIMESTAMPTZ,
+    invoice_kind TEXT,
+    reminder_7day_sent_at TIMESTAMPTZ,
+    reminder_due_sent_at TIMESTAMPTZ,
+    reminder_overdue_sent_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

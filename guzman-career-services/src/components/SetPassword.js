@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { setToken } from '../lib/auth';
+import Logo from './Logo';
 import './SetPassword.css';
 
 function SetPassword() {
@@ -60,7 +61,7 @@ function SetPassword() {
         <div className="sp-page">
             <div className="sp-card">
                 <div className="sp-logo">
-                    <img src="/logo.png" alt="Guzman Career Services" />
+                    <Logo />
                 </div>
                 <h2 className="sp-title">
                     {type === 'reset' ? 'Reset Your Password' : 'Welcome! Set Your Password'}

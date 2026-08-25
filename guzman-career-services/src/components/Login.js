@@ -1,25 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
 import { setToken } from '../lib/auth';
+import Logo from './Logo';
+import OnboardingProgress from './OnboardingProgress';
 import './Login.css';
 
-const BG_IMAGE = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBlS2U5YOmfaEXB3S-f2PexiqM6jAAuNUdaDWS12VDdXnj1WztSPF6k_e6vYOe603W6XTnqbFOiL844KUwOZAGJWa7rwOfnEusljxVVTkQg4TdQzH2kUF1LLU25NYnU9h7Wn9IfCU4OB5B1dkm0uFjPCt9YNRiYWW7Cbfm5J1p2dJTMEn9vJ2X9OIN5LLCpq3LrQX-pU0UI6VLnxxyVuEVl-HQDO0d6dqqbqzZipRYeBOpsNtEaUJsdSOuncBg86tzQM3OYcTaoG7Ml';
+function Login({ isOpen, onClose, asPage = false }) {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [searchParams] = useSearchParams();
 
-const AVATARS = [
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuDGGqmtF-ivC4Jdn7PqY1s4g_rfex_pF1fo5XzJ631MslH0cZSmErGfCuOc7gBTVsxrlUcMl07rc1_syJrsqTA1IEJDta_BBDqCbIkoswO_l8bL8jNMWwGScenHuwMyQoX1bT3u6BEKKGifMtvPBiLTLYVXk-lennJ9e9oWAm4ahhR6c8pH9P_kjYGrovXq09M0KQ50E3QQP3zWS_ZrQDE_OSHtMhuQmZ0ndKKLsX8k2IOFZ8N-ockdwBVH6ncEcE-KgSivfefzCa3l',
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuBq3ZoKRuxtS_l5h4G3LbeuVT3m1G0HmnT8erGoW8a-AZikosvW__8SvYSZE-_WxBIW0w2wSr03lpO5PSaMx_4xKh_QHyr35ynGKpKPihYSPuP0ft0ptdhhRpD2q3x_LQ9K-BtHkxHd4NaCRqN-y20Gg0zV1JiJHULiLqMsKxpjK3RHkymnyv53xfBK7x7zu1P_HvAJiaWo310aJdPSGA44FuzR0jtXGrDkOeaJyLCku-9Ex2v78xN2KvSClFkWVoNAp0_cfD4thXFa',
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuArX11BkWn4vk0dXA3W5IPGTOOanHjqLuGN9ZZTaQE6jm4exyToaL-p_fF6kb4oZ5FWiNNfOTwGwTOJfi5FHYAXCEjntdNETyF2YK1vikw8vTcW0G6OBN2rBwLq8AcuyQEb3bffS1PgifshpExUFRi2yg7ll0DWRbUyOyu2H_b2LtAAmGMZD847qbSRlj01HYhX-F4_ELD5--H_IOFJaY43UOUJXtwhP_N5NW6seWUO1XAsfl427Cpgk8L02ddsPXkdFMOUOqj02jtR',
-];
-
-function Login({ isOpen, onClose }) {
-    const [showPassword, setShowPassword] = useState(false);
-    const [formData, setFormData] = useState({ email: '', password: '', remember: false });
+    const [mode, setMode] = useState(asPage && location.pathname === '/signup' ? 'signup' : 'login');
+    const [forgotMode, setForgotMode] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [forgotMode, setForgotMode] = useState(false);
+
+    // Keep the active tab in sync with the URL (bookmarking, browser back/forward)
+    useEffect(() => {
+        if (!asPage) return;
+        setMode(location.pathname === '/signup' ? 'signup' : 'login');
+    }, [asPage, location.pathname]);
+
+    const switchTab = (nextMode) => {
+        setMode(nextMode);
+        setForgotMode(false);
+        setError('');
+        navigate(nextMode === 'signup' ? '/signup' : '/login', { replace: true });
+    };
+
+    // ── Login form ──────────────────────────────────────────────────────────
+    const [showPassword, setShowPassword] = useState(false);
+    const [formData, setFormData] = useState({ email: location.state?.email || '', password: '', remember: false });
     const [forgotEmail, setForgotEmail] = useState('');
     const [resetSent, setResetSent] = useState(false);
-    const navigate = useNavigate();
+    const [justVerified] = useState(Boolean(location.state?.justVerified));
 
     const switchToForgot = () => { setForgotMode(true); setError(''); setResetSent(false); };
     const switchToLogin = () => { setForgotMode(false); setError(''); setResetSent(false); setForgotEmail(''); };
@@ -38,18 +52,17 @@ function Login({ isOpen, onClose }) {
     };
 
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen || asPage) return;
         const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
         document.addEventListener('keydown', handleKey);
         return () => document.removeEventListener('keydown', handleKey);
-    }, [isOpen, onClose]);
+    }, [isOpen, onClose, asPage]);
 
     useEffect(() => {
+        if (asPage) return;
         document.body.style.overflow = isOpen ? 'hidden' : '';
         return () => { document.body.style.overflow = ''; };
-    }, [isOpen]);
-
-    if (!isOpen) return null;
+    }, [isOpen, asPage]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -70,6 +83,11 @@ function Login({ isOpen, onClose }) {
         const data = await res.json();
 
         if (!res.ok) {
+            if (data.code === 'EMAIL_NOT_VERIFIED') {
+                setLoading(false);
+                navigate('/verify-email', { state: { email: data.email } });
+                return;
+            }
             setError(data.error || 'Incorrect email or password. Please try again.');
             setLoading(false);
             return;
@@ -83,49 +101,130 @@ function Login({ isOpen, onClose }) {
         navigate(dest);
     };
 
+    // ── Signup form ─────────────────────────────────────────────────────────
+    const preselectedTrack = searchParams.get('track');
+    const [showSignupPassword, setShowSignupPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [signupData, setSignupData] = useState({
+        email: '',
+        password: '',
+        confirmPassword: '',
+        track: preselectedTrack === 'tech2mate' ? 'tech2mate' : 'general',
+    });
+
+    const handleSignupChange = (e) => {
+        const { name, value } = e.target;
+        setSignupData(prev => ({ ...prev, [name]: value }));
+        setError('');
+    };
+
+    const selectTrack = (track) => {
+        setSignupData(prev => ({ ...prev, track }));
+        setError('');
+    };
+
+    const handleSignupSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+
+        if (signupData.password !== signupData.confirmPassword) {
+            setError('Passwords do not match.');
+            return;
+        }
+
+        setLoading(true);
+
+        const res = await fetch('/api/auth/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: signupData.email,
+                password: signupData.password,
+                intakeFormType: signupData.track,
+            }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            setError(data.error || 'Signup failed. Please try again.');
+            setLoading(false);
+            return;
+        }
+
+        setLoading(false);
+        navigate('/verify-email', { state: { email: signupData.email } });
+    };
+
+    const heading = forgotMode
+        ? { title: 'Reset Password', subtitle: "Enter your email and we'll send you a reset link if your account exists." }
+        : mode === 'signup'
+            ? { title: 'Create Your Account', subtitle: 'Just a few details to get started.' }
+            : { title: 'Welcome Back', subtitle: 'Please enter your details to access your portal.' };
+
+    const tagline = mode === 'signup'
+        ? "Create an account to get started. You'll complete your profile right after signing up."
+        : 'Log in to manage your applications, invoices, and career journey with Guzman Career Services.';
+
+    if (!isOpen) return null;
+
     return (
-        <div className="login-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Login">
+        <div
+            className={`login-overlay ${asPage ? 'login-overlay--page' : ''}`}
+            onClick={asPage ? undefined : onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Login"
+        >
             <div className="login-modal" onClick={e => e.stopPropagation()}>
 
-                {/* Close button */}
-                <button className="login-close" onClick={onClose} aria-label="Close login">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
-                    </svg>
-                </button>
+                {!asPage && (
+                    <button className="login-close" onClick={onClose} aria-label="Close login">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                        </svg>
+                    </button>
+                )}
 
-                {/* Left panel */}
-                <div className="login-left" style={{ backgroundImage: `url('${BG_IMAGE}')` }}>
-                    <div className="login-left-overlay" />
+                {/* Left brand panel — desktop */}
+                <div className="login-left">
                     <div className="login-left-content">
-                        <div className="login-brand">
-                            <img src="/logo.png" alt="Guzman Career Services" className="login-brand-logo" />
-                        </div>
+                        <Logo variant="white" className="login-brand-logo" />
                         <div className="login-left-tagline">
-                            <h2>Empowering Professionals, Transforming Careers.</h2>
-                            <p>Join thousands of professionals who have accelerated their career growth through our specialized placement and consulting services.</p>
+                            <h2>Your Career Portal</h2>
+                            <p>{tagline}</p>
                         </div>
-                        <div className="login-social-proof">
-                            <div className="login-avatars">
-                                {AVATARS.map((src, i) => (
-                                    <img key={i} src={src} alt="Client" className="login-avatar" />
-                                ))}
-                            </div>
-                            <span className="login-trust-text">Trusted by 10,000+ candidates</span>
-                        </div>
+                        {mode === 'signup' && !forgotMode && (
+                            <OnboardingProgress currentStage={1} variant="vertical" />
+                        )}
                     </div>
+                </div>
+
+                {/* Compact brand strip — mobile only */}
+                <div className="login-left--mobile">
+                    <img src="/logo.png" alt="Guzman Career Services" className="login-brand-logo" />
                 </div>
 
                 {/* Right panel */}
                 <div className="login-right">
-                    {forgotMode ? (
-                        <>
-                            <div className="login-heading">
-                                <h2>Reset Password</h2>
-                                <p>Enter your email and we'll send you a reset link if your account exists.</p>
+                    <div className="login-right-inner">
+                        {asPage && !forgotMode && (
+                            <div className="login-tabs">
+                                <button type="button" className={mode === 'login' ? 'active' : ''} onClick={() => switchTab('login')}>
+                                    Log In
+                                </button>
+                                <button type="button" className={mode === 'signup' ? 'active' : ''} onClick={() => switchTab('signup')}>
+                                    Sign Up
+                                </button>
                             </div>
+                        )}
 
-                            {resetSent ? (
+                        <div className="login-heading">
+                            <h2>{heading.title}</h2>
+                            <p>{heading.subtitle}</p>
+                        </div>
+
+                        {forgotMode ? (
+                            resetSent ? (
                                 <div className="login-reset-sent">
                                     <span className="material-symbols-outlined">mark_email_read</span>
                                     <p>If <strong>{forgotEmail}</strong> is registered with us, a password reset link has been sent. Check your inbox.</p>
@@ -135,7 +234,6 @@ function Login({ isOpen, onClose }) {
                                 <form className="login-form" onSubmit={handleForgotSubmit}>
                                     <div className="login-fields">
                                         <div className="login-field">
-                                            <label htmlFor="forgot-email">Email Address</label>
                                             <div className="login-input-wrap">
                                                 <span className="material-symbols-outlined login-input-icon">mail</span>
                                                 <input
@@ -143,10 +241,11 @@ function Login({ isOpen, onClose }) {
                                                     id="forgot-email"
                                                     value={forgotEmail}
                                                     onChange={e => setForgotEmail(e.target.value)}
-                                                    placeholder="name@example.com"
+                                                    placeholder=" "
                                                     autoComplete="email"
                                                     required
                                                 />
+                                                <label htmlFor="forgot-email">Email Address</label>
                                             </div>
                                         </div>
                                     </div>
@@ -162,102 +261,209 @@ function Login({ isOpen, onClose }) {
                                         ← Back to Login
                                     </button>
                                 </form>
-                            )}
-                        </>
-                    ) : (
-                        <>
-                            <div className="login-heading">
-                                <h2>Welcome Back</h2>
-                                <p>Please enter your details to access your portal.</p>
-                            </div>
+                            )
+                        ) : mode === 'signup' ? (
+                            <>
+                                <div className="ob-progress-mobile-only">
+                                    <OnboardingProgress currentStage={1} />
+                                </div>
+                                <form className="login-form" onSubmit={handleSignupSubmit}>
+                                    <div className="login-fields">
+                                        <div className="login-field">
+                                            <div className="login-input-wrap">
+                                                <span className="material-symbols-outlined login-input-icon">mail</span>
+                                                <input
+                                                    type="email"
+                                                    id="signup-email"
+                                                    name="email"
+                                                    value={signupData.email}
+                                                    onChange={handleSignupChange}
+                                                    placeholder=" "
+                                                    autoComplete="email"
+                                                    required
+                                                />
+                                                <label htmlFor="signup-email">Email Address</label>
+                                            </div>
+                                        </div>
 
-                            <form className="login-form" onSubmit={handleSubmit}>
-                                <div className="login-fields">
-                                    <div className="login-field">
-                                        <label htmlFor="email">Email Address</label>
-                                        <div className="login-input-wrap">
-                                            <span className="material-symbols-outlined login-input-icon">mail</span>
-                                            <input
-                                                type="email"
-                                                id="email"
-                                                name="email"
-                                                value={formData.email}
-                                                onChange={handleChange}
-                                                placeholder="name@example.com"
-                                                autoComplete="email"
-                                                required
-                                            />
+                                        <div className="login-fields-row">
+                                            <div className="login-field">
+                                                <div className="login-input-wrap">
+                                                    <span className="material-symbols-outlined login-input-icon">lock</span>
+                                                    <input
+                                                        type={showSignupPassword ? 'text' : 'password'}
+                                                        id="signup-password"
+                                                        name="password"
+                                                        value={signupData.password}
+                                                        onChange={handleSignupChange}
+                                                        placeholder=" "
+                                                        autoComplete="new-password"
+                                                        minLength={8}
+                                                        required
+                                                    />
+                                                    <label htmlFor="signup-password">Password</label>
+                                                    <button
+                                                        type="button"
+                                                        className="login-pw-toggle"
+                                                        onClick={() => setShowSignupPassword(v => !v)}
+                                                        aria-label="Toggle password visibility"
+                                                    >
+                                                        <span className="material-symbols-outlined">
+                                                            {showSignupPassword ? 'visibility_off' : 'visibility'}
+                                                        </span>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="login-field">
+                                                <div className="login-input-wrap">
+                                                    <span className="material-symbols-outlined login-input-icon">lock_reset</span>
+                                                    <input
+                                                        type={showConfirmPassword ? 'text' : 'password'}
+                                                        id="signup-confirm-password"
+                                                        name="confirmPassword"
+                                                        value={signupData.confirmPassword}
+                                                        onChange={handleSignupChange}
+                                                        placeholder=" "
+                                                        autoComplete="new-password"
+                                                        minLength={8}
+                                                        required
+                                                    />
+                                                    <label htmlFor="signup-confirm-password">Confirm Password</label>
+                                                    <button
+                                                        type="button"
+                                                        className="login-pw-toggle"
+                                                        onClick={() => setShowConfirmPassword(v => !v)}
+                                                        aria-label="Toggle confirm password visibility"
+                                                    >
+                                                        <span className="material-symbols-outlined">
+                                                            {showConfirmPassword ? 'visibility_off' : 'visibility'}
+                                                        </span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="login-field">
+                                            <span className="login-track-label">I'm signing up as</span>
+                                            <div className="login-segmented" role="tablist" aria-label="Signup track">
+                                                <button
+                                                    type="button"
+                                                    role="tab"
+                                                    aria-selected={signupData.track === 'general'}
+                                                    className={signupData.track === 'general' ? 'active' : ''}
+                                                    onClick={() => selectTrack('general')}
+                                                >
+                                                    Guzman
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    role="tab"
+                                                    aria-selected={signupData.track === 'tech2mate'}
+                                                    className={signupData.track === 'tech2mate' ? 'active' : ''}
+                                                    onClick={() => selectTrack('tech2mate')}
+                                                >
+                                                    Tech2Mate
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="login-field">
-                                        <div className="login-field-header">
-                                            <label htmlFor="password">Password</label>
-                                            <button type="button" className="login-forgot" onClick={switchToForgot}>
+                                    {error && <p className="login-error">{error}</p>}
+
+                                    <button type="submit" className="login-submit" disabled={loading}>
+                                        {loading ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}
+                                    </button>
+                                </form>
+
+                                <p className="login-disclaimer">
+                                    By creating an account, you agree to Guzman Career Services' <Link to="/terms-of-service">Terms of Use</Link> and <Link to="/privacy-policy">Privacy Policy</Link>.
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                {justVerified && (
+                                    <p className="login-verified-banner">
+                                        <span className="material-symbols-outlined">check_circle</span>
+                                        Email verified — log in to continue.
+                                    </p>
+                                )}
+
+                                <form className="login-form" onSubmit={handleSubmit}>
+                                    <div className="login-fields">
+                                        <div className="login-field">
+                                            <div className="login-input-wrap">
+                                                <span className="material-symbols-outlined login-input-icon">mail</span>
+                                                <input
+                                                    type="email"
+                                                    id="email"
+                                                    name="email"
+                                                    value={formData.email}
+                                                    onChange={handleChange}
+                                                    placeholder=" "
+                                                    autoComplete="email"
+                                                    required
+                                                />
+                                                <label htmlFor="email">Email Address</label>
+                                            </div>
+                                        </div>
+
+                                        <div className="login-field">
+                                            <div className="login-input-wrap">
+                                                <span className="material-symbols-outlined login-input-icon">lock</span>
+                                                <input
+                                                    type={showPassword ? 'text' : 'password'}
+                                                    id="password"
+                                                    name="password"
+                                                    value={formData.password}
+                                                    onChange={handleChange}
+                                                    placeholder=" "
+                                                    autoComplete="current-password"
+                                                    required
+                                                />
+                                                <label htmlFor="password">Password</label>
+                                                <button
+                                                    type="button"
+                                                    className="login-pw-toggle"
+                                                    onClick={() => setShowPassword(v => !v)}
+                                                    aria-label="Toggle password visibility"
+                                                >
+                                                    <span className="material-symbols-outlined">
+                                                        {showPassword ? 'visibility_off' : 'visibility'}
+                                                    </span>
+                                                </button>
+                                            </div>
+                                            <button type="button" className="login-forgot login-forgot--inline" onClick={switchToForgot}>
                                                 Forgot Password?
                                             </button>
                                         </div>
-                                        <div className="login-input-wrap">
-                                            <span className="material-symbols-outlined login-input-icon">lock</span>
-                                            <input
-                                                type={showPassword ? 'text' : 'password'}
-                                                id="password"
-                                                name="password"
-                                                value={formData.password}
-                                                onChange={handleChange}
-                                                placeholder="••••••••"
-                                                autoComplete="current-password"
-                                                required
-                                            />
-                                            <button
-                                                type="button"
-                                                className="login-pw-toggle"
-                                                onClick={() => setShowPassword(v => !v)}
-                                                aria-label="Toggle password visibility"
-                                            >
-                                                <span className="material-symbols-outlined">
-                                                    {showPassword ? 'visibility_off' : 'visibility'}
-                                                </span>
-                                            </button>
-                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="login-remember">
-                                    <input
-                                        type="checkbox"
-                                        id="remember"
-                                        name="remember"
-                                        checked={formData.remember}
-                                        onChange={handleChange}
-                                    />
-                                    <label htmlFor="remember">Keep me logged in on this device</label>
-                                </div>
+                                    <div className="login-remember">
+                                        <input
+                                            type="checkbox"
+                                            id="remember"
+                                            name="remember"
+                                            checked={formData.remember}
+                                            onChange={handleChange}
+                                        />
+                                        <label htmlFor="remember">Keep me logged in on this device</label>
+                                    </div>
 
-                                {error && <p className="login-error">{error}</p>}
+                                    {error && <p className="login-error">{error}</p>}
 
-                                <button type="submit" className="login-submit" disabled={loading}>
-                                    <span className="material-symbols-outlined">login</span>
-                                    {loading ? 'SIGNING IN...' : 'LOG IN TO PORTAL'}
-                                </button>
-                            </form>
+                                    <button type="submit" className="login-submit" disabled={loading}>
+                                        <span className="material-symbols-outlined">login</span>
+                                        {loading ? 'SIGNING IN...' : 'LOG IN TO PORTAL'}
+                                    </button>
+                                </form>
 
-                            <div className="login-badges">
-                                <div className="login-badge">
-                                    <span className="material-symbols-outlined login-badge-icon login-badge-icon--green">verified_user</span>
-                                    <span>Secure Access</span>
-                                </div>
-                                <div className="login-badge">
-                                    <span className="material-symbols-outlined login-badge-icon">encrypted</span>
-                                    <span>AES-256 SSL</span>
-                                </div>
-                            </div>
-
-                            <p className="login-disclaimer">
-                                Unauthorized access is prohibited. By logging in, you agree to Guzman Career Services' <a href="#terms">Terms of Use</a> and <a href="#privacy">Privacy Policy</a>.
-                            </p>
-                        </>
-                    )}
+                                <p className="login-disclaimer">
+                                    Unauthorized access is prohibited. By logging in, you agree to Guzman Career Services' <Link to="/terms-of-service">Terms of Use</Link> and <Link to="/privacy-policy">Privacy Policy</Link>.
+                                </p>
+                            </>
+                        )}
+                    </div>
                 </div>
 
             </div>

@@ -1,0 +1,117 @@
+.payplan-card {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 1.5rem;
+    padding: 3rem 2.5rem;
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.12),
+        0 32px 64px -16px rgba(8, 15, 35, 0.45);
+}
+
+.payplan-logo {
+    height: 40px;
+    width: auto;
+    display: block;
+    margin: 0 auto 1.75rem;
+}
+
+.payplan-heading {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.payplan-heading h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.4rem;
+}
+
+.payplan-heading p {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin: 0;
+}
+
+.payplan-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+@media (max-width: 560px) {
+    .payplan-options {
+        grid-template-columns: 1fr;
+    }
+    .payplan-card {
+        padding: 2.25rem 1.5rem;
+    }
+}
+
+.payplan-option {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    padding: 1.75rem 1.5rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 1rem;
+    background: #fbfcfe;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+
+.payplan-option:hover {
+    border-color: #022452;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(2, 36, 82, 0.15);
+}
+
+.payplan-option:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.payplan-option-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #022452;
+    margin-bottom: 0.6rem;
+}
+
+.payplan-option-amount {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.35rem;
+}
+
+.payplan-option-detail {
+    font-size: 0.82rem;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.payplan-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    font-size: 0.85rem;
+    padding: 0.7rem 1rem;
+    border-radius: 0.5rem;
+    margin: 0 0 1.25rem;
+}
+
+.payplan-loading {
+    text-align: center;
+    color: #64748b;
+    font-size: 0.9rem;
+    padding: 2rem 0;
+}

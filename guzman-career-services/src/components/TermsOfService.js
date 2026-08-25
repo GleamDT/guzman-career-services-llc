@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { TERMS_OF_SERVICE } from '../lib/legalContent';
+import Logo from './Logo';
 import './LegalPages.css';
 
 function TermsOfService() {
@@ -9,7 +10,7 @@ function TermsOfService() {
             <header className="legal-header">
                 <div className="container">
                     <Link to="/" className="legal-logo">
-                        <img src="/logo.png" alt="Guzman Career Services" />
+                        <Logo />
                     </Link>
                 </div>
             </header>

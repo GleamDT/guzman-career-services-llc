@@ -1,5 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { authFetch, getAuthToken } from '../lib/authFetch';
 import { TERMS_OF_SERVICE, PRIVACY_POLICY } from '../lib/legalContent';
+import {
+    ONBOARDING_COUNTRIES, regionOptionsFor, regionLabelFor,
+    postalLabelFor, postalPlaceholderFor, buildFullAddress,
+} from '../lib/usCaRegions';
+import OnboardingProgress, { stageForOnboardingStep } from './OnboardingProgress';
 import './IntakeForm.css';
 
 const STEPS = [
@@ -12,44 +18,109 @@ const STEPS = [
 
 const initialData = {
     fullName: '',
-    email: '',
     referredBy: '',
     phone: '',
     fullAddress: '',
+    addressStreet: '',
+    addressCity: '',
+    addressRegion: '',
+    addressPostalCode: '',
+    country: '',
     sex: '',
     veteranStatus: '',
     disabilityStatus: '',
     raceIdentity: '',
     workAuthorization: '',
+    educationHistory: [{ institution: '', degree: '', datesAttended: '' }],
     jobTitles: '',
+    minSalaryExpectation: '',
     sharedEmail: '',
     sharedPassword: '',
+    commsEmail: '',
     legalName: '',
     signatureDate: new Date().toISOString().split('T')[0],
     tcAgreed: false,
     finalConfirm: false,
 };
 
-function IntakeForm({ onClose }) {
-    const [step, setStep] = useState(1);
-    const [formData, setFormData] = useState(initialData);
+function dataFromClient(client) {
+    if (!client) return initialData;
+    return {
+        fullName: client.full_name || '',
+        referredBy: client.referred_by || '',
+        phone: client.phone || '',
+        fullAddress: client.full_address || '',
+        addressStreet: '',
+        addressCity: '',
+        addressRegion: '',
+        addressPostalCode: '',
+        country: client.country || '',
+        sex: client.sex || '',
+        veteranStatus: client.veteran_status || '',
+        disabilityStatus: client.disability_status || '',
+        raceIdentity: client.race_identity || '',
+        workAuthorization: client.work_authorization || '',
+        educationHistory: (client.education_history && client.education_history.length > 0)
+            ? client.education_history
+            : [{ institution: '', degree: '', datesAttended: '' }],
+        jobTitles: client.job_titles || '',
+        minSalaryExpectation: client.min_salary_expectation || '',
+        sharedEmail: client.shared_email || '',
+        sharedPassword: client.shared_password || '',
+        commsEmail: client.comms_email || '',
+        legalName: client.legal_name || '',
+        signatureDate: (client.signature_date || '').slice(0, 10) || new Date().toISOString().split('T')[0],
+        tcAgreed: Boolean(client.tc_agreed),
+        finalConfirm: false,
+    };
+}
+
+function OnboardingForm({ client, onClose, onComplete }) {
+    const [step, setStep] = useState(client?.onboarding_step || 1);
+    const [formData, setFormData] = useState(() => dataFromClient(client));
     const [resumeFile, setResumeFile] = useState(null);
+    const [existingResumeFilename, setExistingResumeFilename] = useState(client?.intake_resume_filename || '');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [success, setSuccess] = useState(false);
+    const [saving, setSaving] = useState(false);
     const [showTermsModal, setShowTermsModal] = useState(false);
     const [termsModalTab, setTermsModalTab] = useState('terms');
 
     const set = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
 
+    // Keep the single fullAddress string (what the backend stores) in sync with
+    // the structured street/city/region/postal fields the user actually edits.
+    useEffect(() => {
+        setFormData(prev => ({ ...prev, fullAddress: buildFullAddress(prev) }));
+    }, [formData.addressStreet, formData.addressCity, formData.addressRegion, formData.addressPostalCode]);
+
+    const ALLOWED_RESUME_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+
+    function acceptResumeFile(file) {
+        if (!file) return;
+        if (!ALLOWED_RESUME_TYPES.includes(file.type)) {
+            setError('Only PDF or Word documents are accepted.');
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            setError('File is too large — 10 MB maximum.');
+            return;
+        }
+        setError('');
+        setResumeFile(file);
+    }
+
     function validateStep() {
         setError('');
         if (step === 1) {
             if (!formData.fullName.trim()) return 'Full name is required.';
-            if (!formData.email.trim() || !/\S+@\S+\.\S+/.test(formData.email)) return 'A valid email address is required.';
             if (!formData.phone.trim()) return 'Phone number is required.';
-            if (!formData.fullAddress.trim()) return 'Full address is required.';
+            if (!formData.country) return 'Please select your country.';
+            if (!formData.addressStreet.trim()) return 'Street address is required.';
+            if (!formData.addressCity.trim()) return 'City is required.';
+            if (!formData.addressRegion) return `Please select your ${regionLabelFor(formData.country).toLowerCase()}.`;
+            if (!formData.addressPostalCode.trim()) return `${postalLabelFor(formData.country)} is required.`;
             if (!formData.sex) return 'Please select your sex.';
         }
         if (step === 2) {
@@ -57,14 +128,20 @@ function IntakeForm({ onClose }) {
             if (!formData.disabilityStatus) return 'Please indicate your disability status.';
             if (!formData.raceIdentity) return 'Please select your race/ethnicity identity.';
             if (!formData.workAuthorization) return 'Please select your work authorization status.';
+            const hasCompleteEducationEntry = formData.educationHistory.some(
+                e => e.institution.trim() && e.degree.trim() && e.datesAttended.trim()
+            );
+            if (!hasCompleteEducationEntry) return 'Please add at least one complete education entry (institution, degree, and dates attended).';
         }
         if (step === 3) {
             if (!formData.jobTitles.trim()) return 'Please enter your job title(s).';
+            if (!formData.minSalaryExpectation.trim()) return 'Please enter your minimum salary expectation.';
             if (!formData.sharedEmail.trim() || !/\S+@\S+\.\S+/.test(formData.sharedEmail)) return 'A valid shared email address is required.';
             if (!formData.sharedPassword || formData.sharedPassword.length < 6) return 'Password must be at least 6 characters.';
+            if (!formData.commsEmail.trim() || !/\S+@\S+\.\S+/.test(formData.commsEmail)) return 'A valid primary communications email is required.';
         }
         if (step === 4) {
-            if (!resumeFile) return 'Please upload your resume (PDF).';
+            if (!resumeFile && !existingResumeFilename) return 'Please upload your resume (PDF).';
         }
         if (step === 5) {
             if (!formData.legalName.trim()) return 'Please enter your full legal name as your electronic signature.';
@@ -74,10 +151,41 @@ function IntakeForm({ onClose }) {
         return null;
     }
 
-    function handleNext() {
+    async function handleNext() {
         const err = validateStep();
         if (err) { setError(err); return; }
-        setStep(s => s + 1);
+
+        setSaving(true);
+        setError('');
+
+        try {
+            if (step === 4 && resumeFile) {
+                const fd = new FormData();
+                fd.append('resume', resumeFile);
+                const resumeRes = await fetch('/api/clients/me/intake-resume', {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${getAuthToken()}` },
+                    body: fd,
+                });
+                const rData = await resumeRes.json();
+                if (!resumeRes.ok) throw new Error(rData.error || 'Resume upload failed.');
+                setExistingResumeFilename(rData.client?.intake_resume_filename || resumeFile.name);
+            }
+
+            const res = await authFetch('/api/clients/me/onboarding-draft', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...formData, step: step + 1 }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Could not save your progress.');
+
+            setStep(s => s + 1);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setSaving(false);
+        }
     }
 
     function handleBack() {
@@ -93,49 +201,15 @@ function IntakeForm({ onClose }) {
         setError('');
 
         try {
-            // Step 1: Create account + store intake data
-            const res = await fetch('/api/intake', {
-                method: 'POST',
+            const res = await authFetch('/api/clients/me/onboarding', {
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    fullName: formData.fullName,
-                    email: formData.email,
-                    referredBy: formData.referredBy,
-                    phone: formData.phone,
-                    fullAddress: formData.fullAddress,
-                    sex: formData.sex,
-                    veteranStatus: formData.veteranStatus,
-                    disabilityStatus: formData.disabilityStatus,
-                    raceIdentity: formData.raceIdentity,
-                    workAuthorization: formData.workAuthorization,
-                    jobTitles: formData.jobTitles,
-                    sharedEmail: formData.sharedEmail,
-                    sharedPassword: formData.sharedPassword,
-                    legalName: formData.legalName,
-                    signatureDate: formData.signatureDate,
-                    tcAgreed: formData.tcAgreed,
-                }),
+                body: JSON.stringify(formData),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Submission failed.');
 
-            const submissionId = data.submissionId;
-
-            // Step 2: Upload resume
-            if (resumeFile && submissionId) {
-                const fd = new FormData();
-                fd.append('resume', resumeFile);
-                const resumeRes = await fetch(`/api/intake/${submissionId}/resume`, {
-                    method: 'POST',
-                    body: fd,
-                });
-                if (!resumeRes.ok) {
-                    const rData = await resumeRes.json();
-                    throw new Error(rData.error || 'Resume upload failed.');
-                }
-            }
-
-            setSuccess(true);
+            onComplete();
         } catch (err) {
             setError(err.message);
         } finally {
@@ -143,39 +217,16 @@ function IntakeForm({ onClose }) {
         }
     }
 
-    if (success) {
-        return (
-            <div className="intake-overlay">
-                <div className="intake-container intake-success-card">
-                    <div className="intake-success-icon">✓</div>
-                    <h2>Thank You for Registering!</h2>
-                    <p>
-                        Your intake form has been successfully received by
-                        Guzman Career Services LLC. We appreciate you taking
-                        the time to complete your application.
-                    </p>
-                    <p className="intake-success-note">
-                        Our dedicated team will carefully review your submission
-                        and reach out to you via the email address provided
-                        within <strong>1–2 business days</strong> to discuss
-                        your next steps. We look forward to supporting your
-                        career journey!
-                    </p>
-                    <button className="intake-btn-primary" onClick={onClose}>
-                        Close
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="intake-overlay" onClick={onClose}>
-            <div className="intake-container" onClick={e => e.stopPropagation()}>
+        <div className="intake-overlay">
+            <div className="intake-container">
+                {onClose && (
+                    <button className="intake-close" onClick={onClose} aria-label="Close and finish later">✕</button>
+                )}
                 {/* Header */}
                 <div className="intake-header">
-                    <button className="intake-close" onClick={onClose} aria-label="Close">✕</button>
-                    <h2 className="intake-title">General Client Intake Form</h2>
+                    <OnboardingProgress currentStage={stageForOnboardingStep(step)} />
+                    <h2 className="intake-title">Complete Your Onboarding</h2>
                     <p className="intake-subtitle">Step {step} of {STEPS.length} — {STEPS[step - 1].label}</p>
                 </div>
 
@@ -193,16 +244,11 @@ function IntakeForm({ onClose }) {
                 <div className="intake-body">
                     {error && <div className="intake-error">{error}</div>}
 
-                    {/* ── STEP 1: Personal Info ── */}
                     {step === 1 && (
                         <div className="intake-fields">
                             <div className="intake-field">
                                 <label>Full Name <span className="req">*</span></label>
                                 <input type="text" value={formData.fullName} onChange={e => set('fullName', e.target.value)} placeholder="Jane Doe" />
-                            </div>
-                            <div className="intake-field">
-                                <label>Email Address <span className="req">*</span></label>
-                                <input type="email" value={formData.email} onChange={e => set('email', e.target.value)} placeholder="jane@example.com" />
                             </div>
                             <div className="intake-field">
                                 <label>Who Referred You?</label>
@@ -212,24 +258,55 @@ function IntakeForm({ onClose }) {
                                 <label>Phone Number <span className="req">*</span></label>
                                 <input type="tel" value={formData.phone} onChange={e => set('phone', e.target.value)} placeholder="(555) 000-0000" />
                             </div>
-                            <div className="intake-field intake-field-full">
-                                <label>Full Address <span className="req">*</span></label>
-                                <textarea rows={3} value={formData.fullAddress} onChange={e => set('fullAddress', e.target.value)} placeholder="Street, City, State, ZIP" />
+                            <div className="intake-field">
+                                <label>Country <span className="req">*</span></label>
+                                <select
+                                    value={formData.country}
+                                    onChange={e => { set('country', e.target.value); set('addressRegion', ''); }}
+                                >
+                                    <option value="">Select…</option>
+                                    {ONBOARDING_COUNTRIES.map(c => <option key={c}>{c}</option>)}
+                                </select>
                             </div>
+                            {formData.country && (
+                                <>
+                                    <div className="intake-field intake-field-full">
+                                        <label>Street Address <span className="req">*</span></label>
+                                        <input type="text" value={formData.addressStreet} onChange={e => set('addressStreet', e.target.value)} placeholder="123 Main Street, Apt 4B" />
+                                    </div>
+                                    <div className="intake-field">
+                                        <label>City <span className="req">*</span></label>
+                                        <input type="text" value={formData.addressCity} onChange={e => set('addressCity', e.target.value)} placeholder="City" />
+                                    </div>
+                                    <div className="intake-field">
+                                        <label>{regionLabelFor(formData.country)} <span className="req">*</span></label>
+                                        <select value={formData.addressRegion} onChange={e => set('addressRegion', e.target.value)}>
+                                            <option value="">Select…</option>
+                                            {regionOptionsFor(formData.country).map(r => <option key={r}>{r}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="intake-field">
+                                        <label>{postalLabelFor(formData.country)} <span className="req">*</span></label>
+                                        <input
+                                            type="text"
+                                            value={formData.addressPostalCode}
+                                            onChange={e => set('addressPostalCode', e.target.value)}
+                                            placeholder={postalPlaceholderFor(formData.country)}
+                                        />
+                                    </div>
+                                </>
+                            )}
                             <div className="intake-field">
                                 <label>Sex <span className="req">*</span></label>
                                 <select value={formData.sex} onChange={e => set('sex', e.target.value)}>
                                     <option value="">Select…</option>
                                     <option>Male</option>
                                     <option>Female</option>
-                                    <option>Non-binary</option>
-                                    <option>Prefer not to say</option>
                                 </select>
                             </div>
                         </div>
                     )}
 
-                    {/* ── STEP 2: Background / Identity ── */}
                     {step === 2 && (
                         <div className="intake-fields">
                             <div className="intake-field intake-field-full">
@@ -280,9 +357,9 @@ function IntakeForm({ onClose }) {
                                 <label>Work Authorization Status <span className="req">*</span></label>
                                 <div className="intake-radios intake-radios-col">
                                     {[
-                                        'U.S. Citizen',
-                                        'Green Card Holder',
-                                        'EAD (Employment Authorization Document)',
+                                        'Citizen',
+                                        'Green Card Holder/Permanent Resident',
+                                        'EAD',
                                     ].map(v => (
                                         <label key={v} className="intake-radio">
                                             <input type="radio" name="workAuth" value={v} checked={formData.workAuthorization === v} onChange={() => set('workAuthorization', v)} />
@@ -291,16 +368,75 @@ function IntakeForm({ onClose }) {
                                     ))}
                                 </div>
                             </div>
+
+                            <div className="intake-field intake-field-full">
+                                <label>Education History <span className="req">*</span></label>
+                                <span className="intake-hint">Add every school attended, with dates. Click "Add Another" for more than one.</span>
+                                {formData.educationHistory.map((edu, i) => (
+                                    <div className="intake-education-row" key={i}>
+                                        <input
+                                            type="text"
+                                            value={edu.institution}
+                                            onChange={e => {
+                                                const next = [...formData.educationHistory];
+                                                next[i] = { ...next[i], institution: e.target.value };
+                                                set('educationHistory', next);
+                                            }}
+                                            placeholder="School / Institution"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={edu.degree}
+                                            onChange={e => {
+                                                const next = [...formData.educationHistory];
+                                                next[i] = { ...next[i], degree: e.target.value };
+                                                set('educationHistory', next);
+                                            }}
+                                            placeholder="Degree / Program"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={edu.datesAttended}
+                                            onChange={e => {
+                                                const next = [...formData.educationHistory];
+                                                next[i] = { ...next[i], datesAttended: e.target.value };
+                                                set('educationHistory', next);
+                                            }}
+                                            placeholder="Dates Attended (e.g. 2018 – 2022)"
+                                        />
+                                        {formData.educationHistory.length > 1 && (
+                                            <button
+                                                type="button"
+                                                className="intake-dz-remove"
+                                                onClick={() => set('educationHistory', formData.educationHistory.filter((_, idx) => idx !== i))}
+                                            >
+                                                Remove
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                                <button
+                                    type="button"
+                                    className="intake-tc-link-btn"
+                                    onClick={() => set('educationHistory', [...formData.educationHistory, { institution: '', degree: '', datesAttended: '' }])}
+                                >
+                                    + Add Another School
+                                </button>
+                            </div>
                         </div>
                     )}
 
-                    {/* ── STEP 3: Professional + Shared Credentials ── */}
                     {step === 3 && (
                         <div className="intake-fields">
                             <div className="intake-field intake-field-full">
                                 <label>Job Title(s) <span className="req">*</span></label>
                                 <input type="text" value={formData.jobTitles} onChange={e => set('jobTitles', e.target.value)} placeholder="e.g. Software Engineer, Project Manager" />
                                 <span className="intake-hint">Separate multiple titles with commas.</span>
+                            </div>
+
+                            <div className="intake-field intake-field-full">
+                                <label>Minimum Salary Expectation <span className="req">*</span></label>
+                                <input type="text" value={formData.minSalaryExpectation} onChange={e => set('minSalaryExpectation', e.target.value)} placeholder="e.g. $70,000" />
                             </div>
 
                             <div className="intake-callout">
@@ -334,24 +470,28 @@ function IntakeForm({ onClose }) {
                                     This password will also be used to log into your client portal.
                                 </span>
                             </div>
+
+                            <div className="intake-field intake-field-full">
+                                <label>Primary Email Address for Communications <span className="req">*</span></label>
+                                <input type="email" value={formData.commsEmail} onChange={e => set('commsEmail', e.target.value)} placeholder="you@example.com" />
+                                <span className="intake-hint">
+                                    The address we'll use to reach you about your job search. Can be different from your shared job-search email above.
+                                </span>
+                            </div>
                         </div>
                     )}
 
-                    {/* ── STEP 4: Resume Upload ── */}
                     {step === 4 && (
                         <div className="intake-fields">
                             <div className="intake-field intake-field-full">
                                 <label>Upload Resume <span className="req">*</span></label>
                                 <div
-                                    className={`intake-dropzone ${resumeFile ? 'intake-dropzone-filled' : ''}`}
+                                    className={`intake-dropzone ${resumeFile || existingResumeFilename ? 'intake-dropzone-filled' : ''}`}
                                     onClick={() => document.getElementById('resume-input').click()}
                                     onDragOver={e => e.preventDefault()}
                                     onDrop={e => {
                                         e.preventDefault();
-                                        const f = e.dataTransfer.files[0];
-                                        const allowed = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-                                        if (f && allowed.includes(f.type)) setResumeFile(f);
-                                        else setError('Only PDF or Word documents are accepted.');
+                                        acceptResumeFile(e.dataTransfer.files[0]);
                                     }}
                                 >
                                     <input
@@ -359,10 +499,7 @@ function IntakeForm({ onClose }) {
                                         type="file"
                                         accept="application/pdf,.pdf,application/msword,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
                                         style={{ display: 'none' }}
-                                        onChange={e => {
-                                            const f = e.target.files[0];
-                                            if (f) setResumeFile(f);
-                                        }}
+                                        onChange={e => acceptResumeFile(e.target.files[0])}
                                     />
                                     {resumeFile ? (
                                         <>
@@ -377,6 +514,19 @@ function IntakeForm({ onClose }) {
                                                 Remove
                                             </button>
                                         </>
+                                    ) : existingResumeFilename ? (
+                                        <>
+                                            <div className="intake-dz-icon">📄</div>
+                                            <p className="intake-dz-name">{existingResumeFilename}</p>
+                                            <p className="intake-dz-size">Already uploaded</p>
+                                            <button
+                                                type="button"
+                                                className="intake-dz-remove"
+                                                onClick={e => { e.stopPropagation(); document.getElementById('resume-input').click(); }}
+                                            >
+                                                Replace
+                                            </button>
+                                        </>
                                     ) : (
                                         <>
                                             <div className="intake-dz-icon">📎</div>
@@ -389,7 +539,6 @@ function IntakeForm({ onClose }) {
                         </div>
                     )}
 
-                    {/* ── STEP 5: Legal Agreement ── */}
                     {step === 5 && (
                         <div className="intake-fields">
                             <div className="intake-field intake-field-full">
@@ -412,15 +561,15 @@ function IntakeForm({ onClose }) {
                             <div className="intake-field intake-field-full">
                                 <label>Terms &amp; Conditions and Privacy Policy</label>
                                 <div className="intake-tc-buttons">
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         className="intake-tc-link-btn"
                                         onClick={() => { setTermsModalTab('terms'); setShowTermsModal(true); }}
                                     >
                                         📄 Read Terms &amp; Conditions
                                     </button>
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         className="intake-tc-link-btn"
                                         onClick={() => { setTermsModalTab('privacy'); setShowTermsModal(true); }}
                                     >
@@ -457,19 +606,18 @@ function IntakeForm({ onClose }) {
                         </div>
                     )}
 
-                    {/* T&C Modal */}
                     {showTermsModal && (
                         <div className="intake-tc-modal-overlay" onClick={() => setShowTermsModal(false)}>
                             <div className="intake-tc-modal" onClick={e => e.stopPropagation()}>
                                 <div className="intake-tc-modal-header">
                                     <div className="intake-tc-modal-tabs">
-                                        <button 
+                                        <button
                                             className={`intake-tc-tab ${termsModalTab === 'terms' ? 'active' : ''}`}
                                             onClick={() => setTermsModalTab('terms')}
                                         >
                                             Terms & Conditions
                                         </button>
-                                        <button 
+                                        <button
                                             className={`intake-tc-tab ${termsModalTab === 'privacy' ? 'active' : ''}`}
                                             onClick={() => setTermsModalTab('privacy')}
                                         >
@@ -484,7 +632,7 @@ function IntakeForm({ onClose }) {
                                             <h3>{TERMS_OF_SERVICE.title}</h3>
                                             <h4>{TERMS_OF_SERVICE.subtitle}</h4>
                                             <p className="intake-tc-effective">Effective Date: {TERMS_OF_SERVICE.effectiveDate}</p>
-                                            
+
                                             {TERMS_OF_SERVICE.sections.map((section) => (
                                                 <div key={section.number} className="intake-tc-section">
                                                     <h5>{section.number}. {section.title}</h5>
@@ -518,7 +666,7 @@ function IntakeForm({ onClose }) {
                                             <h3>{PRIVACY_POLICY.title}</h3>
                                             <h4>{PRIVACY_POLICY.subtitle}</h4>
                                             <p className="intake-tc-effective">Effective Date: {PRIVACY_POLICY.effectiveDate}</p>
-                                            
+
                                             {PRIVACY_POLICY.sections.map((section) => (
                                                 <div key={section.number} className="intake-tc-section">
                                                     <h5>{section.number}. {section.title}</h5>
@@ -560,8 +708,8 @@ function IntakeForm({ onClose }) {
                                         />
                                         <span>I have read and agree to the Terms &amp; Conditions and Privacy Policy</span>
                                     </label>
-                                    <button 
-                                        className="intake-btn-primary" 
+                                    <button
+                                        className="intake-btn-primary"
                                         onClick={() => setShowTermsModal(false)}
                                     >
                                         {formData.tcAgreed ? 'Continue' : 'Close'}
@@ -575,18 +723,18 @@ function IntakeForm({ onClose }) {
                 {/* Navigation */}
                 <div className="intake-nav">
                     {step > 1 && (
-                        <button className="intake-btn-secondary" onClick={handleBack} disabled={loading}>
+                        <button className="intake-btn-secondary" onClick={handleBack} disabled={loading || saving}>
                             ← Back
                         </button>
                     )}
                     <div style={{ flex: 1 }} />
                     {step < STEPS.length ? (
-                        <button className="intake-btn-primary" onClick={handleNext}>
-                            Next →
+                        <button className="intake-btn-primary" onClick={handleNext} disabled={saving}>
+                            {saving ? 'Saving…' : 'Next →'}
                         </button>
                     ) : (
                         <button className="intake-btn-primary" onClick={handleSubmit} disabled={loading}>
-                            {loading ? 'Submitting…' : 'Submit Application'}
+                            {loading ? 'Submitting…' : 'Complete Onboarding'}
                         </button>
                     )}
                 </div>
@@ -595,4 +743,4 @@ function IntakeForm({ onClose }) {
     );
 }
 
-export default IntakeForm;
+export default OnboardingForm;

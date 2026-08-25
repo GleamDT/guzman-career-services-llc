@@ -34,10 +34,6 @@
     margin-bottom: var(--space-10);
 }
 
-.contact-icon {
-    font-size: 2rem;
-    flex-shrink: 0;
-}
 
 .contact-details {
     flex: 1;
