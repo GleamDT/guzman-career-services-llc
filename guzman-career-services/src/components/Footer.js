@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Clock, Facebook, Instagram } from 'lucide-react';
+import { Mail, Clock, Facebook, Instagram, X } from 'lucide-react';
 import Logo from './Logo';
 import './Footer.css';
 
@@ -36,6 +36,15 @@ function Footer() {
                                 className="footer-social-link"
                             >
                                 <Instagram size={20} strokeWidth={2} />
+                            </a>
+                            <a
+                                href="https://x.com/guzmancareerservices"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="Guzman Career Services on X"
+                                className="footer-social-link"
+                            >
+                                <X size={20} strokeWidth={2} />
                             </a>
                         </div>
                     </div>
