@@ -58,7 +58,7 @@ function Footer() {
                                 <InstagramIcon />
                             </a>
                             <a
-                                href="https://x.com/guzmancareerservices"
+                                href="https://x.com/guzmancareers"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 aria-label="Guzman Career Services on X"
