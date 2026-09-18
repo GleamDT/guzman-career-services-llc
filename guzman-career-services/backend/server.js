@@ -1847,6 +1847,45 @@ app.get('/api/clients/:clientId/resume/download', requireAuth, async (req, res) 
     }
 });
 
+// GET /api/clients/:clientId/intake-resume/download — the client's OWN resume,
+// submitted during onboarding (intake_resume_* columns). Admin/staff only — by
+// design this never shows up on the client's own dashboard (see the comment on
+// POST /api/clients/me/intake-resume above).
+app.get('/api/clients/:clientId/intake-resume/download', requireAdminOrStaff, async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT intake_resume_path, intake_resume_filename FROM clients WHERE id = $1',
+            [req.params.clientId]
+        );
+        const row = result.rows[0];
+        if (!row || !row.intake_resume_path) {
+            return res.status(404).json({ error: 'No submitted resume on file.' });
+        }
+
+        const signedUrl = await getSignedDownloadUrl(row.intake_resume_path, 60);
+        const { statusCode, headers: cloudHeaders, buffer } = await httpsGetBuffer(signedUrl);
+        if (statusCode !== 200) throw new Error(`Storage error: ${statusCode}`);
+
+        let contentType = cloudHeaders['content-type'] || '';
+        if (!contentType || contentType.startsWith('text/html') || contentType === 'application/octet-stream') {
+            const ext = (row.intake_resume_filename || row.intake_resume_path || '').split('.').pop().toLowerCase();
+            if (ext === 'pdf')  contentType = 'application/pdf';
+            else if (ext === 'docx') contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+            else if (ext === 'doc')  contentType = 'application/msword';
+            else contentType = 'application/octet-stream';
+        }
+
+        const safeFilename = (row.intake_resume_filename || 'resume').replace(/[^\w.\-]/g, '_');
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"; filename*=UTF-8''${encodeURIComponent(row.intake_resume_filename || 'resume')}`);
+        res.setHeader('Content-Length', buffer.length);
+        res.end(buffer);
+    } catch (error) {
+        console.error('[GET /api/clients/:clientId/intake-resume/download]', error.message);
+        if (!res.headersSent) res.status(500).json({ error: 'Could not download file.' });
+    }
+});
+
 // GET /api/activity-log — full activity history (admin only)
 app.get('/api/activity-log', requireAdmin, async (req, res) => {
     const { action, name, search, from, to, limit = 200 } = req.query;
