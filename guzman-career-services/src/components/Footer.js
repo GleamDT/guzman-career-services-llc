@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Clock } from 'lucide-react';
+import { Mail, Clock, Facebook, Instagram } from 'lucide-react';
 import Logo from './Logo';
 import './Footer.css';
 
@@ -18,6 +18,26 @@ function Footer() {
                         <p className="footer-description">
                             Human-managed job applications for professionals across the US & Canada.
                         </p>
+                        <div className="footer-social">
+                            <a
+                                href="https://www.facebook.com/share/19Gfz1h8V5/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="Guzman Career Services on Facebook"
+                                className="footer-social-link"
+                            >
+                                <Facebook size={20} strokeWidth={2} />
+                            </a>
+                            <a
+                                href="https://www.instagram.com/guzmancareers"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="Guzman Career Services on Instagram"
+                                className="footer-social-link"
+                            >
+                                <Instagram size={20} strokeWidth={2} />
+                            </a>
+                        </div>
                     </div>
 
                     <div className="footer-section">
