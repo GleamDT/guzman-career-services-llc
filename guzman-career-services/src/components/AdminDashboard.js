@@ -215,8 +215,30 @@ function DashboardSection({ stats, onCreateClient, onCreateStaff, onNavigate }) 
 // ─── Client Details Modal ─────────────────────────────────────────────────────
 function ClientDetailsModal({ client, onClose, onClientUpdated }) {
     const [loading, setLoading] = useState(false);
+    const [downloadingIntakeResume, setDownloadingIntakeResume] = useState(false);
 
     if (!client) return null;
+
+    const handleDownloadIntakeResume = async () => {
+        setDownloadingIntakeResume(true);
+        try {
+            const res = await authFetch(`/api/clients/${client.id}/intake-resume/download`);
+            if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Download failed'); }
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = client.intake_resume_filename || 'resume.pdf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+        } catch (err) {
+            alert('Error: ' + err.message);
+        } finally {
+            setDownloadingIntakeResume(false);
+        }
+    };
 
     const handleHibernate = async () => {
         setLoading(true);
@@ -272,9 +294,59 @@ function ClientDetailsModal({ client, onClose, onClientUpdated }) {
 
                     {client.resume_filename && (
                         <>
-                            <div className="idm-section-title">Resume</div>
+                            <div className="idm-section-title">Consultant Resume</div>
                             <div className="idm-row"><span className="idm-label">File</span><span className="idm-value">{client.resume_filename}</span></div>
                             <div className="idm-row"><span className="idm-label">Uploaded</span><span className="idm-value">{fmtDate(client.resume_uploaded_at)}</span></div>
+                        </>
+                    )}
+
+                    {client.intake_resume_filename && (
+                        <>
+                            <div className="idm-section-title">Resume Submitted by Client</div>
+                            <div className="idm-row"><span className="idm-label">Uploaded</span><span className="idm-value">{fmtDate(client.intake_resume_uploaded_at)}</span></div>
+                            <div className="idm-resume-row">
+                                <span className="idm-value">{client.intake_resume_filename}</span>
+                                <button className="idm-btn-secondary" onClick={handleDownloadIntakeResume} disabled={downloadingIntakeResume}>
+                                    {downloadingIntakeResume ? 'Downloading…' : 'Download'}
+                                </button>
+                            </div>
+                        </>
+                    )}
+
+                    {client.legal_name && (
+                        <>
+                            <div className="idm-section-title">Onboarding Details</div>
+                            <div className="idm-row"><span className="idm-label">Referred By</span><span className="idm-value">{client.referred_by || '—'}</span></div>
+                            <div className="idm-row"><span className="idm-label">Address</span><span className="idm-value">{client.full_address || '—'}</span></div>
+                            <div className="idm-row"><span className="idm-label">Country</span><span className="idm-value">{client.country || '—'}</span></div>
+                            <div className="idm-row"><span className="idm-label">Sex</span><span className="idm-value">{client.sex || '—'}</span></div>
+                            <div className="idm-row"><span className="idm-label">Veteran Status</span><span className="idm-value">{client.veteran_status || '—'}</span></div>
+                            <div className="idm-row"><span className="idm-label">Disability Status</span><span className="idm-value">{client.disability_status || '—'}</span></div>
+                            <div className="idm-row"><span className="idm-label">Race / Ethnicity</span><span className="idm-value">{client.race_identity || '—'}</span></div>
+                            <div className="idm-row"><span className="idm-label">Work Authorization</span><span className="idm-value">{client.work_authorization || '—'}</span></div>
+                            <div className="idm-row"><span className="idm-label">Job Title(s)</span><span className="idm-value">{client.job_titles || '—'}</span></div>
+                            <div className="idm-row"><span className="idm-label">Min. Salary Expectation</span><span className="idm-value">{client.min_salary_expectation || '—'}</span></div>
+                            {client.linkedin_profile && (
+                                <div className="idm-row"><span className="idm-label">LinkedIn</span><span className="idm-value">{client.linkedin_profile}</span></div>
+                            )}
+                            <div className="idm-row"><span className="idm-label">Communications Email</span><span className="idm-value">{client.comms_email || '—'}</span></div>
+                            <div className="idm-row"><span className="idm-label">Legal Name (Signature)</span><span className="idm-value">{client.legal_name}</span></div>
+                            <div className="idm-row"><span className="idm-label">Signature Date</span><span className="idm-value">{fmtDate(client.signature_date)}</span></div>
+                            {client.additional_notes && (
+                                <div className="idm-row"><span className="idm-label">Additional Notes</span><span className="idm-value">{client.additional_notes}</span></div>
+                            )}
+                        </>
+                    )}
+
+                    {client.education_history && client.education_history.length > 0 && (
+                        <>
+                            <div className="idm-section-title">Education History</div>
+                            {client.education_history.map((edu, i) => (
+                                <div className="idm-row" key={i}>
+                                    <span className="idm-label">{edu.degree || 'Degree'}</span>
+                                    <span className="idm-value">{edu.institution}{edu.datesAttended ? ` (${edu.datesAttended})` : ''}</span>
+                                </div>
+                            ))}
                         </>
                     )}
                 </div>
